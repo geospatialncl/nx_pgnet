@@ -8,7 +8,9 @@ Development notes.
 1) Based on nx_shp.py from NetworkX source.
     - Should be converted to OO/Class based module in the future for better 
         functionality
+        
 2) Currently (v 0.1) contains minimal error checking! 
+    - What we really need is a custom error module to handle schema errors etc.
 
 3) When using read_pg() only include a nodes table if this corresponds to 
 network nodes (i.e. edge junctions) otherwise output nodes table will break!
@@ -43,9 +45,9 @@ def read_pg(conn, table_edges, table_nodes=None, directed=True):
     '''Read PostGIS table and return NetworkX graph.'''
     # Create Directed graph to store output
     if directed is True:
-        net = nx.Graph()
-    else:
         net = nx.DiGraph()
+    else:
+        net = nx.Graph()
     # Empty attributes dict
     for lyr in conn:
         if lyr.GetName() == table_edges or lyr.GetName() == table_nodes:
@@ -172,7 +174,6 @@ def update_graph_table(conn, graph, graph_name, edge_table, node_table):
     feature.SetField('GraphName', graph_name)
     feature.SetField('Nodes', edge_table)
     feature.SetField('Edges', node_table)
-    print nx.is_directed(graph)
     if nx.is_directed(graph):
         feature.SetField('Directed', 1)
     else:
@@ -186,7 +187,10 @@ def update_graph_table(conn, graph, graph_name, edge_table, node_table):
 def write_pg(conn, network, tablename_prefix, overwrite=False):
     '''Write NetworkX (with geom) to PostGIS edges and nodes tables.
     
-    Will also update graph table.    
+    Will also update graph table.
+
+    Note that schema constrains must be applied in database - there are no 
+    checks for database errors here!
     '''
 
     G = network # Use G as network, convention from earlier code.
@@ -196,22 +200,6 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
     edges = getlayer(conn, tbledges)
     nodes = getlayer(conn, tblnodes)    
 
-    '''
-    for layer in conn:    
-        if layer.GetName() == tbledges:
-            edges = layer
-            break
-        else:
-            edges = None
-    
-    for layer in conn:
-        if layer.GetName() == tblnodes:
-            nodes = layer
-            break
-        else:
-            nodes = None
-    '''
-    
     if edges is None:
         edges = conn.CreateLayer(tbledges, None, ogr.wkbLineString)
     else:    
@@ -302,8 +290,8 @@ def main():
     
     print 'reading network'
     # Build network in Python (see module notes about input nodes tables.)
-    net = read_pg(conn, 'LightRail_Baseline') #, 'LightRail_Baseline_Stations')
     
+    net = read_pg(conn, 'LightRail_Baseline') #, 'LightRail_Baseline_Stations')
     # Do some stuff with network.
     
     # Write network to PostGIS tables (use the same connection in this case).
