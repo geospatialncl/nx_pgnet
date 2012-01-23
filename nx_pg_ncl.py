@@ -11,23 +11,26 @@ __version__ = "1.0"
 
 import networkx as nx
 import osgeo.ogr as ogr
-#import pggkgetpass as gp
-import nx_shp
-#PGS = gp.getpass('login', 'postgres')
-PGS = 'postgres'
+import pggkgetpass as gp
+#import nx_shp
+PGS = gp.getpass('login', 'postgres')
+#PGS = 'postgres'
 
 def getfieldinfo(lyr, feature, flds):
     ''' Get information about fields - borrowed from nx_shp.py'''
     f = feature
     return [f.GetField(f.GetFieldIndex(x)) for x in flds]
     
-def read_pg(conn, tablename):
+def read_pg(conn, table_edges, table_nodes=None, directed=True):
     '''Function to convert geometry from PostGIS table to Network.'''
-    # Create Directed graph to store output    
-    net = nx.DiGraph()
+    # Create Directed graph to store output
+    if directed is True:
+        net = nx.Graph()
+    else:
+        net = nx.DiGraph()
     # Empty attributes dict
     for lyr in conn:
-        if lyr.GetName() == 'edges':
+        if lyr.GetName() == table_edges or lyr.GetName() == table_nodes:
             flds = [x.GetName() for x in lyr.schema]
             # Get the number of features in the layer
             for findex in xrange(lyr.GetFeatureCount()):
@@ -88,6 +91,10 @@ def create_feature(geometry, lyr, attributes=None):
          feature.SetField(field,data)
   lyr.CreateFeature(feature)
   feature.Destroy()
+  
+def update_graph_table(conn, graph, edge_table, node_table):
+    '''Function to update graph table based on agreed schema'''
+    
 
 def write_pg(conn, network, tablename_prefix, overwrite=False):
     '''Function to write Network with geometry to PostGIS edges and nodes tables.'''
@@ -141,21 +148,7 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
                      attributes[key] = data
         create_feature(g, nodes, attributes)
         nid += 1
-    '''
-    for n in G.nodes(data=True):
-        G[n[0]]['NodeID'] = nid
-        data = G.node[n[0]].values() or [{}]
-        g = netgeometry(n[0], data[0])
-        create_feature(g, nodes)
-        nid += 1
-    
-    nid = 0
-    for n in G.nodes():
-        #print G.node[n]
-        #print n
-        G.node[n]['NodeID'] = nid
-        nid += 1
-    '''
+
     for e in G.edges(data=True):
          print e
     fields = {}
@@ -163,7 +156,6 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
     eid = 0
     
     for e in G.edges(data=True):
-        #print type(data)     
         data = G.get_edge_data(*e)
         print 'edge data', data
         g = netgeometry(e, data)
@@ -191,7 +183,6 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
                      attributes[key] = data
         eid += 1
          # Create the feature with attributes
-        
         create_feature(g, edges, attributes)
 
     nodes, edges = None, None    
@@ -201,15 +192,10 @@ def main():
     
     # Create Connecton
     conn = ogr.Open("PG: host='127.0.0.1' dbname='android' user='postgres' password="+PGS+"")    
-    #conn.CreateLayer("test")
     
     net = read_pg(conn, 'edges')
     write_pg(conn, net, 'test4', overwrite=True)    
     conn = None
-    #for e in net.edges():
-    #  print e
-    #print net.size()
-    #nx_shp.write_shp(net, '/home/tom/')
                 
                     
     
