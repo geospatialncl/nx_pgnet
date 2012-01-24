@@ -22,6 +22,9 @@ on load.
 
 6) Included main function is just for development and will be removed.
 
+7) Geometry is currently stored in edges and node tables for convenience, but
+this breaks the schema and will be changed in future.
+
 """
 __author__ = "Tom Holderness"
 __created__ = "Thu Jan 19 15:55:13 2012"
@@ -117,7 +120,7 @@ def create_feature(geometry, lyr, attributes=None):
     feature.SetGeometry(geometry)
     if attributes != None:
         for field, data in attributes.iteritems(): 
-            feature.SetField(field,data)
+            feature.SetField(field, data)
     lyr.CreateFeature(feature)
     feature.Destroy()
 
@@ -125,8 +128,12 @@ def getlayer(conn, layername):
     '''Get a PostGIS table (layer) by name and return as OGR layer,
         else return None.
     
-    "Fixes (i.e. hacks)" OGR inconsistent error reporting'''
-    # Disable Error if table is none.
+    "An attempt to fix OGR inconsistent error reporting'''
+    # Disable Error if table is none - this doesn't work. 
+    # (SWIG binding docs are poorly constructed.)
+    # Will run, but will throw user warning if table doesn't exist.
+    # Updated question on gis.stackexchange. 
+    # REF: http://t.co/O8chm6x
     ogr.DontUseExceptions()
     layer = conn.GetLayerByName(layername)
     ogr.UseExceptions()
@@ -134,21 +141,9 @@ def getlayer(conn, layername):
   
 def update_graph_table(conn, graph, graph_name, edge_table, node_table):
     '''Update graph table or create if doesn't exist with agreed schema.'''
-    '''
-    ogr.DontUseExceptions()
-    tblgraphs = conn.GetLayerByName('graphs')
-    ogr.UseExceptions()
-    '''
+    
     tblgraphs = getlayer(conn, 'graphs')
-    '''
-    for layer in conn:
-        print layer.GetName()
-        if layer.GetName() == 'graphs':
-            tblgraphs = layer
-            break
-        else:
-            tblgraphs = None
-    '''
+    #ogr.UseExceptions()
     # tblgraphs doesn't exist so create with new features.
     # This is hard coded - should be reworked to be dynamic, similar style to..
         #...write_pg attributes)
@@ -283,7 +278,6 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
 
 def main():
     '''Testing nx_pg_ncl.py for NetworkX read/write of PostGIS tables.'''
-    
     # Create a source connecton
     conn = ogr.Open("PG: host='ceg-tyndall' dbname='tyndall_data' \
         user='postgres' password="+PGS+"")  
