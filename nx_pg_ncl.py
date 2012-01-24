@@ -76,16 +76,16 @@ def read_pg(conn, table_edges, table_nodes=None, directed=True):
                             n = line.GetPointCount()
                             # Get the attributes (akin to nx_shp)
                             attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
-                            attributes["Wkt"] = ogr.Geometry.ExportToWkb(line)
-                            attributes["Json"] = ogr.Geometry.ExportToWkb(line)
+                            attributes["Wkt"] = ogr.Geometry.ExportToWkt(line)
+                            attributes["Json"] = ogr.Geometry.ExportToJson(line)
                             net.add_edge(line.GetPoint_2D(0), 
                                          line.GetPoint_2D(n-1), attributes)
                     # Line geometry
                     elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
                         n = geom.GetPointCount()
                         attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
-                        attributes["Wkt"] = ogr.Geometry.ExportToWkb(geom)
-                        attributes["Json"] = ogr.Geometry.ExportToWkb(geom) 
+                        attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
+                        attributes["Json"] = ogr.Geometry.ExportToJson(geom) 
                         net.add_edge(geom.GetPoint_2D(0), 
                                          geom.GetPoint_2D(n-1), attributes)
                     # Point geometry                    
