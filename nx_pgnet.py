@@ -33,7 +33,7 @@ class read:
     def __init__(self, db_conn):
         self.conn = db_conn
     
-    def getfieldinf(lyr, feature, flds):
+    def getfieldinfo(self, lyr, feature, flds):
         '''Get information about fields (borrowed from nx_shp.py'''
         f = feature
         return [f.GetField(f.GetFieldIndex(x)) for x in flds]
@@ -46,9 +46,9 @@ class read:
         else:
             net = nx.Graph()
         # Empty attributes dict
-        for lyr in conn:
-            if lyr.GetName() == table_edges or lyr.GetName() == table_nodes:
-                print "reading features from %s" % lyr.GetName()
+        for lyr in self.conn:
+            if lyr.GetName() == edges_tbl or lyr.GetName() == nodes_tbl:
+                sys.stdout.write("Reading features from %s" % lyr.GetName())
                 flds = [x.GetName() for x in lyr.schema]
                 # Get the number of features in the layer
                 for findex in xrange(lyr.GetFeatureCount()):
@@ -57,7 +57,7 @@ class read:
                     if f is None:
                         pass # Catch any returned features which are None. 
                     else:
-                        flddata = getfieldinfo(lyr, f, flds )
+                        flddata = self.getfieldinfo(lyr, f, flds )
                         attributes = dict(zip(flds, flddata))
                         attributes["TableName"] = lyr.GetName()
                         # Get the geometry for that feature
@@ -102,7 +102,7 @@ class read:
         pass
 
     
-def read_pg(conn, table_edges, table_nodes=None, directed=True):
+#def read_pg(conn, table_edges, table_nodes=None, directed=True):
     
 
 def netgeometry(key, data):
