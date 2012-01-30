@@ -24,11 +24,15 @@ def unit_test_read_pg(conn):
     
     if net.edges() != None:
         print 'Test passed.'
+        
+
     
 def unit_test_get_layer(conn):
     layer = nx_pgnet.write(conn).getlayer('graphs')
     print layer
 
+def unit_test_write_pgnet(conn, net):
+    nx_pgnet.write(conn).write_pgnet(net, 'test2',overwrite=True)
 
 def main():
     '''Testing nx_pg_ncl.py for NetworkX read/write of PostGIS tables.'''
@@ -36,9 +40,12 @@ def main():
     conn = ogr.Open("PG: host='ceg-tyndall' dbname='tyndall_data' \
         user='postgres' password="+PGS+"")  
     
+    net = nx_pgnet.read(conn).read_pg('LightRail_Baseline')
+    unit_test_write_pgnet(conn, net)
+    
     #unit_test_read_pg(conn)
 
-    unit_test_get_layer(conn)    
+    #unit_test_get_layer(conn)    
     
     # Do some stuff with network.
     

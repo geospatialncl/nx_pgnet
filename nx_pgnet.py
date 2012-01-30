@@ -97,7 +97,7 @@ class read:
                                    "PostGIS geometry type not supported.")
         return net        
     
-    def read_pg_net(self, network_name):
+    def read_pgnet(self, network_name):
         '''Read postgis graph tables as defined by schema and return networkx
             graph.'''
         pass
@@ -110,7 +110,7 @@ class write:
         self.conn = db_conn
         
     
-    def netgeometry(key, data):
+    def netgeometry(self, key, data):
         '''Create OGR geometry from NetworkX Graph Wkb/Wkt attributes.
         '''
         # Borrowed from nx_shp.py.
@@ -129,15 +129,21 @@ class write:
             geom.SetPoint(0, *key)
         return geom
     
-    def create_feature(geometry, lyr, attributes=None):
-        '''Create an OGR feature in specified layer with geometry and attributes.'''
+    def create_feature(self, geometry, lyr, attributes=None):
+        '''Create an OGR feature in specified layer with geometry and 
+            attributes.'''
         feature = ogr.Feature(lyr.GetLayerDefn())
-        feature.SetGeometry(geometry)
+        if geometry is not None:
+            feature.SetGeometry(geometry)
         if attributes != None:
             for field, data in attributes.iteritems(): 
                 feature.SetField(field, data)
         lyr.CreateFeature(feature)
         feature.Destroy()
+        
+    def write_pg(self):
+        '''Method to write two tables (edges and nodes). '''
+        pass
 
     def getlayer(self, tablename):
         '''Get a PostGIS table by name and return as OGR layer,
@@ -151,140 +157,153 @@ class write:
             else:
                 return self.conn.GetLayerByName(tablename)                
                 
-def update_graph_table(conn, graph, graph_name, edge_table, node_table):
-    '''Update graph table or create if doesn't exist with agreed schema.'''
-    
-    tblgraphs = getlayer(conn, 'graphs')
-    #ogr.UseExceptions()
-    # tblgraphs doesn't exist so create with new features.
-    # This is hard coded - should be reworked to be dynamic, similar style to..
-        #...write_pg attributes)
-    if tblgraphs is None:
-        # tblgraphs is ogr.wkbNone (i.e. non-spatial)
-        tblgraphs = conn.CreateLayer('graphs', None, ogr.wkbNone)
-        Field_GraphName = ogr.FieldDefn('GraphName', ogr.OFTString)
-        tblgraphs.CreateField(Field_GraphName)
+    def update_graph_table(self, graph, graph_name, edge_table, node_table):
+        '''Update graph table or create if doesn't exist with agreed schema.'''
         
-        Field_Nodes = ogr.FieldDefn('Nodes', ogr.OFTString)
-        tblgraphs.CreateField(Field_Nodes)    
-    
-        Field_Edges = ogr.FieldDefn('Edges', ogr.OFTString)
-        tblgraphs.CreateField(Field_Edges)
-        
-        Field_Directed = ogr.FieldDefn('Directed', ogr.OFTInteger)
-        tblgraphs.CreateField(Field_Directed)
-    
-        Field_MultiGraph = ogr.FieldDefn('MultiGraph', ogr.OFTString)
-        tblgraphs.CreateField(Field_MultiGraph)
-    # Now add the data.    
-    feature = ogr.Feature(tblgraphs.GetLayerDefn())
-    feature.SetField('GraphName', graph_name)
-    feature.SetField('Nodes', edge_table)
-    feature.SetField('Edges', node_table)
-    if nx.is_directed(graph):
-        feature.SetField('Directed', 1)
-    else:
-        feature.SetField('Directed', 0)
-    # Multigraph still needs to be implemented.
-    feature.SetField('MultiGraph', 0)
-    # Create feature, clear pointer.
-    tblgraphs.CreateFeature(feature)
-    feature.Destroy()
-
-def write_pg(conn, network, tablename_prefix, overwrite=False):
-    '''Write NetworkX (with geom) to PostGIS edges and nodes tables.
-    
-    Will also update graph table.
-
-    Note that schema constrains must be applied in database - there are no 
-    checks for database errors here!
-    '''
-
-    G = network # Use G as network, convention from earlier code.
-    tbledges = tablename_prefix+'_edges'
-    tblnodes = tablename_prefix+'_nodes'
-    
-    edges = getlayer(conn, tbledges)
-    nodes = getlayer(conn, tblnodes)    
-
-    if edges is None:
-        edges = conn.CreateLayer(tbledges, None, ogr.wkbLineString)
-    else:    
-        if overwrite is True:
-            conn.DeleteLayer(tbledges)
-            edges = conn.CreateLayer(tbledges, None, ogr.wkbLineString)
+        tblgraphs = self.getlayer( 'graphs')
+        #ogr.UseExceptions()
+        # tblgraphs doesn't exist so create with new features.
+        # This is hard coded - should be reworked to be dynamic, similar style to..
+            #...write_pg attributes)
+        if tblgraphs is None:
+            # tblgraphs is ogr.wkbNone (i.e. non-spatial)
+            tblgraphs = self.conn.CreateLayer('graphs', None, ogr.wkbNone)
+            Field_GraphName = ogr.FieldDefn('GraphName', ogr.OFTString)
+            tblgraphs.CreateField(Field_GraphName)
             
-    if nodes is None:
-        nodes = conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
-    else:    
-        if overwrite is True:
-            conn.DeleteLayer(tblnodes)
-            nodes = conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
+            Field_Nodes = ogr.FieldDefn('Nodes', ogr.OFTString)
+            tblgraphs.CreateField(Field_Nodes)    
+        
+            Field_Edges = ogr.FieldDefn('Edges', ogr.OFTString)
+            tblgraphs.CreateField(Field_Edges)
+            
+            Field_Directed = ogr.FieldDefn('Directed', ogr.OFTInteger)
+            tblgraphs.CreateField(Field_Directed)
+        
+            Field_MultiGraph = ogr.FieldDefn('MultiGraph', ogr.OFTString)
+            tblgraphs.CreateField(Field_MultiGraph)
+        # Now add the data.    
+        feature = ogr.Feature(tblgraphs.GetLayerDefn())
+        feature.SetField('GraphName', graph_name)
+        feature.SetField('Nodes', edge_table)
+        feature.SetField('Edges', node_table)
+        if nx.is_directed(graph):
+            feature.SetField('Directed', 1)
+        else:
+            feature.SetField('Directed', 0)
+        # Multigraph still needs to be implemented.
+        feature.SetField('MultiGraph', 0)
+        # Create feature, clear pointer.
+        tblgraphs.CreateFeature(feature)
+        feature.Destroy()
 
-    # For all the nodes add an index.
-    # Warning! This will limit unique node index to sys.maxint 
-    nid = 0
-    fields = {}
-    attributes = {}
-    OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
-    for n in G.nodes(data=True):
-        G.node[n[0]]['NodeID'] = nid
-        data = G.node[n[0]]
-        g = netgeometry(n[0], data)
-        # Loop through data in nodes
-        for key, data in n[1].iteritems():
-            # Reject data not for attribute table
-            if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
-                and key != 'ShpName'):
-                  # Add new attributes for each feature
-                  if key not in fields:
-                     if type(data) in OGRTypes:
-                         fields[key] = OGRTypes[type(data)]
-                     else:
-                         fields[key] = ogr.OFTString
-                     newfield = ogr.FieldDefn(key, fields[key])
-                     nodes.CreateField(newfield)
-                     attributes[key] = data
-                  # Create dict of single feature's attributes
-                  else:
-                     attributes[key] = data
-        create_feature(g, nodes, attributes)
-        nid += 1
-    # Repeat similar operation for Edges (should put in function at some point!)
-    fields = {}
-    attributes = {}
-    eid = 0 # edge_id
-    for e in G.edges(data=True):
-        data = G.get_edge_data(*e)
-        #print 'edge data', data
-        g = netgeometry(e, data)
-        e0 = e[0]   # edge start node
-        e1 = e[1]   # edge end node
-        # Add attributes as defined in schema
-        G[e0][e1]['EdgeID'] = eid
-        G[e0][e1]['Node_F'] = G.node[e[0]]['NodeID']
-        G[e0][e1]['Node_T'] = G.node[e[1]]['NodeID']
-        # Loop through data in edges
-        for key, data in e[2].iteritems():
-            # Reject data not for attribute table
-            if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
-                and key != 'ShpName'):
-                  # Add new attributes for each feature
-                  if key not in fields:
-                     if type(data) in OGRTypes:
-                         fields[key] = OGRTypes[type(data)]
-                     else:
-                         fields[key] = ogr.OFTString
-                     newfield = ogr.FieldDefn(key, fields[key])
-                     edges.CreateField(newfield)
-                     attributes[key] = data
-                  # Create dict of single feature's attributes
-                  else:
-                     attributes[key] = data
-        eid += 1
-         # Create the feature with attributes
-        create_feature(g, edges, attributes)
-    update_graph_table(conn, G, tablename_prefix, tbledges, tblnodes)
-    # Done, clear pointers
-    nodes, edges = None, None    
+    def write_pgnet(self, network, tablename_prefix, overwrite=False):
+        '''Write NetworkX (with geom) to PostGIS graph tables as defined by schema.
+        
+        Will also update graph table.
+    
+        Note that schema constrains must be applied in database - there are no 
+        checks for database errors here!
+        '''
+    
+        G = network # Use G as network, convention from earlier code.
+        tbledges = tablename_prefix+'_edges'
+        tblnodes = tablename_prefix+'_nodes'
+        tbledge_geom = tablename_prefix+'edge_geometry'
+        
+        edge_geom = self.getlayer(tbledge_geom)
+        edges = self.getlayer(tbledges)
+        nodes = self.getlayer(tblnodes)    
+    
+        if edges is None:
+            edges = self.conn.CreateLayer(tbledges, None, ogr.wkbNone)
+        else:    
+            if overwrite is True:
+                self.conn.DeleteLayer(tbledges)
+                edges = self.conn.CreateLayer(tbledges, None, ogr.wkbLineString)
+                
+        if nodes is None:
+            nodes = self.conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
+        else:    
+            if overwrite is True:
+                self.conn.DeleteLayer(tblnodes)
+                nodes = self.conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
+                
+        if edge_geom is None:
+            edge_geom = self.conn.CreateLayer(tbledge_geom, None, 
+                                                             ogr.wkbLineString)
+        else:
+            if overwrite is True:
+                self.conn.DeleteLater(tbledge_geom)
+                edge_geom = self.conn.CreateLayer(tbledge_geom, None, 
+                                                             ogr.wkbLineString)
+    
+        # For all the nodes add an index.
+        # Warning! This will limit unique node index to sys.maxint 
+        nid = 0
+        fields = {}
+        attributes = {}
+        OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
+        for n in G.nodes(data=True):
+            G.node[n[0]]['NodeID'] = nid
+            data = G.node[n[0]]
+            g = self.netgeometry(n[0], data)
+            # Loop through data in nodes
+            for key, data in n[1].iteritems():
+                # Reject data not for attribute table
+                if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
+                    and key != 'ShpName'):
+                      # Add new attributes for each feature
+                      if key not in fields:
+                         if type(data) in OGRTypes:
+                             fields[key] = OGRTypes[type(data)]
+                         else:
+                             fields[key] = ogr.OFTString
+                         newfield = ogr.FieldDefn(key, fields[key])
+                         nodes.CreateField(newfield)
+                         attributes[key] = data
+                      # Create dict of single feature's attributes
+                      else:
+                         attributes[key] = data
+            self.create_feature(g, nodes, attributes)
+            nid += 1
+        # Repeat similar operation for Edges (should put in function at some point!)
+        fields = {}
+        attributes = {}
+        eid = 0 # edge_id
+        for e in G.edges(data=True):
+            data = G.get_edge_data(*e)
+            #print 'edge data', data
+            g = self.netgeometry(e, data)
+            e0 = e[0]   # edge start node
+            e1 = e[1]   # edge end node
+            # Add attributes as defined in schema
+            G[e0][e1]['EdgeID'] = eid
+            G[e0][e1]['Node_F'] = G.node[e[0]]['NodeID']
+            G[e0][e1]['Node_T'] = G.node[e[1]]['NodeID']
+            # Loop through data in edges
+            for key, data in e[2].iteritems():
+                # Reject data not for attribute table
+                if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
+                    and key != 'ShpName'):
+                      # Add new attributes for each feature
+                      if key not in fields:
+                         if type(data) in OGRTypes:
+                             fields[key] = OGRTypes[type(data)]
+                         else:
+                             fields[key] = ogr.OFTString
+                         newfield = ogr.FieldDefn(key, fields[key])
+                         edges.CreateField(newfield)
+                         attributes[key] = data
+                      # Create dict of single feature's attributes
+                      else:
+                         attributes[key] = data
+            eid += 1
+             # Create the feature with attributes
+            self.create_feature(None, edges, attributes)
+            #edges = {'EdgeID':attributes['EdgeID']}
+            #self.create_feature(g, edge_geom, edges)
+        self.update_graph_table(G, tablename_prefix, tbledges, tblnodes)
+        # Done, clear pointers
+        nodes, edges = None, None    
 
