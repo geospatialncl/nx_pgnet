@@ -26,62 +26,84 @@ __version__ = "0.1"
 import networkx as nx
 import osgeo.ogr as ogr
 
+class read:
+    '''Class with methods to read and build networks from either non-network
+    vector line table or from schema defined network tables.'''
 
-def getfieldinfo(lyr, feature, flds):
-    ''' Get information about fields - borrowed from nx_shp.py'''
-    f = feature
-    return [f.GetField(f.GetFieldIndex(x)) for x in flds]
+    def __init__(self, db_conn):
+        self.conn = db_conn
+    
+    def getfieldinf(lyr, feature, flds):
+        '''Get information about fields (borrowed from nx_shp.py'''
+        f = feature
+        return [f.GetField(f.GetFieldIndex(x)) for x in flds]
+    
+    def read_pg(self, edges_tbl, nodes_tbl = None, directed=True):
+        '''Read PostGIS vector line/point tables and return networkx graph.'''        
+        # Create Directed graph to store output
+        if directed is True:
+            net = nx.DiGraph()
+        else:
+            net = nx.Graph()
+        # Empty attributes dict
+        for lyr in conn:
+            if lyr.GetName() == table_edges or lyr.GetName() == table_nodes:
+                print "reading features from %s" % lyr.GetName()
+                flds = [x.GetName() for x in lyr.schema]
+                # Get the number of features in the layer
+                for findex in xrange(lyr.GetFeatureCount()):
+                    # Get a specific feature
+                    f = lyr.GetFeature(findex+1)
+                    if f is None:
+                        pass # Catch any returned features which are None. 
+                    else:
+                        flddata = getfieldinfo(lyr, f, flds )
+                        attributes = dict(zip(flds, flddata))
+                        attributes["TableName"] = lyr.GetName()
+                        # Get the geometry for that feature
+                        geom = f.GetGeometryRef()
+                        
+                        # Multiline geometry so split into line segments
+                        if (ogr.Geometry.GetGeometryName(geom) ==
+                            'MULTILINESTRING'):
+                            for line in geom:
+                                # Get points in line
+                                n = line.GetPointCount()
+                                # Get the attributes (akin to nx_shp)
+                                attributes["Wkb"] = ogr.Geometry.ExportToWkb(
+                                                                        line)
+                                attributes["Wkt"] = ogr.Geometry.ExportToWkt(
+                                                                        line)
+                                attributes["Json"] = ogr.Geometry.ExportToJson(
+                                                                        line)
+                                net.add_edge(line.GetPoint_2D(0), 
+                                             line.GetPoint_2D(n-1), attributes)
+                        # Line geometry
+                        elif (ogr.Geometry.GetGeometryName(geom) ==
+                            'LINESTRING'):
+                            n = geom.GetPointCount()
+                            attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
+                            attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
+                            attributes["Json"] = ogr.Geometry.ExportToJson(
+                                                                        geom) 
+                            net.add_edge(geom.GetPoint_2D(0), 
+                                             geom.GetPoint_2D(n-1), attributes)
+                        # Point geometry                    
+                        elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
+                            net.add_node((geom.GetPoint_2D(0)), attributes)
+                        else:
+                            raise (ValueError, 
+                                   "PostGIS geometry type not supported.")
+        return net        
+    
+    def read_pg_net(self, network_name):
+        '''Read postgis graph tables as defined by schema and return networkx
+            graph.'''
+        pass
+
     
 def read_pg(conn, table_edges, table_nodes=None, directed=True):
-    '''Read PostGIS table and return NetworkX graph.'''
-    # Create Directed graph to store output
-    if directed is True:
-        net = nx.DiGraph()
-    else:
-        net = nx.Graph()
-    # Empty attributes dict
-    for lyr in conn:
-        if lyr.GetName() == table_edges or lyr.GetName() == table_nodes:
-            print "reading features from %s" % lyr.GetName()
-            flds = [x.GetName() for x in lyr.schema]
-            # Get the number of features in the layer
-            for findex in xrange(lyr.GetFeatureCount()):
-                # Get a specific feature
-                f = lyr.GetFeature(findex+1)
-                if f is None:
-                    pass # Hack to catch any returned features which are None. 
-                else:
-                    flddata = getfieldinfo(lyr, f, flds )
-                    attributes = dict(zip(flds, flddata))
-                    attributes["TableName"] = lyr.GetName()
-                    # Get the geometry for that feature
-                    geom = f.GetGeometryRef()
-                    
-                    # Multiline geometry so split into line segments
-                    if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
-                        for line in geom:
-                            # Get points in line
-                            n = line.GetPointCount()
-                            # Get the attributes (akin to nx_shp)
-                            attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
-                            attributes["Wkt"] = ogr.Geometry.ExportToWkt(line)
-                            attributes["Json"] = ogr.Geometry.ExportToJson(line)
-                            net.add_edge(line.GetPoint_2D(0), 
-                                         line.GetPoint_2D(n-1), attributes)
-                    # Line geometry
-                    elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
-                        n = geom.GetPointCount()
-                        attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
-                        attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
-                        attributes["Json"] = ogr.Geometry.ExportToJson(geom) 
-                        net.add_edge(geom.GetPoint_2D(0), 
-                                         geom.GetPoint_2D(n-1), attributes)
-                    # Point geometry                    
-                    elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
-                        net.add_node((geom.GetPoint_2D(0)), attributes)
-                    else:
-                        raise ValueError, "PostGIS geometry type not supported."
-    return net
+    
 
 def netgeometry(key, data):
     '''Create OGR geometry from NetworkX Graph Wkb/Wkt attributes.
