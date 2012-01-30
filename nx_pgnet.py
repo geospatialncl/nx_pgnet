@@ -23,6 +23,7 @@ __created__ = "Thu Jan 19 15:55:13 2012"
 __year__ = "2011"
 __version__ = "0.1"
 
+import sys
 import networkx as nx
 import osgeo.ogr as ogr
 
@@ -101,54 +102,55 @@ class read:
             graph.'''
         pass
 
+class write:
+    ''''Class with methods to write networks to either non-network
+    vector line and points tables or to schema defined network tables.'''
     
-#def read_pg(conn, table_edges, table_nodes=None, directed=True):
+    def __init__(self, db_conn):
+        self.conn = db_conn
+        
     
-
-def netgeometry(key, data):
-    '''Create OGR geometry from NetworkX Graph Wkb/Wkt attributes.
-
-    Borrowed from nx_shp.py.    
-    '''
-    if data.has_key('Wkb'):
-        geom = ogr.CreateGeometryFromWkb(data['Wkb'])
-    elif data.has_key('Wkt'):
-        geom = ogr.CreateGeometryFromWkt(data['Wkt'])
-    elif type(key[0]) == 'tuple': # edge keys are packed tuples
-        geom = ogr.Geometry(ogr.wkbLineString)
-        _from, _to = key[0], key[1]
-        geom.SetPoint(0, *_from)
-        geom.SetPoint(1, *_to)
-    else:
-        geom = ogr.Geometry(ogr.wkbPoint)
-        geom.SetPoint(0, *key)
-    return geom
-
-def create_feature(geometry, lyr, attributes=None):
-    '''Create an OGR feature in specified layer with geometry and attributes.'''
-    feature = ogr.Feature(lyr.GetLayerDefn())
-    feature.SetGeometry(geometry)
-    if attributes != None:
-        for field, data in attributes.iteritems(): 
-            feature.SetField(field, data)
-    lyr.CreateFeature(feature)
-    feature.Destroy()
-
-def getlayer(conn, layername):
-    '''Get a PostGIS table (layer) by name and return as OGR layer,
-        else return None.
+    def netgeometry(key, data):
+        '''Create OGR geometry from NetworkX Graph Wkb/Wkt attributes.
+        '''
+        # Borrowed from nx_shp.py.
+        
+        if data.has_key('Wkb'):
+            geom = ogr.CreateGeometryFromWkb(data['Wkb'])
+        elif data.has_key('Wkt'):
+            geom = ogr.CreateGeometryFromWkt(data['Wkt'])
+        elif type(key[0]) == 'tuple': # edge keys are packed tuples
+            geom = ogr.Geometry(ogr.wkbLineString)
+            _from, _to = key[0], key[1]
+            geom.SetPoint(0, *_from)
+            geom.SetPoint(1, *_to)
+        else:
+            geom = ogr.Geometry(ogr.wkbPoint)
+            geom.SetPoint(0, *key)
+        return geom
     
-    "An attempt to fix OGR inconsistent error reporting'''
-    # Disable Error if table is none - this doesn't work. 
-    # (SWIG binding docs are poorly constructed.)
-    # Will run, but will throw user warning if table doesn't exist.
-    # Updated question on gis.stackexchange. 
-    # REF: http://t.co/O8chm6x
-    ogr.DontUseExceptions()
-    layer = conn.GetLayerByName(layername)
-    ogr.UseExceptions()
-    return layer
-  
+    def create_feature(geometry, lyr, attributes=None):
+        '''Create an OGR feature in specified layer with geometry and attributes.'''
+        feature = ogr.Feature(lyr.GetLayerDefn())
+        feature.SetGeometry(geometry)
+        if attributes != None:
+            for field, data in attributes.iteritems(): 
+                feature.SetField(field, data)
+        lyr.CreateFeature(feature)
+        feature.Destroy()
+
+    def getlayer(self, tablename):
+        '''Get a PostGIS table by name and return as OGR layer,
+            else return None. '''
+    
+        sql = "SELECT * from pg_tables WHERE tablename = '%s'" % tablename 
+        
+        for row in self.conn.ExecuteSQL(sql):
+            if row.tablename is None:
+                return None
+            else:
+                return self.conn.GetLayerByName(tablename)                
+                
 def update_graph_table(conn, graph, graph_name, edge_table, node_table):
     '''Update graph table or create if doesn't exist with agreed schema.'''
     
