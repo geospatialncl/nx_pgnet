@@ -49,7 +49,7 @@ class read:
         # Empty attributes dict
         for lyr in self.conn:
             if lyr.GetName() == edges_tbl or lyr.GetName() == nodes_tbl:
-                sys.stdout.write("Reading features from %s" % lyr.GetName())
+                sys.stdout.write("Reading features from %s\n" % lyr.GetName())
                 flds = [x.GetName() for x in lyr.schema]
                 # Get the number of features in the layer
                 for findex in xrange(lyr.GetFeatureCount()):
@@ -129,15 +129,15 @@ class write:
             geom.SetPoint(0, *key)
         return geom
     
-    def create_feature(self, geometry, lyr, attributes=None):
+    def create_feature(self, lyr, attributes = None, geometry = None):
         '''Create an OGR feature in specified layer with geometry and 
             attributes.'''
         feature = ogr.Feature(lyr.GetLayerDefn())
-        if geometry is not None:
-            feature.SetGeometry(geometry)
-        if attributes != None:
+        if attributes is not None:
             for field, data in attributes.iteritems(): 
                 feature.SetField(field, data)
+        if geometry is not None:
+            feature.SetGeometry(geometry)
         lyr.CreateFeature(feature)
         feature.Destroy()
         
@@ -265,9 +265,12 @@ class write:
                       # Create dict of single feature's attributes
                       else:
                          attributes[key] = data
-            self.create_feature(g, nodes, attributes)
+            self.create_feature(nodes, attributes,g)
             nid += 1
         # Repeat similar operation for Edges (should put in function at some point!)
+        edge_id_field = ogr.FieldDefn('EdgeID',ogr.OFTInteger)
+        edge_geom.CreateField(edge_id_field)        
+        
         fields = {}
         attributes = {}
         eid = 0 # edge_id
@@ -294,15 +297,17 @@ class write:
                              fields[key] = ogr.OFTString
                          newfield = ogr.FieldDefn(key, fields[key])
                          edges.CreateField(newfield)
+                         
                          attributes[key] = data
                       # Create dict of single feature's attributes
                       else:
                          attributes[key] = data
             eid += 1
              # Create the feature with attributes
-            self.create_feature(None, edges, attributes)
-            #edges = {'EdgeID':attributes['EdgeID']}
-            #self.create_feature(g, edge_geom, edges)
+            self.create_feature(edges, attributes)
+            edge_id = {'EdgeID':attributes['EdgeID']}
+
+            self.create_feature(edge_geom, edge_id, g)
         self.update_graph_table(G, tablename_prefix, tbledges, tblnodes)
         # Done, clear pointers
         nodes, edges = None, None    
