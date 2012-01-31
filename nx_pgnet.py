@@ -21,7 +21,7 @@ on load.
 __author__ = "Tom Holderness"
 __created__ = "Thu Jan 19 15:55:13 2012"
 __year__ = "2011"
-__version__ = "0.1"
+__version__ = "0.2.1"
 
 import sys
 import networkx as nx
