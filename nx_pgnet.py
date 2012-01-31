@@ -21,7 +21,7 @@ on load.
 __author__ = "Tom Holderness"
 __created__ = "Thu Jan 19 15:55:13 2012"
 __year__ = "2011"
-__version__ = "0.1"
+__version__ = "0.2"
 
 import sys
 import networkx as nx
@@ -199,6 +199,7 @@ class write:
             self.create_feature(edges, attributes, g)
     
         nodes, edges = None, None 
+        
 
     def getlayer(self, tablename):
         '''Get a PostGIS table by name and return as OGR layer,
@@ -262,37 +263,14 @@ class write:
         '''
     
         G = network # Use G as network, convention from earlier code.
-        tbledges = tablename_prefix+'_edges'
-        tblnodes = tablename_prefix+'_nodes'
-        tbledge_geom = tablename_prefix+'edge_geometry'
+        ## Table name prefix not implemented yet        
+        ##tbledges = tablename_prefix+'_edges'
+        ##tblnodes = tablename_prefix+'_nodes'
+        ##tbledge_geom = tablename_prefix+'edge_geometry'
         
         edge_geom = self.getlayer(tbledge_geom)
         edges = self.getlayer(tbledges)
         nodes = self.getlayer(tblnodes)    
-        # Get rid of this stuff - tables should exist or be created with 
-        #   plpgsql.
-        if edges is None:
-            edges = self.conn.CreateLayer(tbledges, None, ogr.wkbNone)
-        else:    
-            if overwrite is True:
-                self.conn.DeleteLayer(tbledges)
-                edges = self.conn.CreateLayer(tbledges, None, ogr.wkbLineString)
-                
-        if nodes is None:
-            nodes = self.conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
-        else:    
-            if overwrite is True:
-                self.conn.DeleteLayer(tblnodes)
-                nodes = self.conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
-                
-        if edge_geom is None:
-            edge_geom = self.conn.CreateLayer(tbledge_geom, None, 
-                                                             ogr.wkbLineString)
-        else:
-            if overwrite is True:
-                self.conn.DeleteLater(tbledge_geom)
-                edge_geom = self.conn.CreateLayer(tbledge_geom, None, 
-                                                             ogr.wkbLineString)
     
         # For all the nodes add an index.
         # Warning! This will limit unique node index to sys.maxint 
