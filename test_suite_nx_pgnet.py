@@ -30,9 +30,15 @@ def unit_test_read_pg(conn):
 def unit_test_get_layer(conn):
     layer = nx_pgnet.write(conn).getlayer('graphs')
     print layer
+    
+def unit_test_write_pg(conn, net):
+    nx_pgnet.write(conn).write_pg(net,  'test3', overwrite=True)
 
 def unit_test_write_pgnet(conn, net):
     nx_pgnet.write(conn).write_pgnet(net, 'test2',overwrite=True)
+    
+def unit_test_update_graphs_table(conn, net):
+    nx_pgnet.write(conn).update_graph_table(net, 'new_graph','edges','nodes')
 
 def main():
     '''Testing nx_pg_ncl.py for NetworkX read/write of PostGIS tables.'''
@@ -41,8 +47,9 @@ def main():
         user='postgres' password="+PGS+"")  
     
     net = nx_pgnet.read(conn).read_pg('LightRail_Baseline')
-    unit_test_write_pgnet(conn, net)
-    
+    unit_test_update_graphs_table(conn, net)
+    #unit_test_write_pgnet(conn, net)
+    #unit_test_write_pg(conn, net)
     #unit_test_read_pg(conn)
 
     #unit_test_get_layer(conn)    

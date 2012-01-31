@@ -27,6 +27,14 @@ import sys
 import networkx as nx
 import osgeo.ogr as ogr
 
+#To do:
+    # Fix write_pgnet edge and node ID - applied by DB?
+    # Remove create table statements and apply as updates only (tables should 
+    #   already exist)
+    # Add write_pg function (from nx_pg) but integrated within class
+    # Add src_id support
+    # Build wrapper functions round Dave's plpgsql for create/drop graphs etc.
+
 class read:
     '''Class with methods to read and build networks from either non-network
     vector line table or from schema defined network tables.'''
@@ -141,9 +149,64 @@ class write:
         lyr.CreateFeature(feature)
         feature.Destroy()
         
-    def write_pg(self):
-        '''Method to write two tables (edges and nodes). '''
-        pass
+    def write_pg(self, network, tablename_prefix, overwrite=False):
+        '''Function to write Network with geometry to PostGIS edges and node 
+        tables.'''
+        G = network
+        tbledges = tablename_prefix+'_edges'
+        tblnodes = tablename_prefix+'_nodes'
+    
+        if overwrite is True:
+          print 'whoop!'
+          self.conn.DeleteLayer(tbledges)
+          self.conn.DeleteLayer(tblnodes)
+          ''''
+          try:
+             conn.DeleteLayer(tbledges)
+             
+          except:
+             pass
+          try:
+             conn.DeleteLayer(tblnodes)
+          except:
+             pass   
+         '''
+        edges = self.conn.CreateLayer(tbledges, None, ogr.wkbLineString)
+        nodes = self.conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
+        
+        for n in G:
+            data = G.node[n].values() or [{}]
+            g = self.netgeometry(n, data[0])
+            self.create_feature(nodes, None, g)
+        
+        fields = {}
+        attributes = {}
+        OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
+        for e in G.edges(data=True):
+            data = G.get_edge_data(*e)
+            g = self.netgeometry(e, data)
+            # Loop through data in edges
+            for key, data in e[2].iteritems():
+                # Reject data not for attribute table
+                if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
+                    and key != 'ShpName'):
+                      # Add new attributes for each feature
+                      if key not in fields:
+                         if type(data) in OGRTypes:
+                             fields[key] = OGRTypes[type(data)]
+                         else:
+                             fields[key] = ogr.OFTString
+                         newfield = ogr.FieldDefn(key, fields[key])
+                         edges.CreateField(newfield)
+                         attributes[key] = data
+                      # Create dict of single feature's attributes
+                      else:
+                         attributes[key] = data
+             # Create the feature with attributes
+            
+            self.create_feature(edges, attributes, g)
+    
+        nodes, edges = None, None 
 
     def getlayer(self, tablename):
         '''Get a PostGIS table by name and return as OGR layer,
@@ -160,7 +223,7 @@ class write:
     def update_graph_table(self, graph, graph_name, edge_table, node_table):
         '''Update graph table or create if doesn't exist with agreed schema.'''
         
-        tblgraphs = self.getlayer( 'graphs')
+        tblgraphs = self.getlayer('graphs')
         #ogr.UseExceptions()
         # tblgraphs doesn't exist so create with new features.
         # This is hard coded - should be reworked to be dynamic, similar style to..
@@ -182,7 +245,9 @@ class write:
         
             Field_MultiGraph = ogr.FieldDefn('MultiGraph', ogr.OFTString)
             tblgraphs.CreateField(Field_MultiGraph)
-        # Now add the data.    
+        # Now add the data. 
+        Field_Tests = ogr.FieldDefn('Tests', ogr.OFTString)
+        tblgraphs.CreateField(Field_Tests)
         feature = ogr.Feature(tblgraphs.GetLayerDefn())
         feature.SetField('GraphName', graph_name)
         feature.SetField('Nodes', edge_table)
@@ -214,7 +279,8 @@ class write:
         edge_geom = self.getlayer(tbledge_geom)
         edges = self.getlayer(tbledges)
         nodes = self.getlayer(tblnodes)    
-    
+        # Get rid of this stuff - tables should exist or be created with 
+        #   plpgsql.
         if edges is None:
             edges = self.conn.CreateLayer(tbledges, None, ogr.wkbNone)
         else:    
