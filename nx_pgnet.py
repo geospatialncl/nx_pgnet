@@ -27,6 +27,9 @@ import sys
 import networkx as nx
 import osgeo.ogr as ogr
 
+# Ask ogr to use Python exceptions rather than stderr messages.
+ogr.UseExceptions()
+
 #To do:
     # Fix write_pgnet edge and node ID - applied by DB?
     # Remove create table statements and apply as updates only (tables should 
@@ -157,20 +160,9 @@ class write:
         tblnodes = tablename_prefix+'_nodes'
     
         if overwrite is True:
-          print 'whoop!'
           self.conn.DeleteLayer(tbledges)
           self.conn.DeleteLayer(tblnodes)
-          ''''
-          try:
-             conn.DeleteLayer(tbledges)
-             
-          except:
-             pass
-          try:
-             conn.DeleteLayer(tblnodes)
-          except:
-             pass   
-         '''
+          
         edges = self.conn.CreateLayer(tbledges, None, ogr.wkbLineString)
         nodes = self.conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
         
@@ -246,8 +238,6 @@ class write:
             Field_MultiGraph = ogr.FieldDefn('MultiGraph', ogr.OFTString)
             tblgraphs.CreateField(Field_MultiGraph)
         # Now add the data. 
-        Field_Tests = ogr.FieldDefn('Tests', ogr.OFTString)
-        tblgraphs.CreateField(Field_Tests)
         feature = ogr.Feature(tblgraphs.GetLayerDefn())
         feature.SetField('GraphName', graph_name)
         feature.SetField('Nodes', edge_table)
