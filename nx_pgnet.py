@@ -388,29 +388,29 @@ class write:
             edge_geom = self.netgeometry(e, data)
             
             # Insert the start node
-            node_ref = e[0]
-            #node_attrs
-            node_data = G.node[node_ref]   # edge start node
-            node_data['GraphID'] = 1 
-            
-            node_geom = self.netgeometry(node_ref, node_data)            
-            node_id = self.write_pgnet_node(node_data, node_geom)
+            node_attrs = self.create_attribute_map(self.lyrnodes,G.node[e[0]], 
+                                                                   node_fields)
+            node_attrs['GraphID'] = graph_id 
+            node_geom = self.netgeometry(e[0], node_attrs)            
+            node_id = self.write_pgnet_node(node_attrs, node_geom)
             G[e[0]][e[1]]['Node_F_ID'] = node_id
             
             # Insert the end node
-            node_ref = e[1]
-            node_data = G.node[node_ref]   # edge start node
-            node_data['GraphID'] = graph_id           
-            node_geom = self.netgeometry(node_ref, node_data)            
-            node_id = self.write_pgnet_node(node_data, node_geom)
+            node_attrs = self.create_attribute_map(self.lyrnodes,G.node[e[1]], 
+                                                                   node_fields)            
+            node_attrs['GraphID'] = graph_id           
+            node_geom = self.netgeometry(e[1], node_attrs)            
+            node_id = self.write_pgnet_node(node_attrs, node_geom)
             G[e[0]][e[1]]['Node_T_ID'] = node_id
 
+            # Set graph id.
             G[e[0]][e[1]]['GraphID'] = graph_id
             
             edge_attrs = self.create_attribute_map(self.lyredges, e[2], 
                                                                    edge_fields)
                                                                    
-           
+            self.write_pgnet_edge(edge_attrs, edge_geom) 
+            exit(0)
             ''''
             for key, data in e[2].iteritems():
                 # Reject data not for attribute table
@@ -430,9 +430,9 @@ class write:
                       else:
                          edge_attrs[key] = data
             '''
-            self.write_pgnet_edge(edge_attrs, edge_geom)            
+                       
             
-        exit(0)
+        
         ''''
             e1 = e[1]   # edge end node
             NodeID_e0 = self.write_pgnet_node(G.node[e0],
