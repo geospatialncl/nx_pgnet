@@ -35,7 +35,7 @@ def unit_test_write_pg(conn, net):
     nx_pgnet.write(conn).write_pg(net,  'test3', overwrite=False)
 
 def unit_test_write_pgnet(conn, net):
-    nx_pgnet.write(conn).write_pgnet(net, 'test2',overwrite=True)
+    nx_pgnet.write(conn).write_pgnet(net, 'test2', overwrite=False)
     
 def unit_test_update_graphs_table(conn, net):
     nx_pgnet.write(conn).update_graph_table(net, 'new_graph','edges','nodes')
@@ -49,8 +49,13 @@ def main():
     
     net = nx_pgnet.read(conn).read_pg('LightRail_Baseline')
     #unit_test_update_graphs_table(conn, net)
-    #unit_test_write_pgnet(conn, net)
-    unit_test_write_pg(conn, net)
+    
+
+    conn = ogr.Open("PG: host='ceg-tyndall' dbname='network_interdependency' \
+    user='postgres' password="+PGS+"")      
+    
+    unit_test_write_pgnet(conn, net)
+    #unit_test_write_pg(conn, net)
     #unit_test_read_pg(conn)
 
     #unit_test_get_layer(conn)    
