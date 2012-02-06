@@ -15,13 +15,57 @@ def ni_create_network_tables(conn, prefix, epsg):
     '''Takes database connection, graph name and srid and creates network 
     tables (requires schema in database) returns true if succesful'''
     
-    sql = ("SELECT * FROM ni_create_network_tables (%s, %i);" % (prefix, epsg))
+    sql = ("SELECT * FROM ni_create_network_tables ('%s', %i);" % (prefix, epsg))
     
     for row in conn.ExecuteSQL(sql):
         result = row.ni_create_network_tables
         
     return result
+
+def ni_delete_network(conn, prefix):
+    '''Takes network tablename prefix and removes tables and graph table 
+    entry.'''        
+    
+    sql = ("SELECT * FROM ni_delete_network('%s');" % prefix)
+    conn.ExecuteSQL(sql)
+
+def ni_node_geometry_equaility(conn, prefix, geom):
+    
+    table = prefix+'_Nodes'
+    # Hacked version:
         
+    sql = ("SELECT '%s.NodeID' FROM "'"%s"'" WHERE ST_Equals(ST_GeomFromText('%s',27700),%s);") % (table, table, geom, 'geom')
+    print sql
+    result = conn.ExecuteSQL(sql)
+        
+    for row in result:
+        print row
+            
+    return -1
+
+def ni_edge_geometry_equaility(conn, prefix, geom):
+    '''Takes network tablename prefix and geometry and checks if geometry 
+    already exists in edge table.'''
+    
+    ''' - Calling node_geom_eq_check function. Dave to fix,
+    sql = ("SELECT * FROM ni_edge_geometry_equality_check('%s', '%s');" % (prefix, geom))
+    print sql
+    for row in conn.ExecuteSQL(sql):
+        result = row.ni_edge_geometry_equality_check
+        
+    return result
+    '''
+    table = prefix+'_Edge_Geometry'
+    # Hacked version:
+        
+    sql = ("SELECT "'"%s"'"."'"GeomID"'" FROM "'"%s"'" WHERE ST_Equals(ST_GeomFromText('%s',27700),%s);") % (table, table, geom, 'geom')
+    print sql
+    result = conn.ExecuteSQL(sql)
+        
+    for row in result:
+        print row
+            
+    return -1
 
 def ni_check_network_tables():
     '''Check network tables exist'''

@@ -11,6 +11,7 @@ __created__ = "Mon Jan 30 14:32:38 2012"
 __version__ = "1.0"
 
 import nx_pgnet
+import nx_pgnet_sql
 import pggkgetpass as gp
 import osgeo.ogr as ogr
 
@@ -32,6 +33,8 @@ def unit_test_write_pg(conn, net):
     nx_pgnet.write(conn).write_pg(net,  'test3', overwrite=False)
 
 def unit_test_write_pgnet(conn, net):
+    nx_pgnet_sql.ni_delete_network(conn, 'test4')
+    ##exit(0)
     nx_pgnet.write(conn).write_pgnet(net, 'test4', overwrite=False)
     
 def unit_test_update_graphs_table(conn, net):
@@ -48,7 +51,7 @@ def main():
     #unit_test_update_graphs_table(conn, net)
     
 
-    conn = ogr.Open("PG: host='ceg-tyndall' dbname='network_dependency_new' \
+    conn = ogr.Open("PG: host='ceg-tyndall' dbname='network_interdependency' \
     user='postgres' password="+PGS+"")      
     
     unit_test_write_pgnet(conn, net)
