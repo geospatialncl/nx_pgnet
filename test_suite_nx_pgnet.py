@@ -8,7 +8,6 @@ Contains main function tests  (moved from nx_pg_ncl.py)
 """
 __author__ = "Tom Holderness"
 __created__ = "Mon Jan 30 14:32:38 2012"
-__year__ = "2011"
 __version__ = "1.0"
 
 import nx_pgnet
@@ -24,8 +23,6 @@ def unit_test_read_pg(conn):
     
     if net.edges() != None:
         print 'Test passed.'
-        
-
     
 def unit_test_get_layer(conn):
     layer = nx_pgnet.write(conn).getlayer('graphs')
@@ -35,7 +32,7 @@ def unit_test_write_pg(conn, net):
     nx_pgnet.write(conn).write_pg(net,  'test3', overwrite=False)
 
 def unit_test_write_pgnet(conn, net):
-    nx_pgnet.write(conn).write_pgnet(net, 'test2', overwrite=False)
+    nx_pgnet.write(conn).write_pgnet(net, 'test4', overwrite=False)
     
 def unit_test_update_graphs_table(conn, net):
     nx_pgnet.write(conn).update_graph_table(net, 'new_graph','edges','nodes')
@@ -51,7 +48,7 @@ def main():
     #unit_test_update_graphs_table(conn, net)
     
 
-    conn = ogr.Open("PG: host='ceg-tyndall' dbname='network_interdependency' \
+    conn = ogr.Open("PG: host='ceg-tyndall' dbname='network_dependency_new' \
     user='postgres' password="+PGS+"")      
     
     unit_test_write_pgnet(conn, net)
