@@ -31,15 +31,15 @@ import nx_pgnet_sql
 import test_suite_nx_pgnet
 
 # Ask ogr to use Python exceptions rather than stderr messages.
-#ogr.UseExceptions()
+ogr.UseExceptions()
 
 #To do:
-    # Fix write_pgnet edge and node ID - applied by DB?
-    # Remove create table statements and apply as updates only (tables should 
-    #   already exist)
-    # Add write_pg function (from nx_pg) but integrated within class
-    # Add src_id support
-    # Build wrapper functions round Dave's plpgsql for create/drop graphs etc.
+    # Add src_id/SRS/EPSG support
+    # Update delete function (fix Graphs table)- Dave
+    # Talk to Dave about boolean pg types in Graphs table.
+    # Update create function to append to geometry table - Dave
+    # Read function from schema to networkx.
+    # Bring classes into one module
 
 class read:
     '''Class with methods to read and build networks from either non-network
@@ -193,13 +193,40 @@ class write:
         
         return attrs
                 
-    def update_graph_table(self, graph, graph_name, edge_table, node_table):
-        '''Update graph table.'''
+    def update_graph_table(self, graph):
+        '''Update graph table, return new graph ID.'''
+
         
+        ##sql = ("INSERT INTO "'"Graphs"'" ("'"GraphName"'", "'"Nodes"'", "'"Edges"'") VALUES ('%s', '%s', '%s')" % (self.prefix, self.tblnodes, self.tbledges))        
+        ##print sql
+        ##self.conn.ExecuteSQL(sql)
         
+        tblgraphs = self.getlayer('Graphs')
+        feature = ogr.Feature(tblgraphs.GetLayerDefn())
+        feature.SetField('GraphName', self.prefix)
+        feature.SetField('Nodes', self.tbledges)
+        feature.SetField('Edges', self.tblnodes)
         
+        '''   
+        if nx.is_directed(graph):
+            feature.SetField('Directed', '')
+        else:
+            feature.SetField('Directed', '')
         
-        tblgraphs = self.getlayer('graphs')
+        # Multigraph still needs to be implemented.
+        ##feature.SetField('Directed', 'yes')
+        feature.SetField('MultiGraph', '')
+        # Create feature, clear pointer.
+        '''
+        tblgraphs.CreateFeature(feature)
+        
+        sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC LIMIT 1;')
+        for row in self.conn.ExecuteSQL(sql):
+            GraphID = row.GraphID
+        
+        print GraphID
+        return GraphID
+        '''
         #ogr.UseExceptions()
         # tblgraphs doesn't exist so create with new features.
         # This is hard coded - should be reworked to be dynamic, similar style to..
@@ -222,19 +249,7 @@ class write:
             Field_MultiGraph = ogr.FieldDefn('MultiGraph', ogr.OFTString)
             tblgraphs.CreateField(Field_MultiGraph)
         # Now add the data. 
-        feature = ogr.Feature(tblgraphs.GetLayerDefn())
-        feature.SetField('GraphName', graph_name)
-        feature.SetField('Nodes', edge_table)
-        feature.SetField('Edges', node_table)
-        if nx.is_directed(graph):
-            feature.SetField('Directed', 1)
-        else:
-            feature.SetField('Directed', 0)
-        # Multigraph still needs to be implemented.
-        feature.SetField('MultiGraph', 0)
-        # Create feature, clear pointer.
-        tblgraphs.CreateFeature(feature)
-        feature.Destroy()
+        '''
     
     def write_pgnet_edge(self, edge_attributes, edge_geom):
         '''Method to write an edge to edge tables as defined by schema.'''
@@ -316,22 +331,28 @@ class write:
         checks for database errors here!
         '''
         # First create network tables in database
-        res = nx_pgnet_sql.ni_create_network_tables(self.conn, tablename_prefix, 27700)
-        if res == True:
-            print "Database network tables created."
-        else:
-            print "Network tables already exist, exiting"
-            exit(0)
-    
-        G = network # Use G as network, networkx convention.
-        ## Table name prefix not implemented yet (waiting for plpgsql wrappers)
+        
         self.prefix = tablename_prefix        
         self.tbledges = tablename_prefix+'_Edges'
         self.tblnodes = tablename_prefix+'_Nodes'
         self.tbledge_geom = tablename_prefix+'_Edge_Geometry'
+
+        res = nx_pgnet_sql.ni_create_network_tables(self.conn, self.prefix, 27700)
+        print res
+        if res == True:
+            print "Database network tables created."
+        else:
+            if overwrite == True:
+                nx_pgnet_sql.ni_delete_network(self.conn, self.prefix)
+                res = nx_pgnet_sql.ni_create_network_tables(self.conn, self.prefix, 27700)
+            else:
+                print "Network tables already exist, exiting"
+                exit(0)
+    
+        G = network # Use G as network, networkx convention.
         
-        graph_id = self.update_graph_table()     
-        graph_id = 1
+        graph_id = self.update_graph_table(network)     
+        #graph_id = 1
         
         self.lyredges = self.getlayer(self.tbledges)
         self.lyrnodes = self.getlayer(self.tblnodes)

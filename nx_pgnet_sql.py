@@ -19,7 +19,7 @@ def ni_create_network_tables(conn, prefix, epsg):
     
     for row in conn.ExecuteSQL(sql):
         result = row.ni_create_network_tables
-        
+
     return result
 
 def ni_delete_network(conn, prefix):
@@ -28,6 +28,9 @@ def ni_delete_network(conn, prefix):
     
     sql = ("SELECT * FROM ni_delete_network('%s');" % prefix)
     conn.ExecuteSQL(sql)
+    ##sql = ("DELETE FROM "'"Graphs"'" WHERE "'"GraphName"'" = '%s';" % prefix)
+    ##print sql
+    ##conn.ExecuteSQL(sql)
 
 def ni_node_geometry_equaility(conn, prefix, geom):
     
