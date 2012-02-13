@@ -67,7 +67,7 @@ def main():
     ##for row in conn.ExecuteSQL(sql):
     ##    print row.Directed
     ##    print type(row.Directed)
-    unit_test_write_pgnet(conn, net, 'LightRail_Baseline_8')
+    unit_test_write_pgnet(conn, net, 'LightRail_Baseline')
     #unit_test_write_pg(conn, net)
     #unit_test_read_pg(conn)
 
