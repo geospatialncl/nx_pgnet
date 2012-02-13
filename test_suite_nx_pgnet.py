@@ -30,13 +30,13 @@ def unit_test_get_layer(conn):
     print layer
     
 def unit_test_write_pg(conn, net):
-    nx_pgnet.write(conn).write_pg(net,  'test3', overwrite=False)
+    nx_pgnet.write(conn).write_pg(net,  'test3', overwrite=True)
     
 def unit_test_create_tables(conn, name, epsg):
     nx_pgnet_sql.ni_create_network_tables(conn, name, epsg)
 
 def unit_test_write_pgnet(conn, net, name):
-    nx_pgnet.write(conn).write_pgnet(net, name)
+    nx_pgnet.write(conn).write_pgnet(net, name, overwrite=True)
     ##nx_pgnet_sql.ni_delete_network(conn, 'test4')
     ##exit(0)
     ##nx_pgnet.write(conn).write_pgnet(net, name, overwrite=True)

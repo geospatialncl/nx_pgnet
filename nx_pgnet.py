@@ -56,7 +56,10 @@ class nisql:
         sql = ("SELECT * FROM ni_create_network_tables ('%s', %i);" % (prefix,
                epsg))
         print sql
-        self.conn.ExecuteSQL(sql)
+        result = 0
+        for row in self.conn.ExecuteSQL(sql):
+            result = row.ni_create_network_tables
+        
         # Add geometry column
         sql = ("SELECT * FROM ni_add_geometry_columns ('%s', %i);" % (prefix,
                epsg))
@@ -67,13 +70,9 @@ class nisql:
         print sql
         self.conn.ExecuteSQL(sql)        
         
-        ##
-        ##for row in self.conn.ExecuteSQL(sql):
-        ##    result = row.ni_create_network_tables
-        
         # To do: error checking
         # what to return here?
-        return 0
+        return result
     
     def add_graph_record(self, prefix, directed=False, multipath=False):
         '''Takes graph attributes and creates a record in the graph table, if 
@@ -82,13 +81,11 @@ class nisql:
         sql = ("SELECT * FROM ni_add_graph_record('%s', FALSE, FALSE);" % 
                 (prefix))
                 
-        print sql
         result = self.conn.ExecuteSQL(sql)
         '''
         for row in self.conn.ExecuteSQL(sql):
             result = row.ni_add_graph_record
         '''
-        
         return result
         
     def node_geometry_equaility_check(self, prefix, wkt, srs):
@@ -103,7 +100,7 @@ class nisql:
         return result
 
     def edge_geometry_equaility_check(self, prefix, wkt, srs):
-        '''Takes talbe prefix and geometry as Wkt and checks to see if 
+        '''Takes table prefix and geometry as Wkt and checks to see if 
         geometry already eixsts in nodes table, if not return None'''
         
         sql = ("SELECT * FROM ni_edge_geometry_equality_check('%s', '%s', %s);" % 
@@ -113,6 +110,16 @@ class nisql:
             result = row.ni_edge_geometry_equality_check
         return result       
     
+    def delete_network(self, prefix):
+        '''Takes table prefix and uses ni_delete_network function to delete
+        associated network tables.'''
+        
+        sql = ("SELECT * FROM ni_delete_network('%s');" % (prefix))
+        
+        result = None
+        for row in self.conn.ExecuteSQL(sql):
+            result = row.ni_delete_network
+        return result
 
 class read:
     '''Class with methods to read and build networks from either non-network
@@ -441,31 +448,14 @@ class write:
         self.srs = 27700
 
         result = nisql(self.conn).create_network_tables(self.prefix,27700)
-        #res = nx_pgnet_sql.ni_create_network_tables(self.conn, self.prefix, 27700)
-        print result
-        '''        
         if result == 0:
-            if overwrite == True:
-                # Delete and re-create tables
-                pass
+            if overwrite is True:
+                nisql(self.conn).delete_network(self.prefix)
             else:
-                print "Database tables already exist."
+                print 'Network already exists, will now exit.'
                 exit(0)
-        '''
-        '''            
-        if result == True:
-            print "Database network tables created."
-        else:
-            print 'tables already exist?'
-            '''
-        '''
-            if overwrite == True:
-                nx_pgnet_sql.ni_delete_network(self.conn, self.prefix)
-                res = nx_pgnet_sql.ni_create_network_tables(self.conn, self.prefix, 27700)
-            else:
-                print "Network tables already exist, exiting"
-                exit(0)
-        '''
+        #res = nx_pgnet_sql.ni_create_network_tables(self.conn, self.prefix, 27700)
+
         G = network # Use G as network, networkx convention.
         
         graph_id = self.update_graph_table(network)     
@@ -492,7 +482,6 @@ class write:
             node_attrs['GraphID'] = graph_id 
             node_geom = self.netgeometry(e[0], node_attrs)            
             node_id = self.write_pgnet_node(node_attrs, node_geom)
-            print "outloop: nid", node_id
             G[e[0]][e[1]]['Node_F_ID'] = node_id
             
             # Insert the end node
@@ -501,8 +490,6 @@ class write:
             node_attrs['GraphID'] = graph_id           
             node_geom = self.netgeometry(e[1], node_attrs)            
             node_id = self.write_pgnet_node(node_attrs, node_geom)
-            print node_attrs, node_geom
-            print "outloop: nid", node_id
             G[e[0]][e[1]]['Node_T_ID'] = node_id
 
             # Set graph id.
