@@ -55,7 +55,6 @@ class nisql:
         # Create network tables
         sql = ("SELECT * FROM ni_create_network_tables ('%s', %i);" % (prefix,
                epsg))
-        print sql
         result = 0
         for row in self.conn.ExecuteSQL(sql):
             result = row.ni_create_network_tables
@@ -63,11 +62,9 @@ class nisql:
         # Add geometry column
         sql = ("SELECT * FROM ni_add_geometry_columns ('%s', %i);" % (prefix,
                epsg))
-        print sql
         self.conn.ExecuteSQL(sql)
         # Add foreign key constraints
         sql = ("SELECT * FROM ni_add_fr_constraints ('%s');" % (prefix,))
-        print sql
         self.conn.ExecuteSQL(sql)        
         
         # To do: error checking
@@ -281,6 +278,7 @@ class write:
         ##if result is None:
         sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC\
                     LIMIT 1;')
+        GraphID = None
         for row in self.conn.ExecuteSQL(sql):
             GraphID = row.GraphID
 
@@ -290,62 +288,7 @@ class write:
 
         return GraphID
         
-        ##sql = ("INSERT INTO "'"Graphs"'" ("'"GraphName"'", "'"Nodes"'", "'"Edges"'") VALUES ('%s', '%s', '%s')" % (self.prefix, self.tblnodes, self.tbledges))        
-        ##print sql
-        ##self.conn.ExecuteSQL(sql)
-        
-        
-        ##tblgraphs = self.getlayer('Graphs')
-        ##feature = ogr.Feature(tblgraphs.GetLayerDefn())
-        ##feature.SetField('GraphName', self.prefix)
-        ##feature.SetField('Nodes', self.tbledges)
-        ##feature.SetField('Edges', self.tblnodes)
-        
-        '''   
-        if nx.is_directed(graph):
-            feature.SetField('Directed', '')
-        else:
-            feature.SetField('Directed', '')
-        
-        # Multigraph still needs to be implemented.
-        ##feature.SetField('Directed', 'yes')
-        feature.SetField('MultiGraph', '')
-        # Create feature, clear pointer.
-        '''
-        ##tblgraphs.CreateFeature(feature)
-        
-        ##sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC LIMIT 1;')
-        ##for row in self.conn.ExecuteSQL(sql):
-        ##   GraphID = row.GraphID
-        
-        ##print GraphID
-        ##return GraphID
-        '''
-        #ogr.UseExceptions()
-        # tblgraphs doesn't exist so create with new features.
-        # This is hard coded - should be reworked to be dynamic, similar style to..
-            #...write_pg attributes)
-        if tblgraphs is None:
-            # tblgraphs is ogr.wkbNone (i.e. non-spatial)
-            tblgraphs = self.conn.CreateLayer('graphs', None, ogr.wkbNone)
-            Field_GraphName = ogr.FieldDefn('GraphName', ogr.OFTString)
-            tblgraphs.CreateField(Field_GraphName)
-            
-            Field_Nodes = ogr.FieldDefn('Nodes', ogr.OFTString)
-            tblgraphs.CreateField(Field_Nodes)    
-        
-            Field_Edges = ogr.FieldDefn('Edges', ogr.OFTString)
-            tblgraphs.CreateField(Field_Edges)
-            
-            Field_Directed = ogr.FieldDefn('Directed', ogr.OFTInteger)
-            tblgraphs.CreateField(Field_Directed)
-        
-            Field_MultiGraph = ogr.FieldDefn('MultiGraph', ogr.OFTString)
-            tblgraphs.CreateField(Field_MultiGraph)
-        # Now add the data. 
-        '''
-    
-    def write_pgnet_edge(self, edge_attributes, edge_geom):
+    def pgnet_edge(self, edge_attributes, edge_geom):
         '''Method to write an edge to edge tables as defined by schema.'''
         edge_wkt = edge_geom.ExportToWkt()
         # Get table definitions        
@@ -357,48 +300,28 @@ class write:
         GeomID = nisql(self.conn).edge_geometry_equaility_check(self.prefix, edge_wkt, self.srs)
         if GeomID == None: # Need to create new geometry:
             
-            print 'recognised GeomID as none'
             featedge_geom.SetGeometry(edge_geom)
             
-            print 'attempting to set edge geom'
-            print self.lyredge_geom
             ##for field, data in edge_attributes.iteritems():
              ##   featedge_geom.SetField(field, data)
             self.lyredge_geom.CreateFeature(featedge_geom)
-            print 'created new feature gome'
             #Get created edge_geom primary key (GeomID)
             sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;' % 
                                                             self.tbledge_geom)
-            print sql
             for row in self.conn.ExecuteSQL(sql):
                 GeomID = row.GeomID
-                print GeomID
                 # Append the GeomID to the edges attributes 
                 
         edge_attributes['Edge_GeomID'] = GeomID
-        
-        '''
-        #1) Does the geometry already exist
-            # check_geom_equality.        
-        ##test_geom = ogr.CreateGeometryFromWkt('LINESTRING (54.5 -0.11, 55.0 -0.11)')
-        #2) Write edge_geom 
-        ##out_srs = ogr.osr.SpatialReference()
-        ##out_srs.ImportFromEPSG(27700)
-        ##test_geom.AssignSpatialReference(out_srs)
-        featedge_geom.SetGeometry(edge_geom)
-        self.lyredge_geom.CreateFeature(featedge_geom)
-        #featedge_geom.Destroy()
-        '''
         
         #Attributes to edges table
         for field, data in edge_attributes.iteritems():
             featedge.SetField(field, data)
         self.lyredges.CreateFeature(featedge)
         
-    def write_pgnet_node(self, node_attributes, node_geom):
+    def pgnet_node(self, node_attributes, node_geom):
         '''Write NetworkX node to node table as defined by schema. Return the
         NodeID as assigned by the database
-        
         '''
         # Does the node already exist?
             # If yes return NodeID
@@ -407,22 +330,12 @@ class write:
         #featnode = ogr.Feature(self.lyrnodes.GetLayerDefn())
         featnode = ogr.Feature(self.lyrnodes_def)
         node_wkt = node_geom.ExportToWkt()
-        #nwkt2 = ogr.Geometry.ExportToWkt(node_geom)
-        print node_wkt
-        #print nwkt2
         NodeID = nisql(self.conn).node_geometry_equaility_check(self.prefix,node_wkt,self.srs)
-        
-        ##NodeID = nx_pgnet_sql.ni_node_geometry_equaility(self.conn, self.prefix, node_wkt)
-        print "NodeID", NodeID
         if NodeID == None: # Need to create new geometry:
-            print 'generating geom'
             featnode.SetGeometry(node_geom)
-            
             for field, data in node_attributes.iteritems():
                 featnode.SetField(field, data)
-            print 'added attributes'
             self.lyrnodes.CreateFeature(featnode)
-            print 'created feature'
             sql = ('SELECT "NodeID" FROM "%s" ORDER BY "NodeID" DESC LIMIT 1;' % 
                                                             self.tblnodes)
             for row in self.conn.ExecuteSQL(sql):
@@ -430,7 +343,7 @@ class write:
         
         return NodeID
 
-    def write_pgnet(self, network, tablename_prefix, overwrite=False):
+    def pgnet(self, network, tablename_prefix, srs, overwrite=False):
         '''Write NetworkX (with geom) to PostGIS graph tables as defined by schema.
         
         Will also update graph table.
@@ -444,29 +357,29 @@ class write:
         self.tbledges = tablename_prefix+'_Edges'
         self.tblnodes = tablename_prefix+'_Nodes'
         self.tbledge_geom = tablename_prefix+'_Edge_Geometry'
-        
-        self.srs = 27700
+        self.srs = srs
 
-        result = nisql(self.conn).create_network_tables(self.prefix,27700)
+        result = nisql(self.conn).create_network_tables(self.prefix,self.srs)
         if result == 0:
             if overwrite is True:
                 nisql(self.conn).delete_network(self.prefix)
+                nisql(self.conn).create_network_tables(self.prefix,self.srs)
             else:
                 print 'Network already exists, will now exit.'
                 exit(0)
-        #res = nx_pgnet_sql.ni_create_network_tables(self.conn, self.prefix, 27700)
 
         G = network # Use G as network, networkx convention.
         
         graph_id = self.update_graph_table(network)     
-        #graph_id = 1
+        if graph_id == None:
+            print 'GraphID not pulled from Graphs table, will now exit.'
+            exit(1)
         
         self.lyredges = self.getlayer(self.tbledges)
         self.lyrnodes = self.getlayer(self.tblnodes)
+        self.lyredge_geom = self.getlayer(self.tbledge_geom)  
         self.lyrnodes_def =  self.lyrnodes.GetLayerDefn()
-        self.lyredge_geom = self.getlayer(self.tbledge_geom)   
         
-
         node_fields = {'GraphID':ogr.OFTInteger}  
         edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 
                   'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
@@ -481,7 +394,7 @@ class write:
                                                    node_fields)
             node_attrs['GraphID'] = graph_id 
             node_geom = self.netgeometry(e[0], node_attrs)            
-            node_id = self.write_pgnet_node(node_attrs, node_geom)
+            node_id = self.pgnet_node(node_attrs, node_geom)
             G[e[0]][e[1]]['Node_F_ID'] = node_id
             
             # Insert the end node
@@ -489,14 +402,14 @@ class write:
                                                    node_fields)            
             node_attrs['GraphID'] = graph_id           
             node_geom = self.netgeometry(e[1], node_attrs)            
-            node_id = self.write_pgnet_node(node_attrs, node_geom)
+            node_id = self.pgnet_node(node_attrs, node_geom)
             G[e[0]][e[1]]['Node_T_ID'] = node_id
 
             # Set graph id.
             G[e[0]][e[1]]['GraphID'] = graph_id
             
             edge_attrs = self.create_attribute_map(self.lyredges, e[2], edge_fields)
-            self.write_pgnet_edge(edge_attrs, edge_geom) 
+            self.pgnet_edge(edge_attrs, edge_geom) 
             
             #self.lyredge_geom, self.lyredges, self.lyrnodes = None, None, None
             

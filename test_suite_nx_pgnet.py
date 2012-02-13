@@ -36,7 +36,7 @@ def unit_test_create_tables(conn, name, epsg):
     nx_pgnet_sql.ni_create_network_tables(conn, name, epsg)
 
 def unit_test_write_pgnet(conn, net, name):
-    nx_pgnet.write(conn).write_pgnet(net, name, overwrite=True)
+    nx_pgnet.write(conn).pgnet(net, name, 27700, overwrite=True)
     ##nx_pgnet_sql.ni_delete_network(conn, 'test4')
     ##exit(0)
     ##nx_pgnet.write(conn).write_pgnet(net, name, overwrite=True)
@@ -67,7 +67,7 @@ def main():
     ##for row in conn.ExecuteSQL(sql):
     ##    print row.Directed
     ##    print type(row.Directed)
-    unit_test_write_pgnet(conn, net, 'LightRail_Baseline')
+    unit_test_write_pgnet(conn, net, 'LightRail_Baseline2')
     #unit_test_write_pg(conn, net)
     #unit_test_read_pg(conn)
 
