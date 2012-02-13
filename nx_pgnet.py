@@ -31,7 +31,7 @@ import nx_pgnet_sql
 import test_suite_nx_pgnet
 
 # Ask ogr to use Python exceptions rather than stderr messages.
-ogr.UseExceptions()
+##ogr.UseExceptions()
 
 #To do:
     # Add src_id/SRS/EPSG support
@@ -40,6 +40,49 @@ ogr.UseExceptions()
     # Update create function to append to geometry table - Dave
     # Read function from schema to networkx.
     # Bring classes into one module
+
+class nisql:
+    '''Class with wrapper functions for postgis network functions. As a user 
+    don't access these functions directly. Use the complete methods in 
+    read/write classes.'''
+    
+    def __init__(self, db_conn):
+        self.conn = db_conn
+    
+    def create_network_tables(self, prefix, epsg):
+        '''Takes database connection, graph name and srid and creates network 
+        tables (requires schema in database) returns true if succesful.'''
+        # Create network tables
+        sql = ("SELECT * FROM ni_create_network_tables ('%s', %i);" % (prefix,
+               epsg))
+        self.conn.ExecuteSQL(sql)
+        # Add geometry column
+        sql = ("SELECT * FROM ni_add_geometry_columns ('%s', %i);" % (prefix,
+               epsg))
+        self.conn.ExecuteSQL(sql)
+        # Add foreign key constraints
+        sql = ("SELECT * FROM ni_fr_constraints ('%s');" % (prefix,))
+        self.conn.ExecuteSQL(sql)        
+        
+        ##
+        ##for row in self.conn.ExecuteSQL(sql):
+        ##    result = row.ni_create_network_tables
+        
+        # To do: error checking
+        # what to return here?
+        return 0
+    
+    def add_graph_record(self, graph_name, directed=False, multipath=False):
+        '''Takes graph attributes and creates a record in the graph table, if 
+        result none (i.e. no errors) returns new graph id'''  
+    
+        sql = ("SELECT * FROM ni_add_graph_record('%s', FALSE, FALSE);" % 
+                (graph_name))
+        print sql
+        for row in self.conn.ExecuteSQL(sql):
+            result = row.ni_add_graph_record
+            
+        return result
 
 class read:
     '''Class with methods to read and build networks from either non-network
@@ -195,17 +238,30 @@ class write:
                 
     def update_graph_table(self, graph):
         '''Update graph table, return new graph ID.'''
+        result = nisql(self.conn).add_graph_record(self.prefix)
 
+        ##if result is None:
+        sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC\
+                    LIMIT 1;')
+        for row in self.conn.ExecuteSQL(sql):
+            GraphID = row.GraphID
+
+        ##else: 
+        # throw an error?
+        ##  print 'add_graph_record broke!'
+
+        return GraphID
         
         ##sql = ("INSERT INTO "'"Graphs"'" ("'"GraphName"'", "'"Nodes"'", "'"Edges"'") VALUES ('%s', '%s', '%s')" % (self.prefix, self.tblnodes, self.tbledges))        
         ##print sql
         ##self.conn.ExecuteSQL(sql)
         
-        tblgraphs = self.getlayer('Graphs')
-        feature = ogr.Feature(tblgraphs.GetLayerDefn())
-        feature.SetField('GraphName', self.prefix)
-        feature.SetField('Nodes', self.tbledges)
-        feature.SetField('Edges', self.tblnodes)
+        
+        ##tblgraphs = self.getlayer('Graphs')
+        ##feature = ogr.Feature(tblgraphs.GetLayerDefn())
+        ##feature.SetField('GraphName', self.prefix)
+        ##feature.SetField('Nodes', self.tbledges)
+        ##feature.SetField('Edges', self.tblnodes)
         
         '''   
         if nx.is_directed(graph):
@@ -218,14 +274,14 @@ class write:
         feature.SetField('MultiGraph', '')
         # Create feature, clear pointer.
         '''
-        tblgraphs.CreateFeature(feature)
+        ##tblgraphs.CreateFeature(feature)
         
-        sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC LIMIT 1;')
-        for row in self.conn.ExecuteSQL(sql):
-            GraphID = row.GraphID
+        ##sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC LIMIT 1;')
+        ##for row in self.conn.ExecuteSQL(sql):
+        ##   GraphID = row.GraphID
         
-        print GraphID
-        return GraphID
+        ##print GraphID
+        ##return GraphID
         '''
         #ogr.UseExceptions()
         # tblgraphs doesn't exist so create with new features.
@@ -337,18 +393,21 @@ class write:
         self.tblnodes = tablename_prefix+'_Nodes'
         self.tbledge_geom = tablename_prefix+'_Edge_Geometry'
 
-        res = nx_pgnet_sql.ni_create_network_tables(self.conn, self.prefix, 27700)
-        print res
-        if res == True:
+        result = nisql(self.conn).create_network_tables(self.prefix,27700)
+        #res = nx_pgnet_sql.ni_create_network_tables(self.conn, self.prefix, 27700)
+        print result
+        if result == True:
             print "Database network tables created."
         else:
+            print 'tables already exist?'
+            '''
             if overwrite == True:
                 nx_pgnet_sql.ni_delete_network(self.conn, self.prefix)
                 res = nx_pgnet_sql.ni_create_network_tables(self.conn, self.prefix, 27700)
             else:
                 print "Network tables already exist, exiting"
                 exit(0)
-    
+            '''
         G = network # Use G as network, networkx convention.
         
         graph_id = self.update_graph_table(network)     

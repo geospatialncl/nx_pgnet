@@ -35,7 +35,6 @@ def ni_delete_network(conn, prefix):
 def ni_node_geometry_equaility(conn, prefix, geom):
     
     table = prefix+'_Nodes'
-    # Hacked version:
         
     sql = ("SELECT '%s.NodeID' FROM "'"%s"'" WHERE ST_Equals(ST_GeomFromText('%s',27700),%s);") % (table, table, geom, 'geom')
     print sql
