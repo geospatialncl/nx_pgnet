@@ -37,7 +37,6 @@ def ni_node_geometry_equaility(conn, prefix, geom):
     table = prefix+'_Nodes'
         
     sql = ("SELECT '%s.NodeID' FROM "'"%s"'" WHERE ST_Equals(ST_GeomFromText('%s',27700),%s);") % (table, table, geom, 'geom')
-    print sql
     result = conn.ExecuteSQL(sql)
         
     for row in result:

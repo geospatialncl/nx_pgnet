@@ -57,7 +57,7 @@ def main():
     '''Testing nx_pg_ncl.py for NetworkX read/write of PostGIS tables.'''
     # Create a source connecton
     ##conn = ogr.Open("PG: host='ceg-tyndall' dbname='tyndall_data' \
-     ##   user='postgres' password="+PGS+"")  
+    ##    user='postgres' password="+PGS+"")  
     ##print conn
     ##net = nx_pgnet.read(conn).read_pg('LightRail_Baseline')
     #unit_test_update_graphs_table(conn, net)
@@ -68,7 +68,7 @@ def main():
     print conn
     
     G = unit_test_read_graph(conn, 'LightRail_Baseline')
-    return G
+    #print G.edges(data=True)
 
     ##unit_test_create_tables(conn, 'ut_create_tables',27700)    
     
@@ -76,7 +76,7 @@ def main():
     ##for row in conn.ExecuteSQL(sql):
     ##    print row.Directed
     ##    print type(row.Directed)
-    ##unit_test_write_pgnet(conn, net, 'LightRail_Baseline')
+    unit_test_write_pgnet(conn, G, 'LightRail_Baseline2')
     #unit_test_write_pg(conn, net)
     #unit_test_read_pg(conn)
 
