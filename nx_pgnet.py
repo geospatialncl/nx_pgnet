@@ -156,65 +156,6 @@ class read:
         '''Get information about fields (borrowed from nx_shp.py'''
         f = feature
         return [f.GetField(f.GetFieldIndex(x)) for x in flds]
-    
-    def read_pg(self, edges_tbl, nodes_tbl = None, directed=True):
-        '''Read PostGIS vector line/point tables and return networkx graph.'''        
-        # Create Directed graph to store output
-        if directed is True:
-            net = nx.DiGraph()
-        else:
-            net = nx.Graph()
-        # Empty attributes dict
-        for lyr in self.conn:
-            if lyr.GetName() == edges_tbl or lyr.GetName() == nodes_tbl:
-                sys.stdout.write("Reading features from %s\n" % lyr.GetName())
-                flds = [x.GetName() for x in lyr.schema]
-                # Get the number of features in the layer
-                for findex in xrange(lyr.GetFeatureCount()):
-                    # Get a specific feature
-                    f = lyr.GetFeature(findex+1)
-                    if f is None:
-                        pass # Catch any returned features which are None. 
-                    else:
-                        flddata = self.getfieldinfo(lyr, f, flds )
-                        attributes = dict(zip(flds, flddata))
-                        attributes["TableName"] = lyr.GetName()
-                        # Get the geometry for that feature
-                        geom = f.GetGeometryRef()
-                        
-                        # Multiline geometry so split into line segments
-                        if (ogr.Geometry.GetGeometryName(geom) ==
-                            'MULTILINESTRING'):
-                            for line in geom:
-                                # Get points in line
-                                n = line.GetPointCount()
-                                # Get the attributes (akin to nx_shp)
-                                attributes["Wkb"] = ogr.Geometry.ExportToWkb(
-                                                                        line)
-                                attributes["Wkt"] = ogr.Geometry.ExportToWkt(
-                                                                        line)
-                                attributes["Json"] = ogr.Geometry.ExportToJson(
-                                                                        line)
-                                net.add_edge(line.GetPoint_2D(0), 
-                                             line.GetPoint_2D(n-1), attributes)
-                        # Line geometry
-                        elif (ogr.Geometry.GetGeometryName(geom) ==
-                            'LINESTRING'):
-                            n = geom.GetPointCount()
-                            attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
-                            attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
-                            ##print attributes["Wkt"]
-                            attributes["Json"] = ogr.Geometry.ExportToJson(
-                                                                        geom) 
-                            net.add_edge(geom.GetPoint_2D(0), 
-                                             geom.GetPoint_2D(n-1), attributes)
-                        # Point geometry                    
-                        elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
-                            net.add_node((geom.GetPoint_2D(0)), attributes)
-                        else:
-                            raise (ValueError, 
-                                   "PostGIS geometry type not supported.")
-        return net        
 
     def pgnet_edges(self, graph):
         '''Reads edges from edge and edge_geometry tables and add to graph.'''
@@ -541,54 +482,6 @@ class write:
             self.pgnet_edge(edge_attrs, edge_geom) 
             
             #self.lyredge_geom, self.lyredges, self.lyrnodes = None, None, None
-            
-    def write_pg(self, network, tablename_prefix, overwrite=False):
-        '''Function to write Network with geometry to PostGIS edges and node 
-        tables.'''
-        G = network
-        tbledges = tablename_prefix+'_edges'
-        tblnodes = tablename_prefix+'_nodes'
-    
-        if overwrite is True:
-          self.conn.DeleteLayer(tbledges)
-          self.conn.DeleteLayer(tblnodes)
-          
-        edges = self.conn.CreateLayer(tbledges, None, ogr.wkbLineString)
-        nodes = self.conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
-        
-        for n in G:
-            data = G.node[n].values() or [{}]
-            g = self.netgeometry(n, data[0])
-            self.create_feature(nodes, None, g)
-        
-        fields = {}
-        attributes = {}
-        OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
-        for e in G.edges(data=True):
-            data = G.get_edge_data(*e)
-            g = self.netgeometry(e, data)
-            # Loop through data in edges
-            for key, data in e[2].iteritems():
-                # Reject data not for attribute table
-                if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
-                    and key != 'ShpName'):
-                      # Add new attributes for each feature
-                      if key not in fields:
-                         if type(data) in OGRTypes:
-                             fields[key] = OGRTypes[type(data)]
-                         else:
-                             fields[key] = ogr.OFTString
-                         newfield = ogr.FieldDefn(key, fields[key])
-                         edges.CreateField(newfield)
-                         attributes[key] = data
-                      # Create dict of single feature's attributes
-                      else:
-                         attributes[key] = data
-             # Create the feature with attributes
-            
-            self.create_feature(edges, attributes, g)
-    
-        nodes, edges = None, None 
             
 if __name__ == "__main__":
     test_suite_nx_pgnet.main()
