@@ -48,7 +48,9 @@ def unit_test_delete_network(conn, name):
     nx_pgnet_sql.ni_delete_network(conn, name)
     
 def unit_test_read_graph(conn, name):
-    nx_pgnet.read(conn).pgnet(name)
+   G = nx_pgnet.read(conn).pgnet(name)
+   print type(G)
+   return G
 
 def main():
     
@@ -65,7 +67,8 @@ def main():
     user='postgres' password="+PGS+"")  
     print conn
     
-    unit_test_read_graph(conn, 'LightRail_Baseline')
+    G = unit_test_read_graph(conn, 'LightRail_Baseline')
+    return G
 
     ##unit_test_create_tables(conn, 'ut_create_tables',27700)    
     

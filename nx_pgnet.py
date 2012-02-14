@@ -92,7 +92,6 @@ class nisql:
         viewname = None
         
         sql = "SELECT * FROM ni_create_edge_view('%s')" % prefix
-        print sql
         for row in self.conn.ExecuteSQL(sql):
             viewname = row.ni_create_edge_view 
         return viewname
@@ -284,7 +283,6 @@ class read:
                 attributes = dict(zip(flds, flddata))
                 #attributes['network'] = network_name
                 geom = f.GetGeometryRef()
-                print ogr.Geometry.GetGeometryName(geom)
                 graph.add_node((attributes['NodeID']), attributes)
      
     def graph_table(self, prefix):
@@ -299,7 +297,7 @@ class read:
         return graph
     
     def pgnet(self, prefix):
-        '''Read postgis graph tables as defined by schema and return networkx
+        '''Read postgis graph tables as defined by schema and returns networkx
             graph.'''
         
         # Set up variables
@@ -321,7 +319,8 @@ class read:
         
         self.pgnet_edges(G)
         self.pgnet_nodes(G)
-        print G.nodes(data=True)
+
+        return G
 
 class write:
     ''''Class with methods to write networks to either non-network
