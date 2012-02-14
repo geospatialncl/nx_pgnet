@@ -12,9 +12,10 @@ __version__ = "1.0"
 import networkx as nx
 import osgeo.ogr as ogr
 #import pggkgetpass as gp
-import nx_shp
+#import nx_shp
 #PGS = gp.getpass('login', 'postgres')
 PGS = 'postgres'
+ogr.UseExceptions()
 
 def getfieldinfo(lyr, feature, flds):
     ''' Get information about fields - borrowed from nx_shp.py'''
@@ -23,16 +24,18 @@ def getfieldinfo(lyr, feature, flds):
     
 def read_pg(conn, tablename):
     '''Function to convert geometry from PostGIS table to Network.'''
-    # Create Directed graph to store output    
+    # Create Directed graph to store output  
     net = nx.DiGraph()
     # Empty attributes dict
     for lyr in conn:
-        if lyr.GetName() == 'edges':
+        if lyr.GetName() == tablename:
             flds = [x.GetName() for x in lyr.schema]
             # Get the number of features in the layer
             for findex in xrange(lyr.GetFeatureCount()):
                 # Get a specific feature
                 f = lyr.GetFeature(findex+1)
+                if f is None:
+                    pass # Catch any returned features which are None. 
                 flddata = getfieldinfo(lyr, f, flds )
                 attributes = dict(zip(flds, flddata))
                 attributes["TableName"] = lyr.GetName()
@@ -143,11 +146,11 @@ def main():
     '''Main function - testing OGR Python PostGIS API for passing data to NetworkX.'''
     
     # Create Connecton
-    conn = ogr.Open("PG: host='127.0.0.1' dbname='android' user='postgres' password="+PGS+"")    
+    conn = ogr.Open("PG: host='localhost' dbname='tyndall_data' user='postgres' password='postgres'")    
     #conn.CreateLayer("test")
-    
-    net = read_pg(conn, 'edges')
-    write_pg(conn, net, 'test4', overwrite=True)    
+    net = read_pg(conn, 'LightRail_Baseline')
+    #write_pg(conn, net, 'test4', overwrite=True)    
+    print net
     conn = None
     
     #print net.size()
