@@ -46,20 +46,25 @@ def unit_test_update_graphs_table(conn, net):
     
 def unit_test_delete_network(conn, name):
     nx_pgnet_sql.ni_delete_network(conn, name)
+    
+def unit_test_read_graph(conn, name):
+    nx_pgnet.read(conn).pgnet(name)
 
 def main():
     
     '''Testing nx_pg_ncl.py for NetworkX read/write of PostGIS tables.'''
     # Create a source connecton
-    conn = ogr.Open("PG: host='ceg-tyndall' dbname='tyndall_data' \
-        user='postgres' password="+PGS+"")  
+    ##conn = ogr.Open("PG: host='ceg-tyndall' dbname='tyndall_data' \
+        ##user='postgres' password="+PGS+"")  
     
-    net = nx_pgnet.read(conn).read_pg('LightRail_Baseline')
+    ##net = nx_pgnet.read(conn).read_pg('LightRail_Baseline')
     #unit_test_update_graphs_table(conn, net)
-    conn = None
+    ##conn = None
 
     conn = ogr.Open("PG: host='ceg-tyndall' dbname='networks_13022012' \
     user='postgres' password="+PGS+"")  
+    
+    unit_test_read_graph(conn, 'LightRail_Baseline2')
 
     ##unit_test_create_tables(conn, 'ut_create_tables',27700)    
     
@@ -67,7 +72,7 @@ def main():
     ##for row in conn.ExecuteSQL(sql):
     ##    print row.Directed
     ##    print type(row.Directed)
-    unit_test_write_pgnet(conn, net, 'LightRail_Baseline2')
+    ##unit_test_write_pgnet(conn, net, 'LightRail_Baseline2')
     #unit_test_write_pg(conn, net)
     #unit_test_read_pg(conn)
 
