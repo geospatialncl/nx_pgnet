@@ -74,7 +74,7 @@ class nisql:
     def create_edge_view(self, prefix):
         '''Takes network prefix and creates a view containing edge attributes 
         and edge_geometry values. Returns view name if succesful.'''
-        print prefix
+        '''
         viewname = prefix+'_Edges_View'        
         edge_tbl_name = prefix+'_Edges'
         edge_geom_tbl_name = prefix+'_Edge_Geometry'
@@ -85,10 +85,16 @@ class nisql:
         "EdgeID" = "GeomID"' % (viewname, edge_geom_tbl_name, edge_tbl_name)
         self.conn.ExecuteSQL(sql)
         # Add view to geometry_columns table
-        sql = ("SELECT * FROM ni_add_geometry_columns ('%s', %i);" % (viewname,
-               epsg))
-        self.conn.ExecuteSQL(sql)
+        ##sql = ("SELECT * FROM ni_add_geometry_columns ('%s', %i);" % (viewname,
+        ##       epsg))
+        ##self.conn.ExecuteSQL(sql)
+        '''
+        viewname = None
         
+        sql = "SELECT * FROM ni_create_edge_view('%s')" % prefix
+        print sql
+        for row in self.conn.ExecuteSQL(sql):
+            viewname = row.ni_create_edge_view 
         return viewname
     
     def add_graph_record(self, prefix, directed=False, multipath=False):
@@ -112,7 +118,9 @@ class nisql:
         sql = ("SELECT * FROM ni_node_geometry_equality_check('%s', '%s', %s);" % 
                 (prefix, wkt, srs))
         result = None
+        print sql
         for row in self.conn.ExecuteSQL(sql):
+            
             result = row.ni_node_geometry_equality_check
         return result
 
@@ -215,6 +223,7 @@ class read:
         # Join Edges and Edge_Geom
         edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
         # Get lyr by name
+        #edge_tbl_view = "lightrail_baseline_edges_view"
         lyr = self.conn.GetLayerByName(edge_tbl_view)
         # Get fields
         flds = [x.GetName() for x in lyr.schema]
@@ -226,7 +235,58 @@ class read:
                 pass # Catch any returned features which are None. 
             else:
                 # Read edge attrs.
+                flddata = self.getfieldinfo(lyr, f, flds)
+                attributes = dict(zip(flds, flddata))
+                #attributes['network'] = network_name
+                geom = f.GetGeometryRef()
+                # Multiline geometry so split into line segments
+                if (ogr.Geometry.GetGeometryName(geom) ==
+                    'MULTILINESTRING'):
+                    for line in geom:
+                        # Get points in line
+                        n = line.GetPointCount()
+                        # Get the attributes (akin to nx_shp)
+                        attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
+                        attributes["Wkt"] = ogr.Geometry.ExportToWkt(line)
+                        attributes["Json"] = ogr.Geometry.ExportToJson(line)
+                        graph.add_edge(attributes['Node_F_ID'], 
+                                     attributes['Node_T_ID'], attributes)
+                # Line geometry
+                elif (ogr.Geometry.GetGeometryName(geom) ==
+                    'LINESTRING'):
+                    n = geom.GetPointCount()
+                    attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
+                    attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
+                    attributes["Json"] = ogr.Geometry.ExportToJson(
+                                                                geom) 
+                    graph.add_edge(attributes['Node_F_ID'], 
+                                     attributes['Node_T_ID'], attributes)
+    
+    def pgnet_nodes(self, graph):
+        '''Reads edges from edge and edge_geometry tables and add to graph.'''
         
+        # Join Edges and Edge_Geom
+        ##edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
+        # Get lyr by name
+        node_tbl = "LightRail_Baseline_Nodes"
+        lyr = self.conn.GetLayerByName(node_tbl)
+        # Get fields
+        flds = [x.GetName() for x in lyr.schema]
+        # Get the number of features in the layer
+        for findex in xrange(lyr.GetFeatureCount()):
+            # Get a specific feature
+            f = lyr.GetFeature(findex+1)
+            if f is None:
+                pass # Catch any returned features which are None. 
+            else:
+                # Read edge attrs.
+                flddata = self.getfieldinfo(lyr, f, flds)
+                attributes = dict(zip(flds, flddata))
+                #attributes['network'] = network_name
+                geom = f.GetGeometryRef()
+                print ogr.Geometry.GetGeometryName(geom)
+                graph.add_node((attributes['NodeID']), attributes)
+     
     def graph_table(self, prefix):
         '''Reads the standard attributes of a sepcified graph from the graph 
              table. Returns attributes as a dict of variables.'''  
@@ -260,6 +320,8 @@ class read:
             G.graph[key] = value
         
         self.pgnet_edges(G)
+        self.pgnet_nodes(G)
+        print G.nodes(data=True)
 
 class write:
     ''''Class with methods to write networks to either non-network
@@ -300,8 +362,9 @@ class write:
         return geom
     
     def create_feature(self, lyr, attributes = None, geometry = None):
-        '''Create an OGR feature in specified layer with geometry and 
-            attributes.'''
+        '''wrapper for OGR CreateFeature to create a feature in specified 
+        layer with geometry and attributes.'''
+        
         feature = ogr.Feature(lyr.GetLayerDefn())
         if attributes is not None:
             for field, data in attributes.iteritems(): 
