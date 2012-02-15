@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 --------
-nx_pgnet - NetworkX PostGIS network IO module.
+nx_pgnet - NetworkX PostGIS network IO module (PostGIS network schema).
 --------
 nx_pgnet is module for reading and writing NetworkX graphs to and from PostGIS 
 tables as specified by the Newcastle University PostGIS network schema.
@@ -12,6 +12,12 @@ software and documentation. To some extent a 'graph' refers to a topological
 object (often in memory) with none or limited attribution, whilst a 'network' 
 refers to a graph object with attribution of edges and nodes and with 
 geography defined, although this is not always the case.
+
+nx_pgnet operations
+
+read: PostGIS (network schema) --> NetworkX
+
+write: PostGIS (network schema) <-- NetworkX    
 
 ------------
 Introduction
