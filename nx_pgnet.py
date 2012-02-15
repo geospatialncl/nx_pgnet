@@ -187,7 +187,7 @@ To do:
     
 """
 __created__ = "January 2012"
-__version__ = "0.9.1"
+__version__ = "0.9.2"
 __author__ = """\n""".join(['Tomas Holderness (tom.holderness@ncl.ac.uk)',
 	                            'David Alderson (david.alderson@ncl.ac.uk)',
 	                            'Alistair Ford (a.c.ford@ncl.ac.uk)',
@@ -199,11 +199,6 @@ import osgeo.ogr as ogr
 
 # Ask ogr to use Python exceptions rather than stderr messages.
 ##ogr.UseExceptions()
-
-##To do:
-    # Directed and Multigraph support.
-    # Talk to Dave about boolean pg types in Graphs table.
-    # Error module
     
 class net_error:
     '''Class to handle network IO errors. '''
