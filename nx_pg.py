@@ -173,73 +173,73 @@ def read_pg(conn, tablename):
                 # Get a specific feature
                 f = lyr.GetFeature(findex+1)
                 if f is None:
-                   pass # Catch any returned features which are None. 
-                   #Raise warning?
+                    pass # Catch any returned features which are None. 
+                    #Raise warning?
                 else:
-                   flddata = getfieldinfo(lyr, f, flds )
-                   attributes = dict(zip(flds, flddata))
-                   attributes["TableName"] = lyr.GetName()
-                   # Get the geometry for that feature
-                   geom = f.GetGeometryRef()
-                   #print geom
-                   # We've got a Multiline geometry so split into line segments
-                   if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
-                   #print f.GetGeomertyTypeName()
-                       for line in geom:
-                           # Get points in line
-                           n = line.GetPointCount()
-                           # Get the attributes (akin to nx_shp)
-                           attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
-                           attributes["Wkt"] = ogr.Geometry.ExportToWkb(line)
-                           attributes["Json"] = ogr.Geometry.ExportToWkb(line)
-                           #print type(line.GetPoint(0))
-                           net.add_edge(line.GetPoint_2D(0), 
+                    flddata = getfieldinfo(lyr, f, flds )
+                    attributes = dict(zip(flds, flddata))
+                    attributes["TableName"] = lyr.GetName()
+                    # Get the geometry for that feature
+                    geom = f.GetGeometryRef()
+                    #print geom
+                    # We've got a Multiline geometry so split into line segments
+                    if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
+                    #print f.GetGeomertyTypeName()
+                        for line in geom:
+                            # Get points in line
+                            n = line.GetPointCount()
+                            # Get the attributes (akin to nx_shp)
+                            attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
+                            attributes["Wkt"] = ogr.Geometry.ExportToWkb(line)
+                            attributes["Json"] = ogr.Geometry.ExportToWkb(line)
+                            #print type(line.GetPoint(0))
+                            net.add_edge(line.GetPoint_2D(0), 
                                         line.GetPoint_2D(n-1), attributes)
-                   elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
-                       n = geom.GetPointCount()
-                       attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
-                       attributes["Wkt"] = ogr.Geometry.ExportToWkb(geom)
-                       attributes["Json"] = ogr.Geometry.ExportToWkb(geom)  
-                       net.add_edge(geom.GetPoint_2D(0), geom.GetPoint_2D(n-1), 
-                                    attributes)
-                   elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
-                       net.add_node((geom.GetPoint_2D(0)), attributes)
-                   else:
-                       raise ValueError, "PostGIS geometry type not supported."
+                    elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
+                        n = geom.GetPointCount()
+                        attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
+                        attributes["Wkt"] = ogr.Geometry.ExportToWkb(geom)
+                        attributes["Json"] = ogr.Geometry.ExportToWkb(geom)  
+                        net.add_edge(geom.GetPoint_2D(0), geom.GetPoint_2D(n-1)
+                                        , attributes)
+                    elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
+                        net.add_node((geom.GetPoint_2D(0)), attributes)
+                    else:
+                        raise ValueError, "PostGIS geometry type not supported."
     return net
 
 def netgeometry(key, data):
-        '''Create OGR geometry from a NetworkX Graph using Wkb/Wkt attributes.
-        
-        '''
+    '''Create OGR geometry from a NetworkX Graph using Wkb/Wkt attributes.
     
-        if data.has_key('Wkb'):
-            geom = ogr.CreateGeometryFromWkb(data['Wkb'])
-        elif data.has_key('Wkt'):
-            geom = ogr.CreateGeometryFromWkt(data['Wkt'])
-        elif type(key[0]) == 'tuple': # edge keys are packed tuples
-            geom = ogr.Geometry(ogr.wkbLineString)
-            _from, _to = key[0], key[1]
-            geom.SetPoint(0, *_from)
-            geom.SetPoint(1, *_to)
-        else:
-            geom = ogr.Geometry(ogr.wkbPoint)
-            geom.SetPoint(0, *key)
-        return geom
+    '''
+    
+    if data.has_key('Wkb'):
+        geom = ogr.CreateGeometryFromWkb(data['Wkb'])
+    elif data.has_key('Wkt'):
+        geom = ogr.CreateGeometryFromWkt(data['Wkt'])
+    elif type(key[0]) == 'tuple': # edge keys are packed tuples
+        geom = ogr.Geometry(ogr.wkbLineString)
+        _from, _to = key[0], key[1]
+        geom.SetPoint(0, *_from)
+        geom.SetPoint(1, *_to)
+    else:
+        geom = ogr.Geometry(ogr.wkbPoint)
+        geom.SetPoint(0, *key)
+    return geom
 
 def create_feature(geometry, lyr, attributes=None):
-  '''Wrapper for OGR CreateFeature function.
+    '''Wrapper for OGR CreateFeature function.
+            
+    Creates a feature in the specified table with geometry and attributes.
+    '''    
         
-  Creates a feature in the specified table with geometry and attributes.
-  '''    
-    
-  feature = ogr.Feature(lyr.GetLayerDefn())
-  feature.SetGeometry(geometry)
-  if attributes != None:
-      for field, data in attributes.iteritems(): 
-         feature.SetField(field,data)
-  lyr.CreateFeature(feature)
-  feature.Destroy()
+    feature = ogr.Feature(lyr.GetLayerDefn())
+    feature.SetGeometry(geometry)
+    if attributes != None:
+        for field, data in attributes.iteritems(): 
+            feature.SetField(field, data)
+    lyr.CreateFeature(feature)
+    feature.Destroy()
 
 def write_pg(conn, network, tablename_prefix, overwrite=False):
     '''Write NetworkX instance to PostGIS edge and node tables.
@@ -251,14 +251,14 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
     tblnodes = tablename_prefix+'_nodes'
 
     if overwrite is True:
-      try:
-         conn.DeleteLayer(tbledges)
-      except:
-         pass
-      try:
-         conn.DeleteLayer(tblnodes)
-      except:
-         pass    
+        try:
+            conn.DeleteLayer(tbledges)
+        except:
+            pass
+        try:
+            conn.DeleteLayer(tblnodes)
+        except:
+            pass    
     edges = conn.CreateLayer(tbledges, None, ogr.wkbLineString)
     nodes = conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
     
@@ -279,17 +279,17 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
             if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
                 and key != 'ShpName'):
                   # Add new attributes for each feature
-                  if key not in fields:
-                     if type(data) in OGRTypes:
-                         fields[key] = OGRTypes[type(data)]
-                     else:
-                         fields[key] = ogr.OFTString
-                     newfield = ogr.FieldDefn(key, fields[key])
-                     edges.CreateField(newfield)
-                     attributes[key] = data
+                if key not in fields:
+                    if type(data) in OGRTypes:
+                        fields[key] = OGRTypes[type(data)]
+                    else:
+                        fields[key] = ogr.OFTString
+                    newfield = ogr.FieldDefn(key, fields[key])
+                    edges.CreateField(newfield)
+                    attributes[key] = data
                   # Create dict of single feature's attributes
-                  else:
-                     attributes[key] = data
+                else:
+                    attributes[key] = data
          # Create the feature with attributes
         
         create_feature(g, edges, attributes)
