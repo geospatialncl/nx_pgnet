@@ -152,12 +152,16 @@ import osgeo.ogr as ogr
 ##ogr.UseExceptions()
 
 def getfieldinfo(lyr, feature, flds):
-    ''' Get information about fields - borrowed from nx_shp.py'''
+    '''Get information about fields from a table (as OGR feature).'''
+    
     f = feature
     return [f.GetField(f.GetFieldIndex(x)) for x in flds]
     
 def read_pg(conn, tablename):
-    '''Function to convert geometry from PostGIS table to Network.'''
+    '''Read a network from PostGIS tables of line geometry. 
+        
+        Returns instance of networkx.Graph().'''    
+        
     # Create Directed graph to store output  
     net = nx.DiGraph()
     # Empty attributes dict
@@ -205,6 +209,10 @@ def read_pg(conn, tablename):
     return net
 
 def netgeometry(key, data):
+        '''Create OGR geometry from a NetworkX Graph using Wkb/Wkt attributes.
+        
+        '''
+    
         if data.has_key('Wkb'):
             geom = ogr.CreateGeometryFromWkb(data['Wkb'])
         elif data.has_key('Wkt'):
@@ -220,6 +228,11 @@ def netgeometry(key, data):
         return geom
 
 def create_feature(geometry, lyr, attributes=None):
+  '''Wrapper for OGR CreateFeature function.
+        
+  Creates a feature in the specified table with geometry and attributes.
+  '''    
+    
   feature = ogr.Feature(lyr.GetLayerDefn())
   feature.SetGeometry(geometry)
   if attributes != None:
@@ -229,7 +242,10 @@ def create_feature(geometry, lyr, attributes=None):
   feature.Destroy()
 
 def write_pg(conn, network, tablename_prefix, overwrite=False):
-    '''Function to write Network with geometry to PostGIS edges and nodes tables.'''
+    '''Write NetworkX instance to PostGIS edge and node tables.
+    
+    '''    
+    
     G = network
     tbledges = tablename_prefix+'_edges'
     tblnodes = tablename_prefix+'_nodes'
