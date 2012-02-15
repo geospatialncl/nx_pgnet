@@ -10,16 +10,16 @@ tables as specified by the Newcastle University PostGIS network schema.
 Note that the terms 'graph' and 'network' are used interchangeably within the 
 software and documentation. To some extent a 'graph' refers to a topological 
 object (often in memory) with none or limited attribution, whilst a 'network' 
-refers to a graph object wtih attribution of edges and nodes and with 
+refers to a graph object with attribution of edges and nodes and with 
 geography defined, although this is not always the case.
 
 ------------
 Introduction
 ------------
 NetworkX is a python library for graph analysis. Using edge and node 
-attribution it can be used for spatial network analysis (wtih geography stored 
+attribution it can be used for spatial network analysis (with geography stored 
 as node/edge attributes). This module supports the use of NetworkX for the
-development of network analysis of geospatial networks stored in a PostGIS 
+development of network analysis of spatial networks stored in a PostGIS 
 spatial database by acting as an interface to a predefined table structure 
 (the schema) in a PostGIS database from NetworkX Graph classes.
 
@@ -28,7 +28,7 @@ PostGIS Schema
 --------------
 This module assumes that the required PostGIS network schema is available 
 within the target/source PostGIS database. The schema allows for a
-collection of tables to represent a geospatial network, storing
+collection of tables to represent a spatial network, storing
 network geography and attributes. The definition of the schema and the 
 associated scripts for network creation are outside the scope of this 
 documentation however the schema can be briefly described as the following 
@@ -44,15 +44,15 @@ tables:
 
     - Edge_Geometry:
         Holds geometry (PostGIS binary LINESTRING/MULTILINESTRING 
-        represenation).
-        Edge geometry is stored seperately to edges for storage/retrieval 
+        representation).
+        Edge geometry is stored separately to edges for storage/retrieval 
         performance where more than one edge share the same geometry.
         
-    - Interdepdency:
-        Holds interdependncies between networks. Not currently supported.
+    - Interdependency:
+        Holds interdependencies between networks. Not currently supported.
         
-    - Interdepdency_Edges:
-        Holds interdepdency geometry. Not currently supported.
+    - Interdependency_Edges:
+        Holds interdependency geometry. Not currently supported.
 
 ----------------
 Module structure    
@@ -67,7 +67,7 @@ The module is split into three key classes:
         tables.
         
     - nisql:
-        Cotnains methods which act as a wrapper to the special PostGIS network 
+        Contains methods which act as a wrapper to the special PostGIS network 
         schema functions. 
         Note: do not use this class unless you know what you are
         doing! Use the higher-level read/write functions results in less chance
@@ -94,9 +94,9 @@ Database connections
 Connections to PostGIS are created using the OGR simple feature library and are
 passed to the read() and write() classes. See http://www.gdal.ogr/ogr
 
-Connections are mutually exlusive between read() and write() and are contained 
+Connections are mutually exclusive between read() and write() and are contained 
 within each class (i.e. all methods within those classes inherit the :
-connection), although you can of course read and writeto the same database. 
+connection), although you can of course read and write to the same database. 
 You must pass a valid connection to the read or write classes for the module 
 to work.
 
@@ -176,8 +176,12 @@ Development Notes
 -----------------
 Where possible the PEP8/PEP257 style guide has been implemented.
 To do:
-    1) Check attribution of nodes from schema and non-schema sources.
-    2) Error module.
+    1) Check attribution of nodes from schema and non-schema sources 
+    (blank old id fields are being copied over).
+    2) Error  / warnings module.
+    3) Investigate bug: "Warning 1: Geometry to be inserted is of type 
+    Line String, whereas the layer geometry type is Multi Line String.
+    Insertion is likely to fail!"
     3) Multi and directed graph support.
     4) 3D geometry support.
     
@@ -234,6 +238,7 @@ class nisql:
         sql = ("SELECT * FROM ni_create_network_tables ('%s', %i);" % (prefix,
                epsg))
         result = 0
+        print sql
         for row in self.conn.ExecuteSQL(sql):
             result = row.ni_create_network_tables
         

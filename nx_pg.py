@@ -35,35 +35,36 @@ def read_pg(conn, tablename):
                 # Get a specific feature
                 f = lyr.GetFeature(findex+1)
                 if f is None:
-                    pass # Catch any returned features which are None. 
-                flddata = getfieldinfo(lyr, f, flds )
-                attributes = dict(zip(flds, flddata))
-                attributes["TableName"] = lyr.GetName()
-                # Get the geometry for that feature
-                geom = f.GetGeometryRef()
-                #print geom
-                # We've got a Multiline geometry so split into line segments
-                if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
-                #print f.GetGeomertyTypeName()
-                    for line in geom:
-                        # Get points in line
-                        n = line.GetPointCount()
-                        # Get the attributes (akin to nx_shp)
-                        attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
-                        attributes["Wkt"] = ogr.Geometry.ExportToWkb(line)
-                        attributes["Json"] = ogr.Geometry.ExportToWkb(line)
-                        #print type(line.GetPoint(0))
-                        net.add_edge(line.GetPoint_2D(0), line.GetPoint_2D(n-1), attributes)
-                elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
-                    n = geom.GetPointCount()
-                    attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
-                    attributes["Wkt"] = ogr.Geometry.ExportToWkb(geom)
-                    attributes["Json"] = ogr.Geometry.ExportToWkb(geom)  
-                    net.add_edge(geom.GetPoint_2D(0), geom.GetPoint_2D(n-1), attributes)
-                elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
-                    net.add_node((geom.GetPoint_2D(0)), attributes)
+                   pass # Catch any returned features which are None. Raise warning?
                 else:
-                    raise ValueError, "PostGIS geometry type not supported."
+                   flddata = getfieldinfo(lyr, f, flds )
+                   attributes = dict(zip(flds, flddata))
+                   attributes["TableName"] = lyr.GetName()
+                   # Get the geometry for that feature
+                   geom = f.GetGeometryRef()
+                   #print geom
+                   # We've got a Multiline geometry so split into line segments
+                   if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
+                   #print f.GetGeomertyTypeName()
+                       for line in geom:
+                           # Get points in line
+                           n = line.GetPointCount()
+                           # Get the attributes (akin to nx_shp)
+                           attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
+                           attributes["Wkt"] = ogr.Geometry.ExportToWkb(line)
+                           attributes["Json"] = ogr.Geometry.ExportToWkb(line)
+                           #print type(line.GetPoint(0))
+                           net.add_edge(line.GetPoint_2D(0), line.GetPoint_2D(n-1), attributes)
+                   elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
+                       n = geom.GetPointCount()
+                       attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
+                       attributes["Wkt"] = ogr.Geometry.ExportToWkb(geom)
+                       attributes["Json"] = ogr.Geometry.ExportToWkb(geom)  
+                       net.add_edge(geom.GetPoint_2D(0), geom.GetPoint_2D(n-1), attributes)
+                   elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
+                       net.add_node((geom.GetPoint_2D(0)), attributes)
+                   else:
+                       raise ValueError, "PostGIS geometry type not supported."
     return net
 
 def netgeometry(key, data):

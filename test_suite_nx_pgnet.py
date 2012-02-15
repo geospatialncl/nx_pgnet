@@ -10,6 +10,7 @@ __author__ = "Tom Holderness"
 __created__ = "Mon Jan 30 14:32:38 2012"
 __version__ = "1.0"
 
+import nx_pg
 import nx_pgnet
 import nx_pgnet_sql
 import pggkgetpass as gp
@@ -18,6 +19,7 @@ import osgeo.ogr as ogr
 # Get database password from gnomekeyring (for development purposes only).
 # REF: http://www.students.ncl.ac.uk/tom.holderness/pythongnomekeyring.php
 PGS = gp.getpass('login', 'pg-ceg-tyndall')
+#PGS = 'postgres'
 
 def unit_test_read_pg(conn):
     net = nx_pgnet.read(conn).read_pg('LightRail_Baseline')
@@ -55,19 +57,30 @@ def unit_test_read_graph(conn, name):
 def main():
     
     '''Testing nx_pg_ncl.py for NetworkX read/write of PostGIS tables.'''
-    # Create a source connecton
-    ##conn = ogr.Open("PG: host='ceg-tyndall' dbname='tyndall_data' \
-    ##    user='postgres' password="+PGS+"")  
-    ##print conn
-    ##net = nx_pgnet.read(conn).read_pg('LightRail_Baseline')
-    #unit_test_update_graphs_table(conn, net)
-    ##conn = None
-
-    conn = ogr.Open("PG: host='ceg-tyndall' dbname='networks_14022012' \
-    user='postgres' password="+PGS+"")  
+    '''
+    # Test read data from spatial non-schema table:
+    conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"")
     print conn
+    if conn == None:
+        print 'conn error'
+    net = nx_pg.read_pg(conn, 'LightRail_Baseline')
     
-    G = unit_test_read_graph(conn, 'LightRail_Baseline')
+    # Test to write non-schema derived nx to schema tables.
+    conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'networks_14022012' user= 'postgres' password="+PGS+"")  
+    print conn
+    if conn is None:
+      print 'conn is none'
+      exit(0)
+    nx_pgnet.write(conn).pgnet(net, 'LightRail_Baseline3', 27700, overwrite=True)
+    '''
+    conn = None
+    # Test read data from schema
+    conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'networks_14022012' user= 'postgres' password="+PGS+"")  
+    net = nx_pgnet.read(conn).pgnet('LightRail_Baseline3')
+    
+    # Test to write data to schema
+    nx_pgnet.write(conn).pgnet(net, 'LightRail_Baseline4', 27700, overwrite=True)
+#    G = unit_test_write_(conn, 'LightRail_Baseline')
     #print G.edges(data=True)
 
     ##unit_test_create_tables(conn, 'ut_create_tables',27700)    
@@ -76,7 +89,7 @@ def main():
     ##for row in conn.ExecuteSQL(sql):
     ##    print row.Directed
     ##    print type(row.Directed)
-    unit_test_write_pgnet(conn, G, 'LightRail_Baseline2')
+    ##unit_test_write_pgnet(conn, G, 'LightRail_Baseline2')
     #unit_test_write_pg(conn, net)
     #unit_test_read_pg(conn)
 
