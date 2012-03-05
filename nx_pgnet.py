@@ -192,12 +192,6 @@ To do:
     4) 3D geometry support.
     
 """
-<<<<<<< HEAD
-__author__ = "Tom Holderness"
-__created__ = "Thu Jan 19 15:55:13 2012"
-__year__ = "2011"
-__version__ = "0.2"
-=======
 __created__ = "January 2012"
 __version__ = "0.9.2"
 __author__ = """\n""".join(['Tomas Holderness (tom.holderness@ncl.ac.uk)',
@@ -205,7 +199,6 @@ __author__ = """\n""".join(['Tomas Holderness (tom.holderness@ncl.ac.uk)',
 	                            'Alistair Ford (a.c.ford@ncl.ac.uk)',
                                  'Stuart Barr (stuart.barr@ncl.ac.uk)'])
 __license__ = 'BSD style. See LICENSE.TXT'                                
->>>>>>> nx_pg_sql_create
 
 import networkx as nx
 import osgeo.ogr as ogr
@@ -533,59 +526,8 @@ class write:
     def create_attribute_map(self, lyr, g_obj, fields):
         '''Build a dict of attribute field names, data and OGR data types. 
         
-<<<<<<< HEAD
-    def write_pg(self, network, tablename_prefix, overwrite=False):
-        '''Function to write Network with geometry to PostGIS edges and node 
-        tables.'''
-        G = network
-        tbledges = tablename_prefix+'_edges'
-        tblnodes = tablename_prefix+'_nodes'
-    
-        if overwrite is True:
-          self.conn.DeleteLayer(tbledges)
-          self.conn.DeleteLayer(tblnodes)
-          
-        edges = self.conn.CreateLayer(tbledges, None, ogr.wkbLineString)
-        nodes = self.conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
-        
-        for n in G:
-            data = G.node[n].values() or [{}]
-            g = self.netgeometry(n, data[0])
-            self.create_feature(nodes, None, g)
-        
-        fields = {}
-        attributes = {}
-        OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
-        for e in G.edges(data=True):
-            data = G.get_edge_data(*e)
-            g = self.netgeometry(e, data)
-            # Loop through data in edges
-            for key, data in e[2].iteritems():
-                # Reject data not for attribute table
-                if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
-                    and key != 'ShpName'):
-                      # Add new attributes for each feature
-                      if key not in fields:
-                         if type(data) in OGRTypes:
-                             fields[key] = OGRTypes[type(data)]
-                         else:
-                             fields[key] = ogr.OFTString
-                         newfield = ogr.FieldDefn(key, fields[key])
-                         edges.CreateField(newfield)
-                         attributes[key] = data
-                      # Create dict of single feature's attributes
-                      else:
-                         attributes[key] = data
-             # Create the feature with attributes
-            
-            self.create_feature(edges, attributes, g)
-    
-        nodes, edges = None, None 
-        
-=======
         Accepts graph object (either node or edge), fields and 
         returns attribute dictionary.'''
->>>>>>> nx_pg_sql_create
 
         attrs = {}        
         OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
@@ -691,55 +633,6 @@ class write:
         Note that schema constrains must be applied in database. 
         There are no checks for database errors here.
         '''
-<<<<<<< HEAD
-    
-        G = network # Use G as network, convention from earlier code.
-        ## Table name prefix not implemented yet        
-        ##tbledges = tablename_prefix+'_edges'
-        ##tblnodes = tablename_prefix+'_nodes'
-        ##tbledge_geom = tablename_prefix+'edge_geometry'
-        
-        edge_geom = self.getlayer(tbledge_geom)
-        edges = self.getlayer(tbledges)
-        nodes = self.getlayer(tblnodes)    
-    
-        # For all the nodes add an index.
-        # Warning! This will limit unique node index to sys.maxint 
-        nid = 0
-        fields = {}
-        attributes = {}
-        OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
-        for n in G.nodes(data=True):
-            G.node[n[0]]['NodeID'] = nid
-            data = G.node[n[0]]
-            g = self.netgeometry(n[0], data)
-            # Loop through data in nodes
-            for key, data in n[1].iteritems():
-                # Reject data not for attribute table
-                if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
-                    and key != 'ShpName'):
-                      # Add new attributes for each feature
-                      if key not in fields:
-                         if type(data) in OGRTypes:
-                             fields[key] = OGRTypes[type(data)]
-                         else:
-                             fields[key] = ogr.OFTString
-                         newfield = ogr.FieldDefn(key, fields[key])
-                         nodes.CreateField(newfield)
-                         attributes[key] = data
-                      # Create dict of single feature's attributes
-                      else:
-                         attributes[key] = data
-            self.create_feature(nodes, attributes,g)
-            nid += 1
-        # Repeat similar operation for Edges (should put in function at some point!)
-        edge_id_field = ogr.FieldDefn('EdgeID',ogr.OFTInteger)
-        edge_geom.CreateField(edge_id_field)        
-        
-        fields = {}
-        attributes = {}
-        eid = 0 # edge_id
-=======
         # First create network tables in database
         
         self.prefix = tablename_prefix        
@@ -773,7 +666,6 @@ class write:
         edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 
                   'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
                   
->>>>>>> nx_pg_sql_create
         for e in G.edges(data=True):
             data = G.get_edge_data(*e)
             #print 'edge data', data
