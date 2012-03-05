@@ -204,7 +204,7 @@ import networkx as nx
 import osgeo.ogr as ogr
 
 # Ask ogr to use Python exceptions rather than stderr messages.
-##ogr.UseExceptions()
+ogr.UseExceptions()
     
 class net_error:
     '''Class to handle network IO errors. '''
@@ -226,7 +226,8 @@ class nisql:
         '''Setup connection to be inherited by methods.'''
         self.conn = db_conn
     
-    def create_network_tables(self, prefix, epsg):
+    def create_network_tables(self, prefix, epsg, directed = False,
+        multigraph = False):
         '''Wrapper for ni_create_network_tables function.
         
         Creates empty network schema PostGIS tables.
@@ -236,24 +237,42 @@ class nisql:
         Returns True if succesful.'''
         
         # Create network tables
-        sql = ("SELECT * FROM ni_create_network_tables ('%s', %i);" % (prefix,
-               epsg))
+        sql = ("SELECT * FROM ni_create_network_tables ('%s', %i, \
+        CAST(%i AS BOOLEAN), CAST(%i AS BOOLEAN));" % (
+        prefix, epsg, directed, multigraph))
+        
         result = 0
-        print sql
         for row in self.conn.ExecuteSQL(sql):
             result = row.ni_create_network_tables
-        
+        '''
         # Add geometry column
         sql = ("SELECT * FROM ni_add_geometry_columns ('%s', %i);" % (prefix,
                epsg))
+        print sql
         self.conn.ExecuteSQL(sql)
         # Add foreign key constraints
         sql = ("SELECT * FROM ni_add_fr_constraints ('%s');" % (prefix,))
         self.conn.ExecuteSQL(sql)        
-        
+        '''
         # To do: error checking
         # what to return here?
         return result
+        
+    def create_node_view(self, prefix):
+        '''Wrapper for ni_create_node_view function.
+        
+        Creates a view containing node attributes and geometry values including
+        int primary key suitable for QGIS.
+        
+        Requires network name ('prefix').
+        
+        Returns view name if succesful.'''
+        
+        viewname = None
+        sql = "SELECT * FROM ni_create_node_view('%s')" % prefix
+        for row in self.conn.ExecuteSQL(sql):
+            viewname = row.ni_create_node_view
+        return viewname
         
     def create_edge_view(self, prefix):
         '''Wrapper for ni_create_edge_view function.
@@ -693,4 +712,8 @@ class write:
             
             edge_attrs = self.create_attribute_map(self.lyredges, e[2], 
                                                    edge_fields)
-            self.pgnet_edge(edge_attrs, edge_geom) 
+            self.pgnet_edge(edge_attrs, edge_geom)
+            
+        nisql(self.conn).create_node_view(self.prefix)    
+        nisql(self.conn).create_edge_view(self.prefix)
+        
