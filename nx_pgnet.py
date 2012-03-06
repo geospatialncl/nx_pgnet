@@ -666,7 +666,8 @@ class write:
         if result == 0:
             if overwrite is True:
                 nisql(self.conn).delete_network(self.prefix)
-                nisql(self.conn).create_network_tables(self.prefix, self.srs)
+                nisql(self.conn).create_network_tables(self.prefix, self.srs, 
+                                                        directed, multigraph)
             else:
                 print 'Network already exists, will now exit.'
                 exit(0)
