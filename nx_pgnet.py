@@ -226,8 +226,8 @@ class nisql:
         '''Setup connection to be inherited by methods.'''
         self.conn = db_conn
     
-    def create_network_tables(self, prefix, epsg, directed = False,
-        multigraph = False):
+    def create_network_tables(self, prefix, epsg, directed,
+        multigraph):
         '''Wrapper for ni_create_network_tables function.
         
         Creates empty network schema PostGIS tables.
@@ -644,7 +644,8 @@ class write:
         
         return NodeID
 
-    def pgnet(self, network, tablename_prefix, srs, overwrite=False):
+    def pgnet(self, network, tablename_prefix, srs, overwrite=False,
+        directed = False, multigraph = False):
         '''Write NetworkX instance to PostGIS network schema tables.
         
         Updates Graph table with new network.
@@ -660,7 +661,8 @@ class write:
         self.tbledge_geom = tablename_prefix+'_Edge_Geometry'
         self.srs = srs
 
-        result = nisql(self.conn).create_network_tables(self.prefix, self.srs)
+        result = nisql(self.conn).create_network_tables(self.prefix, self.srs, 
+                        directed, multigraph)
         if result == 0:
             if overwrite is True:
                 nisql(self.conn).delete_network(self.prefix)
