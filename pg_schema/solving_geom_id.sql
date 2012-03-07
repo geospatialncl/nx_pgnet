@@ -1,14 +1,10 @@
-﻿--Tom would this work?
---Example insert statement
-INSERT INTO "LightRail_Baseline_Wards_Edges" ("Node_F_ID", "Node_T_ID", "GraphID", "Edge_GeomID") VALUES (SELECT d."NodeID", b."NodeID", g."GraphID", SELECT * FROM return_edge_geometry_geom_id_on_edge_insert("Light_RailBaseline_Wards", SELECT ST_AsText(ST_MakeLine(d.geom, a.geom))) FROM "LightRail_Baseline_Stations" as a, "LightRail_Baseline_Wards_Nodes" as b, "General_Data_CAS_Wards_2001" as c, "LightRail_Baseline_Wards_Nodes" as d, "Graphs" as g) WHERE ST_Equals(a.geom , b.geom)
-AND ST_within(b.geom, c.geom)
-AND d.ons_label = c.ons_label
-AND g."GraphName" = 'LightRail_Baseline_Wards';
+﻿-- Function: return_edge_geometry_geom_id_on_edge_geometry_insert(character varying, character varying)
 
+-- DROP FUNCTION return_edge_geometry_geom_id_on_edge_geometry_insert(character varying, character varying);
 --$1 - edge_geometry table prefix
 --$2 - geometry (as wkt) to insert in to the edge_geometry table
-CREATE OR REPLACE FUNCTION return_edge_geometry_geom_id_on_edge_geometry_insert(varchar, varchar)
-RETURNS integer AS 
+CREATE OR REPLACE FUNCTION return_edge_geometry_geom_id_on_edge_geometry_insert(character varying, character varying)
+  RETURNS integer AS
 $BODY$
 DECLARE
     --edge_geometry table prefix
@@ -30,12 +26,30 @@ BEGIN
     edge_geometry_table_name := edge_geometry_table_prefix||edge_geometry_table_suffix;
     
     --insert the supplied geometry into the appropriate edge_geometry table (based on the supplied table prefix)
-    EXECUTE 'INSERT INTO '||quote_ident(edge_geometry_table_name)||' (geom) VALUES (SELECT ST_GeomFromText('||geometry||')) RETURNING "GeomID"' INTO geom_id;
+    EXECUTE 'INSERT INTO '||quote_ident(edge_geometry_table_name)||' (geom) (SELECT ST_GeomFromText('||quote_literal(geometry)||',27700)) RETURNING "GeomID"' INTO geom_id;
     
     --return the geometry id
     RETURN geom_id;
 END;
 $BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
-ALTER FUNCTION return_edge_geometry_geom_id_on_edge_geometry_insert(varchar, varchar) OWNER TO postgres; 
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+ALTER FUNCTION return_edge_geometry_geom_id_on_edge_geometry_insert(character varying, character varying) OWNER TO postgres;
+
+--Tom would this work?
+--Example insert statement
+INSERT INTO "LightRail_Baseline_Wards_Edges" ("Node_F_ID", "Node_T_ID", "GraphID", "Edge_GeomID") 
+	SELECT d."NodeID", b."NodeID", g."GraphID", 
+	(SELECT * FROM return_edge_geometry_geom_id_on_edge_geometry_insert('LightRail_Baseline_Wards', 
+		(SELECT ST_AsText(ST_MakeLine(d.geom, a.geom))))) 
+	FROM "LightRail_Baseline_Stations" as a, 
+		"LightRail_Baseline_Wards_Nodes" as b, 
+		"General_Data_CAS_Wards_2001" as c, 
+		"LightRail_Baseline_Wards_Nodes" as d, 
+		"Graphs" as g 
+	WHERE ST_Equals(a.geom , b.geom)
+	AND ST_within(b.geom, c.geom)
+	AND d.ons_label = c.ons_label
+	AND g."GraphName" = 'LightRail_Baseline_Wards';
+
+
