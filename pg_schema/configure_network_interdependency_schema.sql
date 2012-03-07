@@ -86,6 +86,7 @@ DECLARE
     interdependency_edge_table_suffix varchar := '_Interdependency_Edges';
     
     --generic view suffixes
+    node_view_suffix varchar := '_View_Nodes';
     edge_edge_geometry_view_suffix varchar := '_View_Edges_Edge_Geometry';
     interdependency_interdependency_edge_view_suffix varchar := '_View_Interdependency_Interdependency_Edges';
     
@@ -123,6 +124,14 @@ BEGIN
     interdependency_suffix_like_comparator := '%'||interdependency_table_suffix;
     interdependency_edge_suffix_like_comparator := '%'||interdependency_edge_table_suffix;
     
+    
+    --remove the views from the geometry columns table
+    FOR information_schema_record IN EXECUTE 'SELECT * FROM information_schema.views WHERE table_schema = '||quote_literal(schema_name)||' AND table_name LIKE ''%'||edge_edge_geometry_view_suffix||''' OR table_name LIKE ''%'||interdependency_interdependency_edge_view_suffix||''' OR table_name LIKE ''%'||node_view_suffix||'''' LOOP
+        --remove the interdependency and edge views
+        EXECUTE 'DROP VIEW IF EXISTS'||quote_ident(information_schema_record.table_name)||' CASCADE';
+        EXECUTE 'DELETE FROM '||quote_ident(geometry_column_table_name)||' WHERE f_table_name = '||quote_literal(information_schema_record.table_name);
+    END LOOP;
+    
     --remove the tables from information_schema
     FOR information_schema_record IN EXECUTE 'SELECT table_name FROM information_schema.tables WHERE table_schema = '||quote_literal(schema_name)||' AND table_name LIKE '||quote_literal(interdependency_prefix_like_comparator)||' AND (table_name LIKE '||quote_literal(interdependency_suffix_like_comparator)||' OR table_name LIKE '||quote_literal(interdependency_edge_suffix_like_comparator)||')' LOOP
         --drop the interdependency table        
@@ -130,12 +139,6 @@ BEGIN
         
     END LOOP;
     
-    --remove the tables from the geometry columns table
-    FOR information_schema_record IN EXECUTE 'SELECT * FROM information_schema.views WHERE table_schema = '||quote_literal(schema_name)||' AND table_name LIKE ''%'||edge_edge_geometry_view_suffix||''' OR table_name LIKE ''%'||interdependency_interdependency_edge_view_suffix||'''' LOOP
-        --remove the interdependency and edge views
-        EXECUTE 'DROP VIEW IF EXISTS'||quote_ident(information_schema_record.table_name)||' CASCADE';
-        EXECUTE 'DELETE FROM '||quote_ident(geometry_column_table_name)||' WHERE f_table_name = '||quote_literal(information_schema_record.table_name);
-    END LOOP;
     
     --determine if there are any graphs of that name
     EXECUTE 'SELECT count(*) FROM "Graphs" WHERE "GraphName" = '||quote_literal(table_prefix) INTO graph_count;
