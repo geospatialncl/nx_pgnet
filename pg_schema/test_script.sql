@@ -1,4 +1,5 @@
-﻿-----------------------RESET THE DATABASE--------------------------
+﻿--helloworld
+-----------------------RESET THE DATABASE--------------------------
 SELECT * FROM ni_reset_database('public');
 
 --delete old network
