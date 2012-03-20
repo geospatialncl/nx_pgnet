@@ -423,9 +423,10 @@ class read:
         '''Reads nodes from node table and add to graph.'''
         
         # Join Edges and Edge_Geom
+        node_tbl = nisql(self.conn).create_node_view(self.prefix)
         ##edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
         # Get lyr by name
-        node_tbl = "LightRail_Baseline_Nodes"
+        #node_tbl = "LightRail_Baseline_Nodes"
         lyr = self.conn.GetLayerByName(node_tbl)
         # Get fields
         flds = [x.GetName() for x in lyr.schema]
