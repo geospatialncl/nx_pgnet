@@ -47,6 +47,7 @@ DECLARE
 	edge_geometry_table_srid integer := 27700;	
 	node_table_srid integer := 27700;
 	edge_geometry_type varchar := 'MULTILINESTRING';
+	node_geometry_type varchar := 'POINT';
 	
 	--table suffixes
 	node_table_suffix varchar := '_Nodes';
@@ -111,7 +112,11 @@ BEGIN
 	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);	
 	
 	--create a temporary table to store the new derived and combined geometry
-	EXECUTE 'CREATE TEMP TABLE '||quote_ident(output_table_name)||' (gid_copy integer, additional_geom geometry, additional_combined_geom geometry)';		
+	EXECUTE 'CREATE TEMP TABLE '||quote_ident(output_table_name)||' (gid_copy integer, connection_point_geom geometry, additional_geom geometry, additional_combined_geom geometry)';		
+
+	--add geometry checks for the connection point geometry to the temporary table (connection_point_geom)
+	EXECUTE 'ALTER TABLE '||quote_ident(output_table_name)||' ADD CONSTRAINT "enforce_srid_connection_point_geom" CHECK (st_srid(connection_point_geom) = '||edge_geometry_table_srid||')';
+	EXECUTE 'ALTER TABLE '||quote_ident(output_table_name)||' ADD CONSTRAINT "enforce_geotype_connection_point_geom" CHECK (geometrytype(connection_point_geom) = ''POINT''::text OR connection_point_geom IS NULL)';
 	
 	--add geometry checks for the newly derived geometry to the temporary table (additional_geom)
 	EXECUTE 'ALTER TABLE '||quote_ident(output_table_name)||' ADD CONSTRAINT "enforce_srid_additional_geom" CHECK (st_srid(additional_geom) = '||edge_geometry_table_srid||')';
@@ -156,7 +161,7 @@ BEGIN
 					EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry;
 				
 					--insert the record in to the temporary output table
-					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| '(gid_copy, start_point_distance, end_point_distance, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||distance_between_node_edge_start_point||', '||distance_between_node_edge_end_point||', ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||'),ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', '||edge_geometry_table_srid||'))';
+					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| '(gid_copy, start_point_distance, end_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||distance_between_node_edge_start_point||', '||distance_between_node_edge_end_point||', ST_GeomFromText('||quote_literal(edge_start_point)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||'),ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', '||edge_geometry_table_srid||'))';
 					
 				ELSIF distance_between_node_edge_start_point > distance_between_node_edge_end_point AND (distance_between_node_edge_end_point <= search_distance) THEN
 					
@@ -166,7 +171,7 @@ BEGIN
 					EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry;
 				
 					--insert the record in to the temporary output table
-					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| '(gid_copy, start_point_distance, end_point_distance, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||distance_between_node_edge_start_point||', '||distance_between_node_edge_end_point||', ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||'),ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', '||edge_geometry_table_srid||'))';
+					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| '(gid_copy, start_point_distance, end_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||distance_between_node_edge_start_point||', '||distance_between_node_edge_end_point||', ST_GeomFromText('||quote_literal(edge_end_point)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||'),ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', '||edge_geometry_table_srid||'))';
 				END IF;							
 			END IF;
 		END LOOP;
@@ -175,11 +180,18 @@ BEGIN
 	--create the new join table name as a combination of the join suffix and supplied output table name
 	join_table_name := output_table_name||join_table_suffix;
 	
+	--drop the join table
+	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(join_table_name);
+	
 	--create the new join table
 	EXECUTE 'CREATE TABLE '||quote_ident(join_table_name)||' AS SELECT * FROM '||quote_ident(edge_table_name)||' LEFT OUTER JOIN '||quote_ident(output_table_name)||' ON ('||quote_ident(edge_table_name)||'.'||quote_ident(edge_join_key_column_name)||' = '||quote_ident(output_table_name)||'.gid_copy)';
 	
 	--add a comment stating what function was used to create the output table
 	EXECUTE 'COMMENT ON TABLE '||quote_ident(join_table_name)|| ' IS ''This table was created using the ni_connect_hanging_edges_to_nodes function. Please see the network_interdependency schema for more details of the parameters required for this function, and what it does''';
+	
+	--add geometry checks for the connection point geometry to the join table (connection_point_geom)
+	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' ADD CONSTRAINT "enforce_srid_connection_point_geom" CHECK (st_srid(connection_point_geom) = '||node_table_srid||')';
+	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' ADD CONSTRAINT "enforce_geotype_connection_point_geom" CHECK (geometrytype(connection_point_geom) = ''POINT''::text OR connection_point_geom IS NULL)';
 	
 	--add geometry checks for geom column to the joined table
 	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' ADD CONSTRAINT "enforce_srid_geom" CHECK (st_srid(geom) = '||edge_geometry_table_srid||')';
@@ -203,6 +215,9 @@ BEGIN
 	IF add_to_geometry_columns IS TRUE THEN
 		RAISE NOTICE 'Adding to geometry columns - geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_table_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
+		
+		RAISE NOTICE 'Adding to geometry columns - connection_point_geom';
+		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||',''connection_point_geom'','||dims||','||node_table_srid||', '||quote_literal(node_geometry_type)||')';
 		
 		RAISE NOTICE 'Adding to geometry columns - additional_geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||',''additional_geom'','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
