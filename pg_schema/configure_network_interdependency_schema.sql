@@ -788,8 +788,8 @@ BEGIN
     --create the new node view table name
     new_node_view_name := table_prefix||node_view_suffix;
 
-	--drop the view
-	EXECUTE 'DROP VIEW '||quote_ident(new_node_view_name);
+	--drop the view	
+	EXECUTE 'DROP VIEW IF EXISTS'||quote_ident(new_node_view_name)||' CASCADE';
 	
     --create node view
     EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_node_view_name)||' AS SELECT int4(ROW_NUMBER() over (order by node_table."NodeID")) as id, node_table.* FROM '||quote_ident(node_table_name)||' as node_table';
@@ -865,8 +865,8 @@ BEGIN
     --create the view by joining the edge and edge_geometry tables for tables with a specific prefix
     --EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_edge_view_name)||' AS SELECT * FROM '||quote_ident(edge_table_name)||', '||quote_ident(edge_geometry_table_name)||' WHERE "EdgeID" = "GeomID"';
     
-	--drop view 
-	EXECUTE 'DROP VIEW '||quote_ident(new_edge_view_name);
+	--drop view 	
+	EXECUTE 'DROP VIEW IF EXISTS'||quote_ident(new_edge_view_name)||' CASCADE';
 	
     --this creates a view of the two edge and edge_geometry tables - this works in QGIS
     EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_edge_view_name)||' AS SELECT int4(ROW_NUMBER() over (order by edge_table."EdgeID")) as id, edge_table.*, edge_geometry_table.* FROM '||quote_ident(edge_table_name)||' as edge_table, '||quote_ident(edge_geometry_table_name)||' as edge_geometry_table WHERE edge_table."EdgeID" = edge_geometry_table."GeomID"';
@@ -944,8 +944,8 @@ BEGIN
     --specify the interdependency_edge table to join
     interdependency_edge_table_name := table_prefix||interdependency_edge_table_suffix;
 	
-	--drop view 
-	EXECUTE 'DROP VIEW '||quote_ident(new_interdependency_view_name);
+	--drop view
+	EXECUTE 'DROP VIEW IF EXISTS'||quote_ident(new_interdependency_view_name)||' CASCADE';		
 
     --create the view by joining the interdependency and interdependency_edge tables for tables with a specific prefix    
     EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_interdependency_view_name)||' AS SELECT int4(ROW_NUMBER() over (order by i."InterdependencyID")) as id, i.*, ie.geom FROM '||quote_ident(interdependency_table_name)||' AS i, '||quote_ident(interdependency_edge_table_name)||' as ie WHERE i."InterdependencyID" = ie."GeomID"';
