@@ -546,6 +546,64 @@ LANGUAGE plpgsql VOLATILE
 COST 100;
 ALTER FUNCTION ni_create_network_table_edge_geometry(varchar, integer) OWNER TO postgres;  
 
+--generic function to remove a reference from the geometry columns table
+--$1 = table_name
+--$2 = catalog name
+--$3 = schema name
+--$4 = geometry column name
+--$5 = coordinate dimension of input geometry
+--$6 = coordinate reference system (EPSG code)
+--$7 = geometry type e.g. POINT, LINESTRING, MULTILINESTRING
+CREATE OR REPLACE FUNCTION ni_remove_from_geometry_columns(varchar, varchar, varchar, varchar, integer, integer, varchar)
+RETURNS boolean AS
+$BODY$ 
+DECLARE
+--table name to insert
+    table_name ALIAS for $1;
+
+    --table_catalog
+    table_catalog ALIAS for $2;
+    
+    --table schema
+    table_schema ALIAS for $3;
+    
+    --table geometry column name
+    geometry_column_name ALIAS for $4;
+    
+    --coordinate dimensions of input geometry
+    coord_dim ALIAS for $5;
+    
+    --coordinate reference system (EPSG code)
+    SRID ALIAS for $6;
+    
+    --geometry type e.g. POINT, LINESTRING
+    geometry_type ALIAS for $7;
+    
+    --geometry_column_table_name
+    geometry_column_table_name varchar := 'geometry_columns';
+    geometry_column_record_exists integer := 0;
+
+    srid_exists boolean := FALSE;
+BEGIN
+
+    EXECUTE 'SELECT * FROM ni_check_srid('||srid||')' INTO srid_exists;
+    
+    IF srid_exists IS FALSE THEN
+        RETURN FALSE;
+    ELSE 
+        
+		EXECUTE 'DELETE FROM '||quote_ident(geometry_column_table_name)'|| WHERE f_table_catalog = '||quote_literal(table_catalog)||' AND f_table_schema = '||quote_literal(table_schema)||' AND f_table_name = '||quote_literal(table_name)||' AND f_geometry_column = '||quote_literal(geometry_column_name)||' AND coord_dimension = '||coord_dim||' AND srid = '||SRID;
+		
+        RETURN TRUE;
+    END IF;
+
+RETURN FALSE;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+ALTER FUNCTION ni_remove_from_geometry_columns(varchar, varchar, varchar, varchar, integer, integer, varchar) OWNER TO postgres;  
+
 --generic function to add table to geometry columns table
 --$1 = table_name
 --$2 = catalog name
@@ -681,10 +739,6 @@ DECLARE
 
 BEGIN
 
-    RAISE NOTICE 'multigraph: %', multigraph;
-    RAISE NOTICE 'directed: %', directed;
-    
-
     --add the new network/graph record to the Graphs table
     EXECUTE 'INSERT INTO "Graphs" ("GraphName", "Nodes", "Edges", "Directed", "MultiGraph") VALUES ('||quote_literal(table_prefix)||', '||quote_literal(table_prefix||node_table_suffix)||', '||quote_literal(table_prefix||edge_table_suffix)||', '||directed||', '||multigraph||')';
     RETURN;
@@ -734,6 +788,9 @@ BEGIN
     --create the new node view table name
     new_node_view_name := table_prefix||node_view_suffix;
 
+	--drop the view
+	EXECUTE 'DROP VIEW '||quote_ident(new_node_view_name);
+	
     --create node view
     EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_node_view_name)||' AS SELECT int4(ROW_NUMBER() over (order by node_table."NodeID")) as id, node_table.* FROM '||quote_ident(node_table_name)||' as node_table';
     
@@ -746,17 +803,9 @@ BEGIN
     --retrieve the geometry type for the node view
     EXECUTE 'SELECT GeometryType(geom) FROM '||quote_ident(node_table_name) INTO node_geometry_type;
     
-    EXECUTE 'SELECT COUNT(*) FROM '||quote_ident(geometry_column_table_name)||' WHERE f_table_schema = ''public'' AND f_table_name = '||quote_literal(new_node_view_name) INTO geometry_column_record_count;
-    
-    RAISE NOTICE 'geometry_column_record_count: %', geometry_column_record_count;
-    --add the view to the geometry columsn table
-    IF geometry_column_record_count < 1 THEN
-        --need to add the view to the geometry columns table here
-        --EXECUTE 'INSERT INTO '||quote_ident(geometry_column_table_name)||' (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, "type") VALUES ('''', ''public'', '||quote_literal(new_node_view_name)||',''geom'', '||dims||', '||SRID||', '||quote_literal(node_geometry_type)||')';
-        EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(node_geometry_type)||')';
-    END IF;
-    
-    --return the new view name to the user
+	--add the node view to the geometry columns table
+	EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(node_geometry_type)||')';
+	--return the new view name to the user
     RETURN new_node_view_name;
     
 END;
@@ -816,6 +865,9 @@ BEGIN
     --create the view by joining the edge and edge_geometry tables for tables with a specific prefix
     --EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_edge_view_name)||' AS SELECT * FROM '||quote_ident(edge_table_name)||', '||quote_ident(edge_geometry_table_name)||' WHERE "EdgeID" = "GeomID"';
     
+	--drop view 
+	EXECUTE 'DROP VIEW '||quote_ident(new_edge_view_name);
+	
     --this creates a view of the two edge and edge_geometry tables - this works in QGIS
     EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_edge_view_name)||' AS SELECT int4(ROW_NUMBER() over (order by edge_table."EdgeID")) as id, edge_table.*, edge_geometry_table.* FROM '||quote_ident(edge_table_name)||' as edge_table, '||quote_ident(edge_geometry_table_name)||' as edge_geometry_table WHERE edge_table."EdgeID" = edge_geometry_table."GeomID"';
     
@@ -828,16 +880,9 @@ BEGIN
     --retrieve the geometry type for the edge geometry table
     EXECUTE 'SELECT GeometryType(geom) FROM '||quote_ident(edge_geometry_table_name) INTO edge_geometry_type;
     
-    EXECUTE 'SELECT COUNT(*) FROM '||quote_ident(geometry_column_table_name)||' WHERE f_table_schema = ''public'' AND f_table_name = '||quote_literal(new_edge_view_name) INTO geometry_column_record_count;
-    
-    RAISE NOTICE 'geometry_column_record_count: %', geometry_column_record_count;
-    --add the edge view to the geometry columns table
-    IF geometry_column_record_count < 1 THEN
-        --need to add the view to the geometry columns table here
-        --EXECUTE 'INSERT INTO '||quote_ident(geometry_column_table_name)||' (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, "type") VALUES ('''', ''public'', '||quote_literal(new_edge_view_name)||',''geom'', '||dims||', '||SRID||', '||quote_literal(edge_geometry_type)||')';
-        EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(edge_geometry_type)||')';
-    END IF;
-    
+	--add the edge view to the geometry columns table
+	EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(edge_geometry_type)||')';
+	
     --return the new view name to the user
     RETURN new_edge_view_name;
     
@@ -898,9 +943,11 @@ BEGIN
     
     --specify the interdependency_edge table to join
     interdependency_edge_table_name := table_prefix||interdependency_edge_table_suffix;
+	
+	--drop view 
+	EXECUTE 'DROP VIEW '||quote_ident(new_interdependency_view_name);
 
-    --create the view by joining the interdependency and interdependency_edge tables for tables with a specific prefix
-    
+    --create the view by joining the interdependency and interdependency_edge tables for tables with a specific prefix    
     EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_interdependency_view_name)||' AS SELECT int4(ROW_NUMBER() over (order by i."InterdependencyID")) as id, i.*, ie.geom FROM '||quote_ident(interdependency_table_name)||' AS i, '||quote_ident(interdependency_edge_table_name)||' as ie WHERE i."InterdependencyID" = ie."GeomID"';
     
     --add a new column to the view that acts as a primary key to overcome the issue of QGIS not accepting non-int4 types as primary keys
@@ -915,16 +962,9 @@ BEGIN
     --retrieve the geometry type for the interdependency edge geometry table
     EXECUTE 'SELECT GeometryType(geom) FROM '||quote_ident(interdependency_edge_table_name) INTO interdependency_edge_geometry_type;
     
-    EXECUTE 'SELECT COUNT(*) FROM '||quote_ident(geometry_column_table_name)||' WHERE f_table_schema = '||quote_literal(schema_name)||' AND f_table_name = '||quote_literal(new_interdependency_view_name) INTO geometry_column_record_count;
-    
-    --add the record to the geometry columns table
-    IF geometry_column_record_count < 1 THEN
-    
-        --need to add the view to the geometry columns table here        
-        EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_interdependency_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(interdependency_edge_geometry_type)||')';
-    
-    END IF;
-    
+	--add the interdependency view to the geometry columns table
+	EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_interdependency_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(interdependency_edge_geometry_type)||')';
+	
     --return the new view name to the user
     RETURN new_interdependency_view_name;    
     
