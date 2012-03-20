@@ -76,7 +76,7 @@ def main():
     conn = None
     # Test read data from schema
     conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"") 
-    print conn
+
     net = nx_pg.read_pg(conn, 'LightRail_Baseline')
     
     # Test to write data to schema
