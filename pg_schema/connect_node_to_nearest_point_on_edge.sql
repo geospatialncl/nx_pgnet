@@ -1,6 +1,5 @@
-﻿--TO DO
---return all edge_geometry attributes in output table - currently just those derived
---return all edge_geometry edges, regardless of needing to be joined or not
+﻿--TODO - auto-determine the SRID for geometry in the nodes and edge_geometry tables
+--output the nearest point as geometry to output table
 
 --joins the geometry of an edge from edge_geometry within the specified search distance of the nodes from the input node table to the closest point on the edge (not necessarily the edge end)
 --$1 - prefix of edge table 
@@ -48,6 +47,8 @@ DECLARE
 	edge_geometry_table_srid integer := 27700;
 	node_table_srid integer := 27700;
 	edge_geometry_type varchar := 'MULTILINESTRING';
+	node_geometry_type varchar := 'POINT';
+	
 	
 	edge_table_suffix varchar := '_Edges';
 	edge_table_name varchar := '';
@@ -111,7 +112,11 @@ BEGIN
 	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);	
 	--create the output table of given name based on the attributes and columns found in the edge_geometry table
 	--create a temporary table to store the new derived and combined geometry
-	EXECUTE 'CREATE TEMP TABLE '||quote_ident(output_table_name)||' (gid_copy integer, node_to_point_distance numeric, additional_geom geometry, additional_combined_geom geometry)';
+	EXECUTE 'CREATE TEMP TABLE '||quote_ident(output_table_name)||' (gid_copy integer, connection_point_geom geometry, node_to_point_distance numeric, additional_geom geometry, additional_combined_geom geometry)';
+	
+	--add geometry checks for the connection point geometry to the temporary table (connection_point_geom)
+	EXECUTE 'ALTER TABLE '||quote_ident(output_table_name)||' ADD CONSTRAINT "enforce_srid_connection_point_geom" CHECK (st_srid(connection_point_geom) = '||edge_geometry_table_srid||')';
+	EXECUTE 'ALTER TABLE '||quote_ident(output_table_name)||' ADD CONSTRAINT "enforce_geotype_connection_point_geom" CHECK (geometrytype(connection_point_geom) = ''POINT''::text OR connection_point_geom IS NULL)';
 	
 	--add geometry checks for the newly derived geometry to the temporary table (additional_geom)
 	EXECUTE 'ALTER TABLE '||quote_ident(output_table_name)||' ADD CONSTRAINT "enforce_srid_additional_geom" CHECK (st_srid(additional_geom) = '||edge_geometry_table_srid||')';
@@ -159,7 +164,7 @@ BEGIN
 					EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry;
 					
 					--insert a record in to the output table 
-					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| '(gid_copy, node_to_point_distance, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||point_to_node_distance||', ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', '||edge_geometry_table_srid||'))';
+					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| '(gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||point_to_node_distance||', ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', '||edge_geometry_table_srid||'))';
 				END IF;
 				
 			ELSIF edge_geometry_record.edge_geom_count > 1 THEN
@@ -167,7 +172,7 @@ BEGIN
 				
 				EXECUTE 'DROP TABLE IF EXISTS closest_point_on_edge_ranking ';
 				--create a temp table to store the ranked values on linestring
-				EXECUTE 'CREATE TEMP TABLE closest_point_on_edge_ranking (gid_copy integer, node_to_point_distance numeric, additional_geom geometry, additional_combined_geom geometry)';			
+				EXECUTE 'CREATE TEMP TABLE closest_point_on_edge_ranking (gid_copy integer, connection_point_geom geometry, node_to_point_distance numeric, additional_geom geometry, additional_combined_geom geometry)';			
 				
 				--1-based index for ST_GeometryN
 				line_string_geom_counter := 1;
@@ -198,14 +203,14 @@ BEGIN
 					
 					--add the newly created values 
 					RAISE NOTICE 'add link to closest_point_on_edge_ranking';
-					EXECUTE 'INSERT INTO closest_point_on_edge_ranking (gid_copy, node_to_point_distance, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||point_to_node_distance||', ST_GeomFromText('||quote_literal(new_edge_geometry)||', 27700), ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', 27700))';	
+					EXECUTE 'INSERT INTO closest_point_on_edge_ranking (gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||point_to_node_distance||', ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', 27700), ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', 27700))';	
 					
 					line_string_geom_counter := line_string_geom_counter + 1;
 				END LOOP;
 				
-				FOR closest_point_on_edge_ranking_record IN EXECUTE 'SELECT gid_copy as gid_copy, ST_AsText(additional_geom) as additional_geom, ST_AsText(additional_combined_geom) as additional_combined_geom, node_to_point_distance as node_to_point_distance FROM closest_point_on_edge_ranking WHERE node_to_point_distance <= '||search_distance||' ORDER BY node_to_point_distance ASC' LOOP
+				FOR closest_point_on_edge_ranking_record IN EXECUTE 'SELECT gid_copy as gid_copy, ST_AsText(additional_geom) as additional_geom, ST_AsText(connection_point_geom) as connection_point_geom, ST_AsText(additional_combined_geom) as additional_combined_geom, node_to_point_distance as node_to_point_distance FROM closest_point_on_edge_ranking WHERE node_to_point_distance <= '||search_distance||' ORDER BY node_to_point_distance ASC' LOOP
 					
-					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| ' (gid_copy, node_to_point_distance, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||','||closest_point_on_edge_ranking_record.node_to_point_distance||', ST_GeomFromText('||quote_literal(closest_point_on_edge_ranking_record.additional_geom)||', 27700), ST_GeomFromText('||quote_literal(closest_point_on_edge_ranking_record.additional_combined_geom)||', 27700))';
+					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| ' (gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||','||closest_point_on_edge_ranking_record.node_to_point_distance||', ST_GeomFromText('||quote_literal(closest_point_on_edge_ranking_record.connection_point_geom)||','||node_table_srid||'), ST_GeomFromText('||quote_literal(closest_point_on_edge_ranking_record.additional_geom)||', 27700), ST_GeomFromText('||quote_literal(closest_point_on_edge_ranking_record.additional_combined_geom)||', 27700))';
 					
 				END LOOP;
 				
@@ -218,11 +223,18 @@ BEGIN
 	--create the new join table name as a combination of the join suffix and supplied output table name
 	join_table_name := output_table_name||join_table_suffix;
 	
+	--drop the join table
+	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(join_table_name);
+	
 	--create the new join table
 	EXECUTE 'CREATE TABLE '||quote_ident(join_table_name)||' AS SELECT * FROM '||quote_ident(edge_table_name)||' LEFT OUTER JOIN '||quote_ident(output_table_name)||' ON ('||quote_ident(edge_table_name)||'.'||quote_ident(edge_join_key_column_name)||' = '||quote_ident(output_table_name)||'.gid_copy)';
 	
 	--add a comment stating what function was used to create the output table
 	EXECUTE 'COMMENT ON TABLE '||quote_ident(join_table_name)|| ' IS ''This table was created using the ni_connect_nodes_to_nearest_point_on_nearest_edge_in_search function. Please see the network_interdependency schema for more details of the parameters required for this function, and what it does''';
+	
+	--add geometry checks for the connection point geometry to the join table (connection_point_geom)
+	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' ADD CONSTRAINT "enforce_srid_connection_point_geom" CHECK (st_srid(connection_point_geom) = '||node_table_srid||')';
+	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' ADD CONSTRAINT "enforce_geotype_connection_point_geom" CHECK (geometrytype(connection_point_geom) = ''POINT''::text OR connection_point_geom IS NULL)';
 	
 	--add geometry checks for geom column to the joined table
 	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' ADD CONSTRAINT "enforce_srid_geom" CHECK (st_srid(geom) = '||edge_geometry_table_srid||')';
@@ -250,6 +262,9 @@ BEGIN
 		RAISE NOTICE 'Adding to geometry columns - geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
 		
+		RAISE NOTICE 'Adding to geometry columns - connection_point_geom';
+		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||',''connection_point_geom'','||dims||','||node_table_srid||', '||quote_literal(node_geometry_type)||')';
+		
 		RAISE NOTICE 'Adding to geometry columns - additional_geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||',''additional_geom'','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
 		
@@ -257,7 +272,7 @@ BEGIN
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||',''additional_combined_geom'','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';		
 	END IF;	
 	RAISE NOTICE 'execute select all from output table';
-	RETURN QUERY EXECUTE 'SELECT * FROM '||quote_ident(output_table_name);
+	RETURN QUERY EXECUTE 'SELECT * FROM '||quote_ident(join_table_name);
 END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
