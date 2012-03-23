@@ -75,15 +75,15 @@ def main():
     '''
     conn = None
     # Test read data from schema
-    #conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"") 
+    conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"") 
 
-    #net = nx_pg.read_pg(conn, 'LightRail_Baseline')
-    #net = nx_pgnet(conn).read('LightRail_Baseline')
-    net = nx_pgnet.read(conn).pgnet('LightRail_Baseline')
+    #net = nx_pg.read_pg(conn, 'LightRail_Baseline', 'LightRail_Baseline_Stations')
+    net = nx_pg.read_pg(conn, 'LightRail_Baseline')
+    #print net.edges(data=True)
+    #print net.nodes(data=True)
     # Test to write data to schema
-    conn = None
-    conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'networks_05032012_v2' user= 'postgres' password="+PGS+"")  
-    nx_pgnet.write(conn).pgnet(net, 'LightRail_Baseline', 27700, overwrite=True)
+    conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"")  
+    nx_pgnet.write(conn).pgnet(net, 'LightRail_Baseline_test', 27700, overwrite=True)
 #    G = unit_test_write_(conn, 'LightRail_Baseline')
     #print G.edges(data=True)
 

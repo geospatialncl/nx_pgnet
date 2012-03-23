@@ -445,7 +445,7 @@ class read:
             if f is None:
                 pass # Catch any returned features which are None. 
             else:
-                # Read edge attrs.
+                # Read node attrs.
                 flddata = self.getfieldinfo(lyr, f, flds)
                 attributes = dict(zip(flds, flddata))
                 #attributes['network'] = network_name
@@ -477,8 +477,7 @@ class read:
         # Get graph attributes
         graph_attrs = self.graph_table(self.prefix)
         if graph_attrs == None:
-            print "Error reading Graph table, does specified network exist?"
-            exit(1)
+            raise Error("Error: Can't find network in Graph table")
         # Create empty graph (directed/un-directed)
         if graph_attrs['Directed'] == 0:
             G = nx.Graph()
