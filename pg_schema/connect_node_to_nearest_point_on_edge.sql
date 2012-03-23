@@ -2,16 +2,16 @@
 --output the nearest point as geometry to output table
 
 --joins the geometry of an edge from edge_geometry within the specified search distance of the nodes from the input node table to the closest point on the edge (not necessarily the edge end)
---$1 - prefix of edge table 
+--$1 - name of edge table 
 --$2 - edge geometry column name e.g. "geom"
 --$3 - edge table join key
---$4 - prefix of node table
+--$4 - name of node table
 --$5 - node geometry column name e.g. "geom"
 --$6 - node table primary key
 --$7 - output table name (will be suffixed with _join when joined back to the original edge data
 --$8 - add output to geometry columns (adds default geom column, additional_geom, and additional_combined_geom to geometry columns table)
 --$9 - search distance (m)
-CREATE OR REPLACE FUNCTION ni_connect_nodes_to_nearest_point_on_nearest_edge_in_search(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric)
+CREATE OR REPLACE FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_in_search(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric)
 RETURNS SETOF RECORD AS 
 $BODY$
 DECLARE
@@ -110,12 +110,20 @@ DECLARE
 	--to store the combined geometry between node, end_point and the original edge geometry
 	new_combined_edge_geometry_to_end_point text := '';
 	
+	--final unique table of records
+	unique_table_name text := '';
+	
 BEGIN
 
+	--do I need to change this so that the input node and edge table names are presumed to NOT be loaded as _Nodes and _Edges and therefore the edge geometry is actually stored in the edge table itself.
+	
 	--create node and edge, edge_geometry table names
-	edge_table_name := edge_table_prefix||edge_table_suffix;	
-	edge_geometry_table_name := edge_table_prefix||edge_geometry_table_suffix;
-	node_table_name := node_table_prefix||node_table_suffix;
+	--edge_table_name := edge_table_prefix||edge_table_suffix;	
+	--edge_geometry_table_name := edge_table_prefix||edge_geometry_table_suffix;
+	--node_table_name := node_table_prefix||node_table_suffix;
+	edge_table_name := edge_table_prefix;
+	edge_geometry_table_name := edge_table_name;
+	node_table_name := node_table_prefix;
 
 	--check the edge table exists
 	EXECUTE 'SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '||quote_literal(edge_table_name) INTO edge_table_exists;
@@ -281,6 +289,12 @@ BEGIN
 	--create the new join table
 	EXECUTE 'CREATE TABLE '||quote_ident(join_table_name)||' AS SELECT * FROM '||quote_ident(edge_table_name)||' LEFT OUTER JOIN '||quote_ident(output_table_name)||' ON ('||quote_ident(edge_table_name)||'.'||quote_ident(edge_join_key_column_name)||' = '||quote_ident(output_table_name)||'.gid_copy)';
 	
+	--remove the gid_copy column from the join table
+	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' DROP COLUMN gid_copy';
+	
+	--remove the temporary output table
+	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);
+	
 	--add a comment stating what function was used to create the output table
 	EXECUTE 'COMMENT ON TABLE '||quote_ident(join_table_name)|| ' IS ''This table was created using the ni_connect_nodes_to_nearest_point_on_nearest_edge_in_search function. Please see the network_interdependency schema for more details of the parameters required for this function, and what it does''';
 	
@@ -300,17 +314,21 @@ BEGIN
 	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' ADD CONSTRAINT "enforce_srid_additional_combined_geom" CHECK (st_srid(additional_geom) = '||edge_geometry_table_srid||')';
 	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' ADD CONSTRAINT "enforce_geotype_additional_combined_geom" CHECK (geometrytype(additional_combined_geom) = ''MULTILINESTRING''::text OR geometrytype(additional_combined_geom) = ''LINESTRING''::text OR additional_combined_geom IS NULL)';	
 	
-	--remove the gid_copy column from the join table
-	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' DROP COLUMN gid_copy';
-	
 	--delete the table of rankings for multilinestring
 	EXECUTE 'DROP TABLE IF EXISTS closest_point_on_edge_ranking';
 	
-		--remove the temporary table
-	--EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);
+	EXECUTE 'SELECT * FROM ni_data_proc_detect_and_combine_duplicate_edges('||quote_literal(edge_table_name)||','||quote_literal(edge_join_key_column_name)||', '||quote_literal(edge_geometry_column_name)||', '||quote_literal(edge_geometry_table_srid)||', '||quote_literal(join_table_name)||', '||quote_literal(output_table_name)||')' INTO unique_table_name;
 	
 	--add the resultant output table to the geometry columns table(adds references to the original data (geom), additional geometry created linking the edge with the node (additional_geom), additional_combined_geom created as a union of geom and additional_geom
 	IF add_to_geometry_columns IS TRUE THEN
+	
+		IF unique_table_name != '' THEN	
+			--unique table
+			RAISE NOTICE 'Adding to geometry columns (unique table) - geom';
+			EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(unique_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
+		END IF;
+	
+	
 		RAISE NOTICE 'Adding to geometry columns - geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
 		
@@ -329,4 +347,4 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_connect_nodes_to_nearest_point_on_nearest_edge_in_search(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric) OWNER TO postgres; 
+ALTER FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_in_search(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric) OWNER TO postgres; 
