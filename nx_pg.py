@@ -87,7 +87,23 @@ Reading a network from PostGIS table of LINESTRINGS representing edges:
     # Read a network
     # Note 'my_network' is the name of the network stored in the 'Graphs' table
     
-    network = nx_pg.read_pg(conn, 'tablename')
+    network = nx_pg.read_pg(conn, 'edges_tablename')
+    
+    Adding node attributes
+        Where the user wants to add node attributes from a table of points,
+        use the optional nodes_tablename option in the read function:
+            
+        network = nx_pg.read_pg(conn, 'edge_tablename', 'node_tablename')
+        
+        This will add attributes from the node table to nodes in the network
+        where a network node geometry is equal to a node table point geometry. 
+        
+        Note that this will not necessarily add all points in the nodes table 
+        as not all points may match created nodes.
+        
+        Also note that if two points share the same geometry as a node, only
+        one of the point attributes will be added (whichever occurs further 
+        in the data).
     
 
 Writing a NetworkX graph instance to a PostGIS schema:
@@ -168,9 +184,12 @@ def getfieldinfo(lyr, feature, flds):
     return [f.GetField(f.GetFieldIndex(x)) for x in flds]
     
 def read_pg(conn, edgetable, nodetable=None):
-    '''Read a network from PostGIS tables of line geometry. 
-        
-        Returns instance of networkx.Graph().'''    
+    '''Read a network from PostGIS table of line geometry. 
+       
+       Optionally takes a table of points and where point geometry is equal
+       to that of nodes created, point attributes will be added to nodes.
+       
+       Returns instance of networkx.Graph().'''    
     if conn == None:
         raise Error('No connection to database.')
             
