@@ -18,11 +18,11 @@
 	--edge_attribute ILIKE node_attribute% = CASE INSENSITIVE, WITH WILDCARD SUCCEED, MATCH e.g. 6
 	--edge_attribute LIKE node_attribute% = CASE SENSITIVE, WITH WILDCARD SUCCEED, MATCH e.g. 7
 
-	--$1 - prefix of edge table 
+	--$1 - name of edge table 
 	--$2 - edge geometry column name e.g. "geom"
 	--$3 - edge table join key
 	--$4 - edge_table_attribute
-	--$5 - prefix of node table
+	--$5 - name of node table
 	--$6 - node geometry column name e.g. "geom"
 	--$7 - node table primary key
 	--$8 - node_table_attribute
@@ -30,7 +30,7 @@
 	--$10 - output table name (will be suffixed with _join when joined back to the original edge data
 	--$11 - add output to geometry columns (adds default geom column, additional_geom, and additional_combined_geom to geometry columns table)	
 	
-CREATE OR REPLACE FUNCTION ni_connect_hanging_edges_to_node_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean)
+CREATE OR REPLACE FUNCTION ni_data_proc_connect_hanging_edges_to_node_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean)
 RETURNS SETOF RECORD AS 
 $BODY$
 DECLARE
@@ -125,12 +125,21 @@ DECLARE
 	--derived from output_table_name + join_table_suffix
 	join_table_name varchar := '';
 	join_table_suffix varchar := '_join';	
+	
+	--final unique table of records
+	unique_table_name text := '';
+	
 BEGIN
 	
+	--do I need to change this so that the input node and edge table names are presumed to NOT be loaded as _Nodes and _Edges and therefore the edge geometry is actually stored in the edge table itself.
+	
 	--create node and edge, edge_geometry table names
-	edge_table_name := edge_table_prefix||edge_table_suffix;	
-	edge_geometry_table_name := edge_table_prefix||edge_geometry_table_suffix;
-	node_table_name := node_table_prefix||node_table_suffix;
+	--edge_table_name := edge_table_prefix||edge_table_suffix;	
+	--edge_geometry_table_name := edge_table_prefix||edge_geometry_table_suffix;
+	--node_table_name := node_table_prefix||node_table_suffix;
+	edge_table_name := edge_table_prefix;
+	edge_geometry_table_name := edge_table_name;
+	node_table_name := node_table_prefix;
 	
 	--check the edge table exists
 	EXECUTE 'SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '||quote_literal(edge_table_name) INTO edge_table_exists;
@@ -175,10 +184,10 @@ BEGIN
 	node_edge_relationship_mapping[2] = quote_ident(edge_table_attribute)||' LIKE !';	
 	node_edge_relationship_mapping[3] = quote_ident(edge_table_attribute)||' ILIKE %!%';	
 	node_edge_relationship_mapping[4] = quote_ident(edge_table_attribute)||' LIKE %!%';	
-	--node_edge_relationship_mapping[5] = quote_ident(edge_table_attribute)||' ILIKE %!';	
-	--node_edge_relationship_mapping[6] = quote_ident(edge_table_attribute)||' LIKE %!';	
-	--node_edge_relationship_mapping[7] = quote_ident(edge_table_attribute)||' ILIKE !%';	
-	--node_edge_relationship_mapping[8] = quote_ident(edge_table_attribute)||' LIKE !%';	
+	node_edge_relationship_mapping[5] = quote_ident(edge_table_attribute)||' ILIKE %!';	
+	node_edge_relationship_mapping[6] = quote_ident(edge_table_attribute)||' LIKE %!';	
+	node_edge_relationship_mapping[7] = quote_ident(edge_table_attribute)||' ILIKE !%';	
+	node_edge_relationship_mapping[8] = quote_ident(edge_table_attribute)||' LIKE !%';	
 	
 	--loop around every node in the node table
 	FOR node_record IN EXECUTE 'SELECT ST_AsText('||quote_ident(node_geometry_column_name)||') AS geom, node_table.'||quote_ident(node_table_attribute)||' as node_table_attribute_value, node_table.* FROM '||quote_ident(node_table_name)||' AS node_table ORDER BY '||quote_ident(node_join_key_column_name)||' ASC' LOOP				
@@ -186,7 +195,8 @@ BEGIN
 		ex_position := 0;
 		node_table_attribute_value := node_record.node_table_attribute_value;		
 		ex_position := position('!' in node_edge_relationship);				
-		perc_position := position('%' in node_edge_relationship);		
+		perc_position := position('%' in node_edge_relationship);	
+
 		--no wildcards, quoting node table attribute value and inserting in to custom sql
 		IF perc_position = 0 THEN	
 			--simply replace the placeholder with the correct quoted node table attribute value
@@ -195,9 +205,10 @@ BEGIN
 			--wildcards present, replace values with node_table_attribute_value
 			pre_ex_char := substring(node_edge_relationship from ex_position-1 for 1);
 			post_ex_char := substring(node_edge_relationship from ex_position+1 for 1);			
+			
 			IF pre_ex_char = '%' AND post_ex_char = '%' THEN
 				node_edge_relationship := overlay(node_edge_relationship placing quote_literal(pre_ex_char||node_table_attribute_value||post_ex_char) from ex_position-1 for 3);
-
+				
 				--need to assume that a user would want to perform a prefix / suffix check at the same time
 				additional_prefix_node_edge_relationship := node_edge_relationship_mapping[node_edge_relationship_proxy+2];
 				additional_suffix_node_edge_relationship := node_edge_relationship_mapping[node_edge_relationship_proxy+4];
@@ -207,6 +218,7 @@ BEGIN
 				additional_suffix_node_edge_relationship := overlay(additional_suffix_node_edge_relationship placing quote_literal(node_table_attribute_value||post_ex_char) from perc_position for 3);
 				
 				node_edge_relationship := node_edge_relationship||' OR '||additional_prefix_node_edge_relationship||' OR '||additional_suffix_node_edge_relationship;				
+				
 			ELSIF pre_ex_char = '%' AND post_ex_char != '%' THEN
 				node_edge_relationship := overlay(node_edge_relationship placing quote_literal(pre_ex_char||node_table_attribute_value) from perc_position for 2);
 			ELSIF post_ex_char = '%' AND pre_ex_char != '%' THEN
@@ -294,8 +306,17 @@ BEGIN
 	--remove the temporary table
 	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);
 	
+	EXECUTE 'SELECT * FROM ni_data_proc_detect_and_combine_duplicate_edges('||quote_literal(edge_table_name)||','||quote_literal(edge_join_key_column_name)||', '||quote_literal(edge_geometry_column_name)||', '||quote_literal(edge_geometry_table_srid)||', '||quote_literal(join_table_name)||', '||quote_literal(output_table_name)||')' INTO unique_table_name;
+	
 	--add the new output join table geometry columns to the geomtry columns table (this has been joined back to the original data)
 	IF add_to_geometry_columns IS TRUE THEN
+	
+		IF unique_table_name != '' THEN	
+			--unique table
+			RAISE NOTICE 'Adding to geometry columns (unique table) - geom';
+			EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(unique_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
+		END IF;
+	
 		RAISE NOTICE 'Adding to geometry columns - geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_table_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
 		
@@ -316,7 +337,7 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_connect_hanging_edges_to_node_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean) OWNER TO postgres; 	
+ALTER FUNCTION ni_data_proc_connect_hanging_edges_to_node_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean) OWNER TO postgres; 	
 	
 	--using SIMILAR TO from http://www.postgresql.org/docs/9.1/static/functions-matching.html
 	--true returned if it matches the "entire" string - this would act as a single function
