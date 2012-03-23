@@ -14,11 +14,11 @@
 	--edge_attribute ILIKE node_attribute% = CASE INSENSITIVE, WITH WILDCARD SUCCEED, MATCH e.g. 6
 	--edge_attribute LIKE node_attribute% = CASE SENSITIVE, WITH WILDCARD SUCCEED, MATCH e.g. 7
 
-	--$1 - prefix of edge table 
+	--$1 - name of edge table 
 	--$2 - edge geometry column name e.g. "geom"
 	--$3 - edge table join key
 	--$4 - edge_table_attribute
-	--$5 - prefix of node table
+	--$5 - name of node table
 	--$6 - node geometry column name e.g. "geom"
 	--$7 - node table primary key
 	--$8 - node_table_attribute
@@ -26,7 +26,7 @@
 	--$10 - output table name (will be suffixed with _join when joined back to the original edge data
 	--$11 - add output to geometry columns (adds default geom column, additional_geom, and additional_combined_geom to geometry columns table)	
 	
-CREATE OR REPLACE FUNCTION ni_connect_nodes_to_nearest_point_on_nearest_edge_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean)
+CREATE OR REPLACE FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean)
 RETURNS SETOF RECORD AS 
 $BODY$
 DECLARE
@@ -155,13 +155,21 @@ DECLARE
 	--to store the combined geometry between node, end_point and the original edge geometry
 	new_combined_edge_geometry_to_end_point text := '';
 	
+	--final unique table of records
+	unique_table_name text := '';
+	
 BEGIN
 
 
+	--do I need to change this so that the input node and edge table names are presumed to NOT be loaded as _Nodes and _Edges and therefore the edge geometry is actually stored in the edge table itself.
+	
 	--create node and edge, edge_geometry table names
-	edge_table_name := edge_table_prefix||edge_table_suffix;	
-	edge_geometry_table_name := edge_table_prefix||edge_geometry_table_suffix;
-	node_table_name := node_table_prefix||node_table_suffix;
+	--edge_table_name := edge_table_prefix||edge_table_suffix;	
+	--edge_geometry_table_name := edge_table_prefix||edge_geometry_table_suffix;
+	--node_table_name := node_table_prefix||node_table_suffix;
+	edge_table_name := edge_table_prefix;
+	edge_geometry_table_name := edge_table_name;
+	node_table_name := node_table_prefix;
 
 	--check the edge table exists
 	EXECUTE 'SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '||quote_literal(edge_table_name) INTO edge_table_exists;
@@ -202,10 +210,10 @@ BEGIN
 	node_edge_relationship_mapping[2] = quote_ident(edge_table_attribute)||' LIKE !';	
 	node_edge_relationship_mapping[3] = quote_ident(edge_table_attribute)||' ILIKE %!%';	
 	node_edge_relationship_mapping[4] = quote_ident(edge_table_attribute)||' LIKE %!%';	
-	--node_edge_relationship_mapping[5] = quote_ident(edge_table_attribute)||' ILIKE %!';	
-	--node_edge_relationship_mapping[6] = quote_ident(edge_table_attribute)||' LIKE %!';	
-	--node_edge_relationship_mapping[7] = quote_ident(edge_table_attribute)||' ILIKE !%';	
-	--node_edge_relationship_mapping[8] = quote_ident(edge_table_attribute)||' LIKE !%';
+	node_edge_relationship_mapping[5] = quote_ident(edge_table_attribute)||' ILIKE %!';	
+	node_edge_relationship_mapping[6] = quote_ident(edge_table_attribute)||' LIKE %!';	
+	node_edge_relationship_mapping[7] = quote_ident(edge_table_attribute)||' ILIKE !%';	
+	node_edge_relationship_mapping[8] = quote_ident(edge_table_attribute)||' LIKE !%';
 	
 	--loop around all the nodes	
 	FOR node_record IN EXECUTE 'SELECT ST_AsText('||quote_ident(node_geometry_column_name)||') AS geom, node_table.'||quote_ident(node_table_attribute)||' as node_table_attribute_value, node_table.* FROM '||quote_ident(node_table_name)||' AS node_table ORDER BY '||quote_ident(node_join_key_column_name)||' ASC' LOOP		
@@ -393,10 +401,19 @@ BEGIN
 	EXECUTE 'DROP TABLE IF EXISTS closest_point_on_edge_ranking_like';
 	
 		--remove the temporary table
-	--EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);
+	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);
+	
+	EXECUTE 'SELECT * FROM ni_data_proc_detect_and_combine_duplicate_edges('||quote_literal(edge_table_name)||','||quote_literal(edge_join_key_column_name)||', '||quote_literal(edge_geometry_column_name)||', '||quote_literal(edge_geometry_table_srid)||', '||quote_literal(join_table_name)||', '||quote_literal(output_table_name)||')' INTO unique_table_name;
 	
 	--add the resultant output table to the geometry columns table(adds references to the original data (geom), additional geometry created linking the edge with the node (additional_geom), additional_combined_geom created as a union of geom and additional_geom
 	IF add_to_geometry_columns IS TRUE THEN
+	
+		IF unique_table_name != '' THEN	
+			--unique table
+			RAISE NOTICE 'Adding to geometry columns (unique table) - geom';
+			EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(unique_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
+		END IF;
+	
 		RAISE NOTICE 'Adding to geometry columns - geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
 		
@@ -415,4 +432,4 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_connect_nodes_to_nearest_point_on_nearest_edge_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean) OWNER TO postgres; 
+ALTER FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean) OWNER TO postgres; 
