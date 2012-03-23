@@ -75,10 +75,11 @@ def main():
     '''
     conn = None
     # Test read data from schema
-    conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"") 
+    #conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"") 
 
-    net = nx_pg.read_pg(conn, 'LightRail_Baseline')
-    
+    #net = nx_pg.read_pg(conn, 'LightRail_Baseline')
+    #net = nx_pgnet(conn).read('LightRail_Baseline')
+    net = nx_pgnet.read(conn).pgnet('LightRail_Baseline')
     # Test to write data to schema
     conn = None
     conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'networks_05032012_v2' user= 'postgres' password="+PGS+"")  

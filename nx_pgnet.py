@@ -206,14 +206,15 @@ import osgeo.ogr as ogr
 # Ask ogr to use Python exceptions rather than stderr messages.
 ogr.UseExceptions()
     
-class net_error:
+class Error(Exception):
     '''Class to handle network IO errors. '''
-    # Error class. To do
-    def __init__(self):
-        pass
+    # Error class. 
+    # Ref:http://en.wikibooks.org/wiki/Python_Programming/Exceptions
     
-    def connection_error(self):
-        pass
+    def __init__(self, value):
+        self.parameter = value
+    def __str__(self):
+        return repr(self.parameter)
     
 
 class nisql:
@@ -225,6 +226,8 @@ class nisql:
     def __init__(self, db_conn):
         '''Setup connection to be inherited by methods.'''
         self.conn = db_conn
+        if self.conn == None:
+            raise Error('No connection to database.')
     
     def create_network_tables(self, prefix, epsg, directed,
         multigraph):
@@ -368,6 +371,9 @@ class read:
     def __init__(self, db_conn):
         '''Setup connection to be inherited by methods.'''
         self.conn = db_conn
+        
+        if self.conn == None:
+            raise Error('No connection to database.')
     
     def getfieldinfo(self, lyr, feature, flds):
         '''Get information about fields from a table (as OGR feature).'''
@@ -495,6 +501,9 @@ class write:
     def __init__(self, db_conn):
         '''Setup connection to be inherited by methods.'''
         self.conn = db_conn
+        
+        if self.conn == None:
+            raise Error('No connection to database.')
 
     def getlayer(self, tablename):
         '''Get a PostGIS table by name and return as OGR layer.

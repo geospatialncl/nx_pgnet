@@ -149,7 +149,17 @@ import networkx as nx
 import osgeo.ogr as ogr
 
 # Ask ogr to use Python exceptions rather than stderr messages.
-##ogr.UseExceptions()
+ogr.UseExceptions()
+
+class Error(Exception):
+    '''Class to handle network IO errors. '''
+    # Error class. 
+    # Ref:http://en.wikibooks.org/wiki/Python_Programming/Exceptions
+    
+    def __init__(self, value):
+        self.parameter = value
+    def __str__(self):
+        return repr(self.parameter)
 
 def getfieldinfo(lyr, feature, flds):
     '''Get information about fields from a table (as OGR feature).'''
@@ -161,7 +171,9 @@ def read_pg(conn, tablename):
     '''Read a network from PostGIS tables of line geometry. 
         
         Returns instance of networkx.Graph().'''    
-        
+   if self.conn == None:
+            raise Error('No connection to database.')
+            
     # Create Directed graph to store output  
     net = nx.DiGraph()
     # Empty attributes dict
@@ -245,7 +257,9 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
     '''Write NetworkX instance to PostGIS edge and node tables.
     
     '''    
-    
+    if self.conn == None:
+        raise Error('No connection to database.')
+        
     G = network
     tbledges = tablename_prefix+'_edges'
     tblnodes = tablename_prefix+'_nodes'
