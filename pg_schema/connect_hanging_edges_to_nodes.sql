@@ -1,17 +1,17 @@
 ﻿--TODO - auto-determine the SRID for geometry in the nodes and edge_geometry tables
 
 --connects the geometry of an edge from edge_geometry within the specified search distance of the nodes from the input node table (edge end)
---$1 - prefix of edge table 
+--$1 - name of edge table
 --$2 - edge geometry column name e.g. "geom"
 --$3 - edge table join key
---$4 - prefix of node table
+--$4 - name of node table
 --$5 - node geometry column name e.g. "geom"
 --$6 - node table primary key
 --$7 - output table name (will be suffixed with _join when joined back to the original edge data
 --$8 - add output to geometry columns (adds default geom column, additional_geom, and additional_combined_geom to geometry columns table)
 --$9 - search distance (m)
 
-CREATE OR REPLACE FUNCTION ni_connect_hanging_edges_to_nodes(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric)
+CREATE OR REPLACE FUNCTION ni_data_proc_connect_hanging_edges_to_nodes_in_search(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric)
 RETURNS SETOF RECORD AS 
 $BODY$
 DECLARE
@@ -86,27 +86,33 @@ DECLARE
 	join_table_name varchar := '';
 	join_table_suffix varchar := '_join';
 	
+	--final unique table of records
+	unique_table_name text := '';
+	
 BEGIN
 
+	--do I need to change this so that the input node and edge table names are presumed to NOT be loaded as _Nodes and _Edges and therefore the edge geometry is actually stored in the edge table itself.
+	
 	--create node and edge, edge_geometry table names
-	edge_table_name := edge_table_prefix||edge_table_suffix;	
-	edge_geometry_table_name := edge_table_prefix||edge_geometry_table_suffix;
-	node_table_name := node_table_prefix||node_table_suffix;
+	--edge_table_name := edge_table_prefix||edge_table_suffix;	
+	--edge_geometry_table_name := edge_table_prefix||edge_geometry_table_suffix;
+	--node_table_name := node_table_prefix||node_table_suffix;
+	edge_table_name := edge_table_prefix;
+	edge_geometry_table_name := edge_table_name;
+	node_table_name := node_table_prefix;
 	
 	--check the edge table exists
 	EXECUTE 'SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '||quote_literal(edge_table_name) INTO edge_table_exists;
 	--check the edge_geometry table exists
 	EXECUTE 'SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '||quote_literal(edge_geometry_table_name)  INTO edge_geometry_table_exists;
 	--check the node table exists
-	EXECUTE 'SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '||quote_literal(node_table_name)  INTO node_table_exists;
+	EXECUTE 'SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '||quote_literal(node_table_name) INTO node_table_exists;
 	
 	--raise exception if the tables do not exist or there are multiple tables of same name
 	IF edge_table_exists <> 1 OR edge_geometry_table_exists <> 1 OR node_table_exists <> 1 THEN
 		--there are either duplicates of the same name or the table does not exist
 		RAISE EXCEPTION 'Either the edge table, corresponding edge_geometry table or the node table specified do not exist in the current database.';
 	END IF;
-	
-	
 	
 	--drop the previous temporary output table
 	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);	
@@ -176,14 +182,14 @@ BEGIN
 			END IF;
 		END LOOP;
 	END LOOP;
-	
+
 	--create the new join table name as a combination of the join suffix and supplied output table name
 	join_table_name := output_table_name||join_table_suffix;
 	
 	--drop the join table
 	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(join_table_name);
 	
-	--create the new join table
+	--create the new join table between the edge table and the generated output table based on key matches
 	EXECUTE 'CREATE TABLE '||quote_ident(join_table_name)||' AS SELECT * FROM '||quote_ident(edge_table_name)||' LEFT OUTER JOIN '||quote_ident(output_table_name)||' ON ('||quote_ident(edge_table_name)||'.'||quote_ident(edge_join_key_column_name)||' = '||quote_ident(output_table_name)||'.gid_copy)';
 	
 	--add a comment stating what function was used to create the output table
@@ -208,13 +214,23 @@ BEGIN
 	--remove the gid_copy column from the join table
 	EXECUTE 'ALTER TABLE '||quote_ident(join_table_name)||' DROP COLUMN gid_copy';
 	
-	--remove the temporary table
+	--remove the temporary output table
 	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);
 	
-	--add the new output join table geometry columns to the geomtry columns table (this has been joined back to the original data)
+	EXECUTE 'SELECT * FROM ni_data_proc_detect_and_combine_duplicate_edges('||quote_literal(edge_table_name)||','||quote_literal(edge_join_key_column_name)||', '||quote_literal(edge_geometry_column_name)||', '||quote_literal(edge_geometry_table_srid)||', '||quote_literal(join_table_name)||', '||quote_literal(output_table_name)||')' INTO unique_table_name;
+	
+	--add the new output join table and unique edges records table geometry columns to the geomtry columns table (this has been joined back to the original data)
 	IF add_to_geometry_columns IS TRUE THEN
+		
+		IF unique_table_name != '' THEN	
+			--unique table
+			RAISE NOTICE 'Adding to geometry columns (unique table) - geom';
+			EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(unique_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
+		END IF;
+		
+		--join table
 		RAISE NOTICE 'Adding to geometry columns - geom';
-		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_table_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
+		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
 		
 		RAISE NOTICE 'Adding to geometry columns - connection_point_geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||',''connection_point_geom'','||dims||','||node_table_srid||', '||quote_literal(node_geometry_type)||')';
@@ -233,4 +249,4 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_connect_hanging_edges_to_nodes(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric) OWNER TO postgres; 
+ALTER FUNCTION ni_data_proc_connect_hanging_edges_to_nodes_in_search(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric) OWNER TO postgres; 
