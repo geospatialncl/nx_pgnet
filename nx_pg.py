@@ -239,7 +239,7 @@ def read_pg(conn, edgetable, nodetable=None):
         else:
             flddata = getfieldinfo(lyr, f, flds )
             attributes = dict(zip(flds, flddata))
-            attributes["TableName"] = lyr.GetName()
+            ##attributes["TableName"] = lyr.GetName()
             # Get the geometry for that feature
             geom = f.GetGeometryRef()
             #print geom
