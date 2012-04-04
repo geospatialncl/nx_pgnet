@@ -477,7 +477,7 @@ class read:
         # Get graph attributes
         graph_attrs = self.graph_table(self.prefix)
         if graph_attrs == None:
-            raise Error("Error: Can't find network in Graph table")
+            raise Error("Can't find network in Graph table")
         # Create empty graph (directed/un-directed)
         if graph_attrs['Directed'] == 0:
             G = nx.Graph()
@@ -678,8 +678,7 @@ class write:
                 nisql(self.conn).create_network_tables(self.prefix, self.srs, 
                                                         directed, multigraph)
             else:
-                print 'Network already exists, will now exit.'
-                exit(0)
+                raise Error('Network already exists.')
 
         G = network # Use G as network, networkx convention.
         
