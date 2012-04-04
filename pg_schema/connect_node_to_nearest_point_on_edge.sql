@@ -113,6 +113,8 @@ DECLARE
 	--final unique table of records
 	unique_table_name text := '';
 	
+	--search_radius buffer
+	buffer_geom text := '';
 BEGIN
 
 	--do I need to change this so that the input node and edge table names are presumed to NOT be loaded as _Nodes and _Edges and therefore the edge geometry is actually stored in the edge table itself.
@@ -144,7 +146,7 @@ BEGIN
 	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);	
 	--create the output table of given name based on the attributes and columns found in the edge_geometry table
 	--create a temporary table to store the new derived and combined geometry
-	EXECUTE 'CREATE TEMP TABLE '||quote_ident(output_table_name)||' (gid_copy integer, connection_point_geom geometry, node_to_point_distance numeric, additional_geom geometry, additional_combined_geom geometry)';
+	EXECUTE 'CREATE TEMP TABLE '||quote_ident(output_table_name)||' (gid_copy integer, connection_point_geom geometry, additional_geom geometry, additional_combined_geom geometry, node_to_point_distance numeric)';
 	
 	--add geometry checks for the connection point geometry to the temporary table (connection_point_geom)
 	EXECUTE 'ALTER TABLE '||quote_ident(output_table_name)||' ADD CONSTRAINT "enforce_srid_connection_point_geom" CHECK (st_srid(connection_point_geom) = '||edge_geometry_table_srid||')';
@@ -160,43 +162,50 @@ BEGIN
 
 	--loop around all the nodes
 	FOR node_record IN EXECUTE 'SELECT ST_AsText('||quote_ident(node_geometry_column_name)||') AS geom, node_table.* FROM '||quote_ident(node_table_name)||' AS node_table' LOOP		
-	
+		
 		--loop around all the edges (geometries)		
-		FOR edge_geometry_record IN EXECUTE 'SELECT ST_AsText('||quote_ident(edge_geometry_column_name)||') AS geom, ST_NumGeometries('||quote_ident(edge_geometry_column_name)||') as edge_geom_count, edge_geometry_table.'||quote_ident(edge_join_key_column_name)||' as gid, edge_geometry_table.* FROM '||quote_ident(edge_geometry_table_name)||' AS edge_geometry_table ORDER BY '||quote_ident(edge_join_key_column_name)||' ASC' LOOP
-						
+		
+		--create a buffer around the node
+		EXECUTE 'SELECT ST_Buffer(ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'), '||search_distance||', ''quad_segs=8'')' INTO buffer_geom;
+		
+		--select only edges that intersect this buffer
+		FOR edge_geometry_record IN EXECUTE 'SELECT ST_AsText('||quote_ident(edge_geometry_column_name)||') AS geom, ST_NumGeometries('||quote_ident(edge_geometry_column_name)||') as edge_geom_count, edge_geometry_table.'||quote_ident(edge_join_key_column_name)||' as gid, edge_geometry_table.* FROM '||quote_ident(edge_geometry_table_name)||' AS edge_geometry_table WHERE ST_Intersects('||quote_ident(edge_geometry_column_name)||',ST_GeomFromText('||quote_literal(buffer_geom)||', '||node_table_srid||'))  ORDER BY '||quote_ident(edge_join_key_column_name)||' ASC' LOOP		
+					
 			--single geometry stored e.g. linestring or multilinestring with only one linestring
-			IF edge_geometry_record.edge_geom_count = 1 THEN
-				
+			--IF edge_geometry_record.edge_geom_count = 1 THEN
+			IF (edge_geometry_record.edge_geom_count IS NULL) OR (edge_geometry_record.edge_geom_count = 1) THEN	
 				--get the first geometry (as there is only one geometry within the multilinestring)
-				EXECUTE 'SELECT ST_AsText(ST_GeometryN(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), 1))' INTO edge_geom;				
+				--EXECUTE 'SELECT ST_AsText(ST_GeometryN(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), 1))' INTO edge_geom;				
 				
 				--reset the locate point result to 0
 				st_line_locate_point_result := 0;
 				
 				--interpolate along the current edge, at what fraction of the total length does the node lie at
-				EXECUTE 'SELECT ST_Line_Locate_Point(ST_GeomFromText('||quote_literal(edge_geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'))' INTO st_line_locate_point_result;				
+				EXECUTE 'SELECT ST_Line_Locate_Point(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'))' INTO st_line_locate_point_result;				
 				
 				--create a point on the edge, based on the fraction calculated in st_line_locate_point_result
-				EXECUTE 'SELECT AsText(ST_Line_Interpolate_Point(ST_GeomFromText('||quote_literal(edge_geom)||', '||edge_geometry_table_srid||'), '||st_line_locate_point_result||'))' INTO st_line_interpolate_point_result;
+				EXECUTE 'SELECT AsText(ST_Line_Interpolate_Point(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), '||st_line_locate_point_result||'))' INTO st_line_interpolate_point_result;
 				
 				--calculate the distance between the newly created point (on the edge) and the node in question
 				EXECUTE 'SELECT ST_Distance(ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'))' INTO point_to_node_distance;
 				
 				--dealing with a single linestring within a multilinestring means that the nearest point found could be an edge end, or somewhere along the edge, therefore we do not need to calculate the distances to the start / end points
-				IF point_to_node_distance <= search_distance THEN
+				
+				IF (point_to_node_distance <= search_distance) THEN
 				
 					--create a line that links the node with the interpolated point on the line (additional_geom in output table)
 					EXECUTE 'SELECT ST_AsText(ST_MakeLine(ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||edge_geometry_table_srid||')))' INTO new_edge_geometry;
 					
 					--create a line that combines the original edge geometry with the newly derived geometry (additional_combined_geom in the output table)
-					EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry;
+					EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry;
 					
 					--insert a record in to the output table 
 					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| '(gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||point_to_node_distance||', ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', '||edge_geometry_table_srid||'))';
 				END IF;
 				
-			ELSIF edge_geometry_record.edge_geom_count > 1 THEN
-				
+			--ELSIF edge_geometry_record.edge_geom_count > 1 THEN
+			ELSIF (edge_geometry_record.edge_geom_count IS NOT NULL) OR (edge_geometry_record.edge_geom_count > 1) THEN
+								
 				--remove the temporary table
 				EXECUTE 'DROP TABLE IF EXISTS closest_point_on_edge_ranking ';
 				--create a temp table to store the ranked values on linestring
@@ -210,18 +219,18 @@ BEGIN
 				
 					--get the current geometry whilst looping all linestrings of multilinestring
 					EXECUTE 'SELECT ST_AsText(ST_GeometryN(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), '||line_string_geom_counter||')) as edge_linestring_geom' INTO edge_geometry_linestring_record;
-					
+						
 					--find the start point of the current line string geometry
 					EXECUTE 'SELECT ST_AsText(ST_StartPoint(ST_GeomFromText('||quote_literal(edge_geometry_linestring_record.edge_linestring_geom)||', '||edge_geometry_table_srid||')))' INTO edge_start_point;
-					
+										
 					--find the end point of the current line string geometry
 					EXECUTE 'SELECT ST_AsText(ST_EndPoint(ST_GeomFromText('||quote_literal(edge_geometry_linestring_record.edge_linestring_geom)||', '||edge_geometry_table_srid||')))' INTO edge_end_point;
-					
+										
 					--calculate distance between node and the start point of the chosen edge
-					EXECUTE 'SELECT ST_Distance(ST_GeomFromText('||quote_literal(edge_start_point)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'))' INTO distance_to_start_point;
+					EXECUTE 'SELECT ST_Distance(ST_GeomFromText('||quote_literal(edge_start_point)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'))' INTO distance_to_start_point;					
 					
 					--calculate distance between node and the end point of the chosen edge
-					EXECUTE 'SELECT ST_Distance(ST_GeomFromText('||quote_literal(edge_end_point)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'))' INTO distance_to_end_point;
+					EXECUTE 'SELECT ST_Distance(ST_GeomFromText('||quote_literal(edge_end_point)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'))' INTO distance_to_end_point;					
 					
 					--find a point on the line based on the linestring geometry and the chosen node					
 					st_line_locate_point_result := 0;
@@ -229,40 +238,48 @@ BEGIN
 					EXECUTE 'SELECT ST_Line_Locate_Point(ST_GeomFromText('||quote_literal(edge_geometry_linestring_record.edge_linestring_geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'))' INTO st_line_locate_point_result;
 					
 					--create a point based on the fraction returned by ST_Line_Locate_Point
-					EXECUTE 'SELECT AsText(ST_Line_Interpolate_Point(ST_GeomFromText('||quote_literal(edge_geom)||', '||edge_geometry_table_srid||'), '||st_line_locate_point_result||'))' INTO st_line_interpolate_point_result;
-										
+					--EXECUTE 'SELECT AsText(ST_Line_Interpolate_Point(ST_GeomFromText('||quote_literal(edge_geom)||', '||edge_geometry_table_srid||'), '||st_line_locate_point_result||'))' INTO st_line_interpolate_point_result;
+					EXECUTE 'SELECT AsText(ST_Line_Interpolate_Point(ST_GeomFromText('||quote_literal(edge_geometry_linestring_record.edge_linestring_geom)||', '||edge_geometry_table_srid||'), '||st_line_locate_point_result||'))' INTO st_line_interpolate_point_result;
+					
 					--calculate the distance between this newly created point and the chosen node
 					EXECUTE 'SELECT ST_Distance(ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'))' INTO point_to_node_distance;
 					
-					--create a new line
-					EXECUTE 'SELECT ST_AsText(ST_MakeLine(ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||edge_geometry_table_srid||')))' INTO new_edge_geometry;
+										
+					IF (point_to_node_distance <= distance_to_start_point) AND (distance_to_start_point <= distance_to_end_point) AND (point_to_node_distance <= search_distance) THEN
 					
-					--create a new line (between the edge start point) and the node in question
-					EXECUTE 'SELECT ST_AsText(ST_MakeLine(ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(edge_start_point)||', '||edge_geometry_table_srid||')))' INTO new_edge_to_start_point_geometry;
+						--create a new line
+						EXECUTE 'SELECT ST_AsText(ST_MakeLine(ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||edge_geometry_table_srid||')))' INTO new_edge_geometry;
+						
+						--create a line that combines the original edge geometry with the newly derived geometry (additional_combined_geom in the output table)
+						EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry;
+						
+						--add the newly created values 					
+						EXECUTE 'INSERT INTO closest_point_on_edge_ranking (gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||point_to_node_distance||', ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', 27700), ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', 27700))';	
+						
+					ELSIF (distance_to_start_point <= distance_to_end_point) AND (distance_to_end_point <= point_to_node_distance) AND (distance_to_start_point <= search_distance) THEN
+						
+						--create a new line (between the edge start point) and the node in question
+						EXECUTE 'SELECT ST_AsText(ST_MakeLine(ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(edge_start_point)||', '||edge_geometry_table_srid||')))' INTO new_edge_to_start_point_geometry;
+						
+						--create a line that combines the original edge geometry with the newly derived geometry (to the start point of the edge)
+						EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_to_start_point_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry_to_start_point;
+						
+						--add the newly created values (for the start point)
+						EXECUTE 'INSERT INTO closest_point_on_edge_ranking (gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||distance_to_start_point||', ST_GeomFromText('||quote_literal(edge_start_point)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_to_start_point_geometry)||', 27700), ST_GeomFromText('||quote_literal(new_combined_edge_geometry_to_start_point)||', 27700))';	
+						
+					ELSIF (distance_to_end_point <= distance_to_start_point) AND (distance_to_start_point <= point_to_node_distance) AND (distance_to_end_point <= search_distance) THEN
+						
+						--create a new line (between the edge end point) and the node in question
+						EXECUTE 'SELECT ST_AsText(ST_MakeLine(ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(edge_end_point)||', '||edge_geometry_table_srid||')))' INTO new_edge_to_end_point_geometry;
 					
-					--create a new line (between the edge end point) and the node in question
-					EXECUTE 'SELECT ST_AsText(ST_MakeLine(ST_GeomFromText('||quote_literal(node_record.geom)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(edge_end_point)||', '||edge_geometry_table_srid||')))' INTO new_edge_to_end_point_geometry;
+						--create a line that combines the original edge geometry with the newly derived geometry (to the end point of the edge)
+						EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_to_end_point_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry_to_end_point;
 					
-					--create a line that combines the original edge geometry with the newly derived geometry (additional_combined_geom in the output table)
-					EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry;
+						--add the newly created values (for the end point)
+						EXECUTE 'INSERT INTO closest_point_on_edge_ranking (gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||distance_to_end_point||', ST_GeomFromText('||quote_literal(edge_end_point)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_to_end_point_geometry)||', 27700), ST_GeomFromText('||quote_literal(new_combined_edge_geometry_to_end_point)||', 27700))';
 					
-					--create a line that combines the original edge geometry with the newly derived geometry (to the start point of the edge)
-					EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_to_start_point_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry_to_start_point;
-					
-					--create a line that combines the original edge geometry with the newly derived geometry (to the end point of the edge)
-					EXECUTE 'SELECT ST_AsText(ST_Union(ST_GeomFromText('||quote_literal(edge_geometry_record.geom)||', '||edge_geometry_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_to_end_point_geometry)||', '||edge_geometry_table_srid||')))' INTO new_combined_edge_geometry_to_end_point;
-					
-					
-					
-					--add the newly created values 					
-					EXECUTE 'INSERT INTO closest_point_on_edge_ranking (gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||point_to_node_distance||', ST_GeomFromText('||quote_literal(st_line_interpolate_point_result)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_geometry)||', 27700), ST_GeomFromText('||quote_literal(new_combined_edge_geometry)||', 27700))';	
-					
-					--add the newly created values (for the start point)
-					EXECUTE 'INSERT INTO closest_point_on_edge_ranking (gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||distance_to_start_point||', ST_GeomFromText('||quote_literal(edge_start_point)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_to_start_point_geometry)||', 27700), ST_GeomFromText('||quote_literal(new_combined_edge_geometry_to_start_point)||', 27700))';	
-					
-					--add the newly created values (for the end point)
-					EXECUTE 'INSERT INTO closest_point_on_edge_ranking (gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||', '||distance_to_end_point||', ST_GeomFromText('||quote_literal(edge_end_point)||', '||node_table_srid||'), ST_GeomFromText('||quote_literal(new_edge_to_end_point_geometry)||', 27700), ST_GeomFromText('||quote_literal(new_combined_edge_geometry_to_end_point)||', 27700))';	
-					
+					END IF;
+												
 					line_string_geom_counter := line_string_geom_counter + 1;
 				END LOOP;
 				
@@ -272,12 +289,9 @@ BEGIN
 					
 					EXECUTE 'INSERT INTO '||quote_ident(output_table_name)|| ' (gid_copy, node_to_point_distance, connection_point_geom, additional_geom, additional_combined_geom) VALUES ('||edge_geometry_record.gid||','||closest_point_on_edge_ranking_record.node_to_point_distance||', ST_GeomFromText('||quote_literal(closest_point_on_edge_ranking_record.connection_point_geom)||','||node_table_srid||'), ST_GeomFromText('||quote_literal(closest_point_on_edge_ranking_record.additional_geom)||', 27700), ST_GeomFromText('||quote_literal(closest_point_on_edge_ranking_record.additional_combined_geom)||', 27700))';
 					
-				END LOOP;
-				
-				
+				END LOOP;				
 			END IF;		
-		END LOOP;
-	
+		END LOOP;	
 	END LOOP;
 		
 	--create the new join table name as a combination of the join suffix and supplied output table name
@@ -327,8 +341,7 @@ BEGIN
 			RAISE NOTICE 'Adding to geometry columns (unique table) - geom';
 			EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(unique_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
 		END IF;
-	
-	
+		
 		RAISE NOTICE 'Adding to geometry columns - geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||','||quote_literal(edge_geometry_column_name)||','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';
 		
@@ -341,7 +354,7 @@ BEGIN
 		RAISE NOTICE 'Adding to geometry columns - additional_combined_geom';
 		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(join_table_name)||', '''', '||quote_literal(schema_name)||',''additional_combined_geom'','||dims||','||edge_geometry_table_srid||', '||quote_literal(edge_geometry_type)||')';		
 	END IF;	
-	RAISE NOTICE 'execute select all from output table';
+	RAISE NOTICE 'Returning records';
 	RETURN QUERY EXECUTE 'SELECT * FROM '||quote_ident(join_table_name);
 END;
 $BODY$
