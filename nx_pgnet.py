@@ -490,8 +490,7 @@ class read:
         
         self.pgnet_edges(G)
         self.pgnet_nodes(G)
-        print G.node[1]
-        print G.node[2]
+
         return G
 
 class write:
