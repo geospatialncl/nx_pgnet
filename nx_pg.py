@@ -206,18 +206,18 @@ def read_pg(conn, edgetable, nodetable=None):
     # Create temporary node storage if needed.
     if nodetable is not None:
         nodes = {}
-        for lyr in conn:
-            if lyr.GetName() == nodetable:
-                flds = [x.GetName() for x in lyr.schema]
+        for nlyr in conn:
+            if nlyr.GetName() == nodetable:
+                flds = [x.GetName() for x in nlyr.schema]
                 # Get the number of features in the layer
-                for findex in xrange(lyr.GetFeatureCount()):
+                for findex in xrange(nlyr.GetFeatureCount()):
                     # Get a specific feature
-                    f = lyr.GetFeature(findex+1)
+                    f = nlyr.GetFeature(findex+1)
                     if f is None:
                         pass # Catch any returned features which are None. 
                         #Raise warning?
                     else:
-                        flddata = getfieldinfo(lyr, f, flds )
+                        flddata = getfieldinfo(nlyr, f, flds )
                         attributes = dict(zip(flds, flddata))
                         # Get the geometry for that feature
                         geom = f.GetGeometryRef()
@@ -278,7 +278,7 @@ def read_pg(conn, edgetable, nodetable=None):
                 
                 # Create the edge and nodes in the network
                 net.add_edge(nodef, nodet, attributes)
-
+                ###print attributes # table name here.
                 if nodetable is not None:
                     # Check if the nodes exist in the nodes table                                    
                     for node, attrs in nodes.iteritems():

@@ -420,8 +420,7 @@ class read:
                     n = geom.GetPointCount()
                     attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
                     attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
-                    attributes["Json"] = ogr.Geometry.ExportToJson(
-                                                                geom) 
+                    attributes["Json"] = ogr.Geometry.ExportToJson(geom) 
                     graph.add_edge(attributes['Node_F_ID'], 
                                      attributes['Node_T_ID'], attributes)
     
