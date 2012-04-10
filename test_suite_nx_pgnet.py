@@ -9,7 +9,9 @@ Contains main function tests  (moved from nx_pg_ncl.py)
 __author__ = "Tom Holderness"
 __created__ = "Mon Jan 30 14:32:38 2012"
 __version__ = "1.0"
-
+import sys
+sys.path.append('/home/a5245228/bin/python/postgres')
+sys.path.append('/home/a5245228/bin/python/IAM/network/nx_pg/')
 import nx_pg
 import nx_pgnet
 import nx_pgnet_sql
@@ -78,9 +80,12 @@ def main():
     conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"") 
 
     #net = nx_pg.read_pg(conn, 'LightRail_Baseline', 'LightRail_Baseline_Stations')
-    net = nx_pg.read_pg(conn, 'LightRail_Baseline')
-    
-    print net.edges(data=True)
+    net = nx_pgnet.read(conn).pgnet('LightRail_Baseline_Wards')
+    print 'read'
+    print 'writing'
+    nx_pgnet.write(conn).pgnet(net, 'LightRail_Baseline_Three', 27700, overwrite=True)
+    print 'written'
+    #print net.edges(data=True)
     #print net.nodes(data=True)
     # Test to write data to schema
     
