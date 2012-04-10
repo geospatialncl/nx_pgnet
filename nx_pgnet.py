@@ -202,6 +202,7 @@ __license__ = 'BSD style. See LICENSE.TXT'
 
 import networkx as nx
 import osgeo.ogr as ogr
+import osgeo.gdal as gdal
 
 # Ask ogr to use Python exceptions rather than stderr messages.
 ogr.UseExceptions()
@@ -588,6 +589,7 @@ class write:
         
     def pgnet_edge(self, edge_attributes, edge_geom):
         '''Write an edge to Edge and Edge_Geometry tables.'''
+        ##print "pg net edge"
         edge_wkt = edge_geom.ExportToWkt()
         # Get table definitions        
         featedge = ogr.Feature(self.lyredges.GetLayerDefn())
@@ -596,12 +598,14 @@ class write:
         # Test for geometry existance       
         GeomID = nisql(self.conn).edge_geometry_equaility_check(self.prefix, 
                         edge_wkt, self.srs)
+        ##print 'tested for geom equality'                
         if GeomID == None: # Need to create new geometry:
-            
+            ##print 'setting geom'
             featedge_geom.SetGeometry(edge_geom)
             
             ##for field, data in edge_attributes.iteritems():
              ##   featedge_geom.SetField(field, data)
+            ##print 'creating feature'
             self.lyredge_geom.CreateFeature(featedge_geom)
             #Get created edge_geom primary key (GeomID)
             sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;'
@@ -613,10 +617,13 @@ class write:
         edge_attributes['Edge_GeomID'] = GeomID
         
         #Attributes to edges table
-        for field, data in edge_attributes.iteritems():
+        ##for field, data in edge_attributes.iteritems():
+        for field, data in edge_attributes.items():    
             featedge.SetField(field, data)
+        ##print 'set fields, now creating'
+        gdal.SetConfigOption('PG_USE_COPY','YES')
         self.lyredges.CreateFeature(featedge)
-        
+        gdal.SetConfigOption('PG_USE_COPY','NO')
     def pgnet_node(self, node_attributes, node_geom):
         '''Write a node to a Node table.
         
