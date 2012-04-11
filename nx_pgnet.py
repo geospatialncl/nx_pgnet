@@ -202,6 +202,7 @@ __license__ = 'BSD style. See LICENSE.TXT'
 
 import networkx as nx
 import osgeo.ogr as ogr
+import osgeo.gdal as gdal
 
 # Ask ogr to use Python exceptions rather than stderr messages.
 ogr.UseExceptions()
@@ -382,78 +383,69 @@ class read:
 
     def pgnet_edges(self, graph):
         '''Reads edges from edge and edge_geometry tables and add to graph.'''
-        
+
         # Join Edges and Edge_Geom
         edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
         # Get lyr by name
-        #edge_tbl_view = "lightrail_baseline_edges_view"
         lyr = self.conn.GetLayerByName(edge_tbl_view)
+        # Get current feature        
+        feat = lyr.GetNextFeature()
         # Get fields
         flds = [x.GetName() for x in lyr.schema]
-        # Get the number of features in the layer
-        for findex in xrange(lyr.GetFeatureCount()):
-            # Get a specific feature
-            f = lyr.GetFeature(findex+1)
-            if f is None:
-                pass # Catch any returned features which are None. 
-            else:
-                # Read edge attrs.
-                flddata = self.getfieldinfo(lyr, f, flds)
-                attributes = dict(zip(flds, flddata))
-                #attributes['network'] = network_name
-                geom = f.GetGeometryRef()
-                # Multiline geometry so split into line segments
-                if (ogr.Geometry.GetGeometryName(geom) ==
-                    'MULTILINESTRING'):
-                    for line in geom:
-                        # Get points in line
-                        n = line.GetPointCount()
-                        # Get the attributes (akin to nx_shp)
-                        attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
-                        attributes["Wkt"] = ogr.Geometry.ExportToWkt(line)
-                        attributes["Json"] = ogr.Geometry.ExportToJson(line)
-                        graph.add_edge(attributes['Node_F_ID'], 
-                                     attributes['Node_T_ID'], attributes)
-                # Line geometry
-                elif (ogr.Geometry.GetGeometryName(geom) ==
-                    'LINESTRING'):
-                    n = geom.GetPointCount()
-                    attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
-                    attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
-                    attributes["Json"] = ogr.Geometry.ExportToJson(geom) 
+        # Loop features
+        while feat is not None:
+            # Read edge attrs.
+            flddata = self.getfieldinfo(lyr, feat, flds)
+            attributes = dict(zip(flds, flddata))
+            #attributes['network'] = network_name
+            geom = feat.GetGeometryRef()
+            # Multiline geometry so split into line segments
+            if (ogr.Geometry.GetGeometryName(geom) ==
+                'MULTILINESTRING'):
+                for line in geom:
+                    # Get points in line
+                    n = line.GetPointCount()
+                    # Get the attributes (akin to nx_shp)
+                    attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
+                    attributes["Wkt"] = ogr.Geometry.ExportToWkt(line)
+                    attributes["Json"] = ogr.Geometry.ExportToJson(line)
                     graph.add_edge(attributes['Node_F_ID'], 
-                                     attributes['Node_T_ID'], attributes)
-    
+                                 attributes['Node_T_ID'], attributes)
+            # Line geometry
+            elif (ogr.Geometry.GetGeometryName(geom) ==
+                'LINESTRING'):
+                n = geom.GetPointCount()
+                attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
+                attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
+                attributes["Json"] = ogr.Geometry.ExportToJson(geom) 
+                graph.add_edge(attributes['Node_F_ID'], 
+                                 attributes['Node_T_ID'], attributes)
+            feat = lyr.GetNextFeature() 
+            
     def pgnet_nodes(self, graph):
         '''Reads nodes from node table and add to graph.'''
-        
+
         # Join Edges and Edge_Geom
         node_tbl = nisql(self.conn).create_node_view(self.prefix)
-        ##edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
         # Get lyr by name
-        #node_tbl = "LightRail_Baseline_Nodes"
         lyr = self.conn.GetLayerByName(node_tbl)
         # Get fields
         flds = [x.GetName() for x in lyr.schema]
-        # Get the number of features in the layer
-        for findex in xrange(lyr.GetFeatureCount()):
-            # Get a specific feature
-            #f = lyr.GetFeature(findex+1)
-            #print 'findex',findex
-            f = lyr.GetFeature(findex)
-            if f is None:
-                pass # Catch any returned features which are None. 
-            else:
-                # Read node attrs.
-                flddata = self.getfieldinfo(lyr, f, flds)
-                attributes = dict(zip(flds, flddata))
-                #attributes['network'] = network_name
-                geom = f.GetGeometryRef()
-                ##if geom != None:
-                attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
-                attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
-                graph.add_node((attributes['NodeID']), attributes)
-     
+        # Get current feature
+        feat = lyr.GetNextFeature()
+        # Loop features
+        while feat is not None:
+            # Read node attrs.
+            flddata = self.getfieldinfo(lyr, feat, flds)
+            attributes = dict(zip(flds, flddata))
+            #attributes['network'] = network_name
+            geom = feat.GetGeometryRef()
+            ##if geom != None:
+            attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
+            attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
+            graph.add_node((attributes['NodeID']), attributes)
+            feat = lyr.GetNextFeature()
+        
     def graph_table(self, prefix):
         '''Reads the attributes of a graph from the graph table. 
         
@@ -596,6 +588,7 @@ class write:
         
     def pgnet_edge(self, edge_attributes, edge_geom):
         '''Write an edge to Edge and Edge_Geometry tables.'''
+        ##print "pg net edge"
         edge_wkt = edge_geom.ExportToWkt()
         # Get table definitions        
         featedge = ogr.Feature(self.lyredges.GetLayerDefn())
@@ -604,12 +597,14 @@ class write:
         # Test for geometry existance       
         GeomID = nisql(self.conn).edge_geometry_equaility_check(self.prefix, 
                         edge_wkt, self.srs)
+        ##print 'tested for geom equality'                
         if GeomID == None: # Need to create new geometry:
-            
+            ##print 'setting geom'
             featedge_geom.SetGeometry(edge_geom)
             
             ##for field, data in edge_attributes.iteritems():
              ##   featedge_geom.SetField(field, data)
+            ##print 'creating feature'
             self.lyredge_geom.CreateFeature(featedge_geom)
             #Get created edge_geom primary key (GeomID)
             sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;'
@@ -621,8 +616,10 @@ class write:
         edge_attributes['Edge_GeomID'] = GeomID
         
         #Attributes to edges table
-        for field, data in edge_attributes.iteritems():
+        ##for field, data in edge_attributes.iteritems():
+        for field, data in edge_attributes.items():    
             featedge.SetField(field, data)
+
         self.lyredges.CreateFeature(featedge)
         
     def pgnet_node(self, node_attributes, node_geom):
@@ -682,8 +679,7 @@ class write:
         
         graph_id = self.update_graph_table(network)     
         if graph_id == None:
-            print 'GraphID not pulled from Graphs table, will now exit.'
-            exit(1)
+            raise Error('Could not load network from Graphs table.')
         
         self.lyredges = self.getlayer(self.tbledges)
         self.lyrnodes = self.getlayer(self.tblnodes)

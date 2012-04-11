@@ -17,6 +17,7 @@ import nx_pgnet
 import nx_pgnet_sql
 import pggkgetpass as gp
 import osgeo.ogr as ogr
+import osgeo.gdal as gdal
 
 # Get database password from gnomekeyring (for development purposes only).
 # REF: http://www.students.ncl.ac.uk/tom.holderness/pythongnomekeyring.php
@@ -76,22 +77,21 @@ def main():
     nx_pgnet.write(conn).pgnet(net, 'LightRail_Baseline3', 27700, overwrite=True)
     '''
     conn = None
+    gdal.SetConfigOption('PG_USE_COPY', 'NO')
     # Test read data from schema
     conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"") 
 
     #net = nx_pg.read_pg(conn, 'LightRail_Baseline', 'LightRail_Baseline_Stations')
+    ##net = nx_pg.read_pg(conn, 'LightRail_Baseline')
     net = nx_pgnet.read(conn).pgnet('LightRail_Baseline_Wards')
     print 'read'
-    print 'writing'
-    nx_pgnet.write(conn).pgnet(net, 'LightRail_Baseline_Three', 27700, overwrite=True)
-    print 'written'
-    #print net.edges(data=True)
+    ##print net.edges(data=True)
     #print net.nodes(data=True)
     # Test to write data to schema
     
     ##conn = ogr.Open("PG: host='ceg-tyndall' dbname = 'tyndall_data' user= 'postgres' password="+PGS+"")  
-    ##nx_pgnet.write(conn).pgnet(net, 'LightRail_Baseline', 27700, overwrite=True)
-    
+    nx_pgnet.write(conn).pgnet(net, 'LightRail_Baseline22', 27700, overwrite=True)
+    print 'written'
 #    G = unit_test_write_(conn, 'LightRail_Baseline')
     #print G.edges(data=True)
 
