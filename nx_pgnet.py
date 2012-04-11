@@ -679,8 +679,7 @@ class write:
         
         graph_id = self.update_graph_table(network)     
         if graph_id == None:
-            print 'GraphID not pulled from Graphs table, will now exit.'
-            exit(1)
+            raise Error('Could not load network from Graphs table.')
         
         self.lyredges = self.getlayer(self.tbledges)
         self.lyrnodes = self.getlayer(self.tblnodes)
