@@ -421,10 +421,10 @@ class read:
                 graph.add_edge(attributes['Node_F_ID'], 
                                  attributes['Node_T_ID'], attributes)
             feat = lyr.GetNextFeature() 
-        print 'read edges'
+            
     def pgnet_nodes(self, graph):
         '''Reads nodes from node table and add to graph.'''
-        print 'reading nodes'
+
         # Join Edges and Edge_Geom
         node_tbl = nisql(self.conn).create_node_view(self.prefix)
         # Get lyr by name
@@ -445,7 +445,6 @@ class read:
             attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
             graph.add_node((attributes['NodeID']), attributes)
             feat = lyr.GetNextFeature()
-        print 'read nodes'
         
     def graph_table(self, prefix):
         '''Reads the attributes of a graph from the graph table. 
@@ -620,7 +619,7 @@ class write:
         ##for field, data in edge_attributes.iteritems():
         for field, data in edge_attributes.items():    
             featedge.SetField(field, data)
-        ##print 'set fields, now creating'
+
         self.lyredges.CreateFeature(featedge)
         
     def pgnet_node(self, node_attributes, node_geom):
