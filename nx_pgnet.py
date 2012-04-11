@@ -381,9 +381,9 @@ class read:
         f = feature
         return [f.GetField(f.GetFieldIndex(x)) for x in flds]
 
-    def pgnet_edges(self, graph, geography=True):
+    def pgnet_edges(self, graph):
         '''Reads edges from edge and edge_geometry tables and add to graph.'''
-        print 'reading edges'
+
         # Join Edges and Edge_Geom
         edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
         # Get lyr by name
