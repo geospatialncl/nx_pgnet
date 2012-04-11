@@ -621,9 +621,8 @@ class write:
         for field, data in edge_attributes.items():    
             featedge.SetField(field, data)
         ##print 'set fields, now creating'
-        gdal.SetConfigOption('PG_USE_COPY','YES')
         self.lyredges.CreateFeature(featedge)
-        gdal.SetConfigOption('PG_USE_COPY','NO')
+        
     def pgnet_node(self, node_attributes, node_geom):
         '''Write a node to a Node table.
         
