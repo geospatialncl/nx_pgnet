@@ -245,7 +245,7 @@ class nisql:
         CAST(%i AS BOOLEAN), CAST(%i AS BOOLEAN));" % (
         prefix, epsg, directed, multigraph))
         
-        result = 0
+        result = None
         for row in self.conn.ExecuteSQL(sql):
             result = row.ni_create_network_tables
         '''
