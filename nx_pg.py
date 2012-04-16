@@ -198,7 +198,7 @@ def read_pg(conn, edgetable, nodetable=None):
         if tbl.GetName() == edgetable:
             lyr = tbl
     if lyr == None:
-        raise Error('Table not found in database')
+        raise Error('Table not found in database: %s.' % (edgetable))
         
     # Create Directed graph to store output  
     net = nx.DiGraph()
