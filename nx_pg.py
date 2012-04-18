@@ -206,93 +206,127 @@ def read_pg(conn, edgetable, nodetable=None):
     # Create temporary node storage if needed.
     if nodetable is not None:
         nodes = {}
+        nodes_geom = {}
         for nlyr in conn:
             if nlyr.GetName() == nodetable:
+                f = nlyr.GetNextFeature()
                 flds = [x.GetName() for x in nlyr.schema]
+                while f is not None:
+                    
+                    
                 # Get the number of features in the layer
-                for findex in xrange(nlyr.GetFeatureCount()):
+                #for findex in xrange(nlyr.GetFeatureCount()):
                     # Get a specific feature
-                    f = nlyr.GetFeature(findex+1)
-                    if f is None:
-                        pass # Catch any returned features which are None. 
+                    #f = nlyr.GetFeature(findex+1)
+                    #if f is None:
+                    #    pass # Catch any returned features which are None. 
                         #Raise warning?
+                    #else:
+                    flddata = getfieldinfo(nlyr, f, flds )
+                    attributes = dict(zip(flds, flddata))
+                    # Get the geometry for that feature
+                    geom = f.GetGeometryRef()
+                    # Check that we're dealing with point data'
+                    if ogr.Geometry.GetGeometryName(geom) != 'POINT':
+                        raise Error('Error:'\
+                            'Node table does not contain point geometry')
                     else:
-                        flddata = getfieldinfo(nlyr, f, flds )
-                        attributes = dict(zip(flds, flddata))
-                        # Get the geometry for that feature
-                        geom = f.GetGeometryRef()
-                        # Check that we're dealing with point data'
-                        if ogr.Geometry.GetGeometryName(geom) != 'POINT':
-                            raise Error('Error:'\
-                                'Node table does not contain point geometry')
-                        else:
-                            nodes[geom.GetPoint_2D(0)] = attributes
-            
+                        nodes[geom.GetPoint_2D(0)] = attributes
+                        #nodes_geom[geom.GetPoint_2D(0)] = geom
+                        f = nlyr.GetNextFeature()
+
+    f = lyr.GetNextFeature()        
     flds = [x.GetName() for x in lyr.schema]
     # Get the number of features in the layer
-    for findex in xrange(lyr.GetFeatureCount()):
+    while f is not None:
+        
+    #for findex in xrange(lyr.GetFeatureCount()):
         # Get a specific feature
-        f = lyr.GetFeature(findex+1)
-        if f is None:
-            pass # Catch any returned features which are None. 
+        #f = lyr.GetFeature(findex+1)
+        #if f is None:
+        #    pass # Catch any returned features which are None. 
             #Raise warning?
-        else:
-            flddata = getfieldinfo(lyr, f, flds )
-            attributes = dict(zip(flds, flddata))
-            ##attributes["TableName"] = lyr.GetName()
-            # Get the geometry for that feature
-            geom = f.GetGeometryRef()
-            #print geom
-            # We've got Multiline geometry so split into line segments
-            if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
-            #print f.GetGeomertyTypeName()
-                for line in geom:
-                    # Get points in line
-                    n = line.GetPointCount()
-                    # Get the attributes (akin to nx_shp)
-                    attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
-                    attributes["Wkt"] = ogr.Geometry.ExportToWkb(line)
-                    attributes["Json"] = ogr.Geometry.ExportToWkb(line)
-                    #print type(line.GetPoint(0))
-                    nodef = line.GetPoint_2D(0)
-                    nodet = line.GetPoint_2D(n-1)
-                    net.add_edge(nodef, nodet, attributes)
-                    
-                    if nodetable is not None:
-                        for node, attrs in nodes.iteritems():
-                            if node == nodef:
-                                # Overwrite with values from node table
-                                net.add_node(node, attrs)
-                            elif node == nodet:
-                                net.add_node(node, attrs)
-                        
-            elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
-                n = geom.GetPointCount()
-                attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
-                attributes["Wkt"] = ogr.Geometry.ExportToWkb(geom)
-                attributes["Json"] = ogr.Geometry.ExportToWkb(geom)  
+        #else:
+        flddata = getfieldinfo(lyr, f, flds )
+        attributes = dict(zip(flds, flddata))
+        ##attributes["TableName"] = lyr.GetName()
+        # Get the geometry for that feature
+        geom = f.GetGeometryRef()
+        #print geom
+        # We've got Multiline geometry so split into line segments
+        if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
+        #print f.GetGeomertyTypeName()
+            for line in geom:
+                # Get points in line
+                n = line.GetPointCount()
+                # Get the attributes (akin to nx_shp)
+                attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
+                attributes["Wkt"] = ogr.Geometry.ExportToWkb(line)
+                attributes["Json"] = ogr.Geometry.ExportToWkb(line)
+                #print type(line.GetPoint(0))
+                nodef = line.GetPoint_2D(0)
                 
-                # Get the from and to nodes
-                nodef = geom.GetPoint_2D(0)
-                nodet = geom.GetPoint_2D(n-1)
+                node_f_point = ogr.Geometry(ogr.wkbPoint)
+                node_f_point.AddPoint(nodef[0],nodef[1])
+
+                nodet = line.GetPoint_2D(n-1)
+                node_t_point = ogr.Geometry(ogr.wkbPoint)
+                node_t_point.AddPoint(nodet[0],nodet[1])
                 
-                # Create the edge and nodes in the network
-                net.add_edge(nodef, nodet, attributes)
-                ###print attributes # table name here.
                 if nodetable is not None:
-                    # Check if the nodes exist in the nodes table                                    
                     for node, attrs in nodes.iteritems():
-                        if node == nodef:
+                        if nodes_geom[node].Within(node_f_point.Buffer(0.1)):
+                        #if node == nodef:
                             # Overwrite with values from node table
-                            net.add_node(node, attrs)
-                        elif node == nodet:
-                            net.add_node(node, attrs)
-                                                    
-            elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
-                net.add_node((geom.GetPoint_2D(0)), attributes)
-            else:
-                raise ValueError, "PostGIS geometry type not"\
-                                    " supported."
+                            net.add_node(nodef, attrs)
+                        elif nodes_geom[node].Within(node_t_point.Buffer(0.1)):
+                            net.add_node(nodet, attrs)
+                            #nodet = node
+                            
+                net.add_edge(nodef, nodet, attributes)
+                f = lyr.GetNextFeature()
+                
+        elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
+            n = geom.GetPointCount()
+            attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
+            attributes["Wkt"] = ogr.Geometry.ExportToWkb(geom)
+            attributes["Json"] = ogr.Geometry.ExportToWkb(geom)  
+            
+            # Get the from and to nodes
+            nodef = geom.GetPoint_2D(0)
+            nodet = geom.GetPoint_2D(n-1)
+            
+            node_f_point = ogr.Geometry(ogr.wkbPoint)
+            node_f_point.AddPoint(nodef[0],nodef[1])
+
+            node_t_point = ogr.Geometry(ogr.wkbPoint)
+            node_t_point.AddPoint(nodet[0],nodet[1])
+                
+            #print 'here'
+            ###print attributes # table name here.
+            if nodetable is not None:
+                for node, attrs in nodes.iteritems():
+                    #print node, attrs
+                    ##a_node_geom = ogr.Geometry(ogr.wkbPoint)
+                    #print type(a_node_geom)
+                    ##a_node_geom.AddPoint(node[0],node[1])
+                    ##if a_node_geom.Within(node_f_point.Buffer(0.1)):
+                    if node == nodef:
+                        # Overwrite with values from node table
+                        net.add_node(nodef, attrs)
+                    ##elif a_node_geom.Within(node_f_point.Buffer(0.1)):
+                    elif node == nodet:
+                        net.add_node(nodet, attrs)
+                    # Create the edge and nodes in the network
+            net.add_edge(nodef, nodet, attributes)
+            
+        elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
+            net.add_node((geom.GetPoint_2D(0)), attributes)
+            
+        else:
+            raise ValueError, "PostGIS geometry type not"\
+                                " supported."
+        f = lyr.GetNextFeature()                       
     return net
 
 def netgeometry(key, data):
