@@ -212,16 +212,6 @@ def read_pg(conn, edgetable, nodetable=None):
                 f = nlyr.GetNextFeature()
                 flds = [x.GetName() for x in nlyr.schema]
                 while f is not None:
-                    
-                    
-                # Get the number of features in the layer
-                #for findex in xrange(nlyr.GetFeatureCount()):
-                    # Get a specific feature
-                    #f = nlyr.GetFeature(findex+1)
-                    #if f is None:
-                    #    pass # Catch any returned features which are None. 
-                        #Raise warning?
-                    #else:
                     flddata = getfieldinfo(nlyr, f, flds )
                     attributes = dict(zip(flds, flddata))
                     # Get the geometry for that feature
@@ -232,27 +222,16 @@ def read_pg(conn, edgetable, nodetable=None):
                             'Node table does not contain point geometry')
                     else:
                         nodes[geom.GetPoint_2D(0)] = attributes
-                        #nodes_geom[geom.GetPoint_2D(0)] = geom
                         f = nlyr.GetNextFeature()
 
     f = lyr.GetNextFeature()        
     flds = [x.GetName() for x in lyr.schema]
     # Get the number of features in the layer
     while f is not None:
-        
-    #for findex in xrange(lyr.GetFeatureCount()):
-        # Get a specific feature
-        #f = lyr.GetFeature(findex+1)
-        #if f is None:
-        #    pass # Catch any returned features which are None. 
-            #Raise warning?
-        #else:
         flddata = getfieldinfo(lyr, f, flds )
         attributes = dict(zip(flds, flddata))
-        ##attributes["TableName"] = lyr.GetName()
         # Get the geometry for that feature
         geom = f.GetGeometryRef()
-        #print geom
         # We've got Multiline geometry so split into line segments
         if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
         #print f.GetGeomertyTypeName()
@@ -263,25 +242,16 @@ def read_pg(conn, edgetable, nodetable=None):
                 attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
                 attributes["Wkt"] = ogr.Geometry.ExportToWkb(line)
                 attributes["Json"] = ogr.Geometry.ExportToWkb(line)
-                #print type(line.GetPoint(0))
                 nodef = line.GetPoint_2D(0)
-                
-                node_f_point = ogr.Geometry(ogr.wkbPoint)
-                node_f_point.AddPoint(nodef[0],nodef[1])
-
                 nodet = line.GetPoint_2D(n-1)
-                node_t_point = ogr.Geometry(ogr.wkbPoint)
-                node_t_point.AddPoint(nodet[0],nodet[1])
                 
                 if nodetable is not None:
                     for node, attrs in nodes.iteritems():
-                        if nodes_geom[node].Within(node_f_point.Buffer(0.1)):
-                        #if node == nodef:
+                        if node == nodef:
                             # Overwrite with values from node table
                             net.add_node(nodef, attrs)
-                        elif nodes_geom[node].Within(node_t_point.Buffer(0.1)):
+                        elif node == nodet:
                             net.add_node(nodet, attrs)
-                            #nodet = node
                             
                 net.add_edge(nodef, nodet, attributes)
                 f = lyr.GetNextFeature()
@@ -296,28 +266,14 @@ def read_pg(conn, edgetable, nodetable=None):
             nodef = geom.GetPoint_2D(0)
             nodet = geom.GetPoint_2D(n-1)
             
-            node_f_point = ogr.Geometry(ogr.wkbPoint)
-            node_f_point.AddPoint(nodef[0],nodef[1])
-
-            node_t_point = ogr.Geometry(ogr.wkbPoint)
-            node_t_point.AddPoint(nodet[0],nodet[1])
-                
-            #print 'here'
-            ###print attributes # table name here.
             if nodetable is not None:
                 for node, attrs in nodes.iteritems():
-                    #print node, attrs
-                    ##a_node_geom = ogr.Geometry(ogr.wkbPoint)
-                    #print type(a_node_geom)
-                    ##a_node_geom.AddPoint(node[0],node[1])
-                    ##if a_node_geom.Within(node_f_point.Buffer(0.1)):
                     if node == nodef:
                         # Overwrite with values from node table
                         net.add_node(nodef, attrs)
-                    ##elif a_node_geom.Within(node_f_point.Buffer(0.1)):
                     elif node == nodet:
                         net.add_node(nodet, attrs)
-                    # Create the edge and nodes in the network
+            # Create the edge and nodes in the network
             net.add_edge(nodef, nodet, attributes)
             
         elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
@@ -353,7 +309,6 @@ def create_feature(geometry, lyr, attributes=None):
             
     Creates a feature in the specified table with geometry and attributes.
     '''    
-        
     feature = ogr.Feature(lyr.GetLayerDefn())
     feature.SetGeometry(geometry)
     if attributes != None:
