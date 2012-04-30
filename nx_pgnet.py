@@ -229,6 +229,21 @@ class nisql:
         self.conn = db_conn
         if self.conn == None:
             raise Error('No connection to database.')
+            
+    def sql_function_check(self, function_name):
+        '''Checks Postgres database for existence of specified function, 
+            if not found raises error.'''
+            
+        sql = ("SELECT * FROM pg_proc WHERE proname = '%s';" % (function_name))
+        print sql
+        result = None
+        for row in self.conn.ExecuteSQL(sql):
+            result = row
+        if result == None:
+            raise Error('Database error: SQL function %s does not exist.' % 
+                            function_name)
+        else:
+            return None
     
     def create_network_tables(self, prefix, epsg, directed,
         multigraph):
@@ -245,7 +260,7 @@ class nisql:
         CAST(%i AS BOOLEAN), CAST(%i AS BOOLEAN));" % (
         prefix, epsg, directed, multigraph))
         
-        result = 0
+        result = None
         for row in self.conn.ExecuteSQL(sql):
             result = row.ni_create_network_tables
         '''
@@ -375,7 +390,7 @@ class read:
         
         if self.conn == None:
             raise Error('No connection to database.')
-    
+            
     def getfieldinfo(self, lyr, feature, flds):
         '''Get information about fields from a table (as OGR feature).'''
         f = feature
@@ -643,6 +658,7 @@ class write:
             self.lyrnodes.CreateFeature(featnode)
             sql = ('SELECT "NodeID" FROM "%s" ORDER BY "NodeID" DESC LIMIT 1;'
                     % self.tblnodes)
+            
             for row in self.conn.ExecuteSQL(sql):
                 NodeID = row.NodeID
         
@@ -657,8 +673,15 @@ class write:
         Note that schema constrains must be applied in database. 
         There are no checks for database errors here.
         '''
-        # First create network tables in database
+
+        # Disable pg use copy or NodeID not-null error will be raised
+        if gdal.GetConfigOption("PG_USE_COPY") == "YES":
+            raise Error('Attempting to write database schema with GDAL option '
+                        '"PG_USE_COPY=YES". Please do: '
+                        'gdal.SetConfigOption("PG_USE_COPY", "NO") and reset '
+                        'database connection.')        
         
+        # First create network tables in database
         self.prefix = tablename_prefix        
         self.tbledges = tablename_prefix+'_Edges'
         self.tblnodes = tablename_prefix+'_Nodes'
