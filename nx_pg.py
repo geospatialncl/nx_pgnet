@@ -293,7 +293,6 @@ def netgeometry(key, data):
     '''Create OGR geometry from a NetworkX Graph using Wkb/Wkt attributes.
     
     '''
-    
     if data.has_key('Wkb'):
         geom = ogr.CreateGeometryFromWkb(data['Wkb'])
     elif data.has_key('Wkt'):
