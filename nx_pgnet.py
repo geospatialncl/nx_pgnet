@@ -235,7 +235,6 @@ class nisql:
             if not found raises error.'''
             
         sql = ("SELECT * FROM pg_proc WHERE proname = '%s';" % (function_name))
-        print sql
         result = None
         for row in self.conn.ExecuteSQL(sql):
             result = row
