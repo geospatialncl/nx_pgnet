@@ -183,7 +183,7 @@ def getfieldinfo(lyr, feature, flds):
     f = feature
     return [f.GetField(f.GetFieldIndex(x)) for x in flds]
     
-def read_pg(conn, edgetable, nodetable=None):
+def read_pg(conn, edgetable, nodetable=None, directed=False):
     '''Read a network from PostGIS table of line geometry. 
        
        Optionally takes a table of points and where point geometry is equal
@@ -199,9 +199,12 @@ def read_pg(conn, edgetable, nodetable=None):
             lyr = tbl
     if lyr == None:
         raise Error('Table not found in database: %s.' % (edgetable))
-        
-    # Create Directed graph to store output  
-    net = nx.DiGraph()
+    
+    if directed == False:
+        net = nx.Graph()
+    elif directed == True:
+        # Create Directed graph to store output  
+        net = nx.DiGraph()
     
     # Create temporary node storage if needed.
     if nodetable is not None:
@@ -282,7 +285,8 @@ def read_pg(conn, edgetable, nodetable=None):
         else:
             raise ValueError, "PostGIS geometry type not"\
                                 " supported."
-        f = lyr.GetNextFeature()                       
+        f = lyr.GetNextFeature()
+        # Raise warning if nx_is_connected(G) is false.                       
     return net
 
 def netgeometry(key, data):
