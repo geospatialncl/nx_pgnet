@@ -247,7 +247,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
                 attributes["Json"] = ogr.Geometry.ExportToWkb(line)
                 nodef = line.GetPoint_2D(0)
                 nodet = line.GetPoint_2D(n-1)
-                '''
+                
                 if nodetable is not None:
                     for node, attrs in nodes.iteritems():
                         if node == nodef:
@@ -255,7 +255,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
                             net.add_node(nodef, attrs)
                         elif node == nodet:
                             net.add_node(nodet, attrs)
-                '''            
+                            
                 net.add_edge(nodef, nodet, attributes)
                 f = lyr.GetNextFeature()
                 
@@ -268,7 +268,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
             # Get the from and to nodes
             nodef = geom.GetPoint_2D(0)
             nodet = geom.GetPoint_2D(n-1)
-            '''
+            
             if nodetable is not None:
                 for node, attrs in nodes.iteritems():
                     if node == nodef:
@@ -276,7 +276,6 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
                         net.add_node(nodef, attrs)
                     elif node == nodet:
                         net.add_node(nodet, attrs)
-            '''
             # Create the edge and nodes in the network
             net.add_edge(nodef, nodet, attributes)
             
@@ -287,13 +286,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
             raise ValueError, "PostGIS geometry type not"\
                                 " supported."
         f = lyr.GetNextFeature()
-        # Raise warning if nx_is_connected(G) is false.  
-    
-    # development - new attribution of created nodes by node table (faster?)
-    if nodetable is not None:
-        for node in nodes:
-            if node in net.nodes():
-                net.node = nodes[node]               
+        # Raise warning if nx_is_connected(G) is false.                       
     return net
 
 def netgeometry(key, data):
