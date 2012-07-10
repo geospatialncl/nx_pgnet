@@ -291,8 +291,10 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
     
     # development - new attribution of created nodes by node table (faster?)
     if nodetable is not None:
+        print 'yep'
         for node in nodes:
             if node in net.nodes():
+                print 'y'
                 net.node = nodes[node]               
     return net
 
