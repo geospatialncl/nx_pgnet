@@ -247,6 +247,8 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
                 attributes["Json"] = ogr.Geometry.ExportToWkb(line)
                 nodef = line.GetPoint_2D(0)
                 nodet = line.GetPoint_2D(n-1)
+                
+                # Old attribution of nodes
                 '''
                 if nodetable is not None:
                     for node, attrs in nodes.iteritems():
@@ -268,6 +270,8 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
             # Get the from and to nodes
             nodef = geom.GetPoint_2D(0)
             nodet = geom.GetPoint_2D(n-1)
+            
+            # Old attribution of nodes
             '''
             if nodetable is not None:
                 for node, attrs in nodes.iteritems():
@@ -289,18 +293,12 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
         f = lyr.GetNextFeature()
         # Raise warning if nx_is_connected(G) is false.  
     
-    # development - new attribution of created nodes by node table (faster?)
+    # Attribution of nodes from points table (must exost in network)
     if nodetable is not None:
-        print 'yep'
         for point in nodes:
             if point in net.nodes():
-                #print nodes
-                #print nodes[point]
-                
-                #print nodes[node]
-                ##net.node = nodes[node]
-                
                 net.node[point] = nodes[point] 
+                
     return net
 
 def netgeometry(key, data):
