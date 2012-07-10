@@ -714,13 +714,12 @@ class write:
                   
         for e in G.edges(data=True):
             data = G.get_edge_data(*e)
-            #print 'edge data', data
             edge_geom = self.netgeometry(e, data)
-            print 'got edge geom'
+
             # Insert the start node
-            try:
-                node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[0]], 
+            node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[0]], 
                                                    node_fields)
+            '''                                       
             except(KeyError) as err:
                 print err
                 print e[0]
@@ -730,24 +729,24 @@ class write:
                         if node == e[0]:
                             print 'here the node:',node
                             print G.node.keys()
-                            print type(node)
-                            print type(G.nodes())
-                            print G.node[(525736.19450000022, 169985.8161999993)]
+                            #print type(node)
+                            #print type(G.nodes())
+                            #print G.node[(525736.19450000022, 169985.8161999993)]
                             break
                 exit(0)
-                
+              '''  
                 
                                            
-            print 'got node atts'
+            ##print 'got node atts'
             node_attrs['GraphID'] = graph_id 
             # Check attribution of nodes?
             node_geom = self.netgeometry(e[0], G.node[e[0]])          
-            print 'got node geom'
+            ##print 'got node geom'
             node_id = self.pgnet_node(node_attrs, node_geom)
-            print 'got node id (after insert)'
+            ##print 'got node id (after insert)'
             G[e[0]][e[1]]['Node_F_ID'] = node_id
-            print 'set node id to edge attributes (before insertion)'
-            print 'second node now...'
+            ##print 'set node id to edge attributes (before insertion)'
+            ##print 'second node now...'
             # Insert the end node
             node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[1]], 
                                                    node_fields)            
@@ -762,9 +761,9 @@ class write:
             
             edge_attrs = self.create_attribute_map(self.lyredges, e[2], 
                                                    edge_fields)
-            print 'compiled edge attrs'
+            ##print 'compiled edge attrs'
             self.pgnet_edge(edge_attrs, edge_geom)
-            print 'written edge'
+            ##print 'written edge'
             
         nisql(self.conn).create_node_view(self.prefix)    
         nisql(self.conn).create_edge_view(self.prefix)

@@ -292,10 +292,15 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
     # development - new attribution of created nodes by node table (faster?)
     if nodetable is not None:
         print 'yep'
-        for node in nodes:
-            if node in net.nodes():
-                print 'y'
-                net.node = nodes[node]               
+        for point in nodes:
+            if point in net.nodes():
+                #print nodes
+                #print nodes[point]
+                
+                #print nodes[node]
+                ##net.node = nodes[node]
+                
+                net.node[point] = nodes[point] 
     return net
 
 def netgeometry(key, data):
