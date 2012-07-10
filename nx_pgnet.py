@@ -718,8 +718,26 @@ class write:
             edge_geom = self.netgeometry(e, data)
             print 'got edge geom'
             # Insert the start node
-            node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[0]], 
+            try:
+                node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[0]], 
                                                    node_fields)
+            except(KeyError) as err:
+                print err
+                print e[0]
+                if e[0] in G.nodes():
+                    print 'it is in'
+                    for node in G.nodes():
+                        if node == e[0]:
+                            print 'here the node:',node
+                            print G.node.keys()
+                            print type(node)
+                            print type(G.nodes())
+                            print G.node[(525736.19450000022, 169985.8161999993)]
+                            break
+                exit(0)
+                
+                
+                                           
             print 'got node atts'
             node_attrs['GraphID'] = graph_id 
             # Check attribution of nodes?
