@@ -248,6 +248,8 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
                 nodef = line.GetPoint_2D(0)
                 nodet = line.GetPoint_2D(n-1)
                 
+                # Old attribution of nodes
+                '''
                 if nodetable is not None:
                     for node, attrs in nodes.iteritems():
                         if node == nodef:
@@ -255,7 +257,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
                             net.add_node(nodef, attrs)
                         elif node == nodet:
                             net.add_node(nodet, attrs)
-                            
+                '''            
                 net.add_edge(nodef, nodet, attributes)
                 f = lyr.GetNextFeature()
                 
@@ -269,6 +271,8 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
             nodef = geom.GetPoint_2D(0)
             nodet = geom.GetPoint_2D(n-1)
             
+            # Old attribution of nodes
+            '''
             if nodetable is not None:
                 for node, attrs in nodes.iteritems():
                     if node == nodef:
@@ -276,6 +280,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
                         net.add_node(nodef, attrs)
                     elif node == nodet:
                         net.add_node(nodet, attrs)
+            '''
             # Create the edge and nodes in the network
             net.add_edge(nodef, nodet, attributes)
             
@@ -286,7 +291,14 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
             raise ValueError, "PostGIS geometry type not"\
                                 " supported."
         f = lyr.GetNextFeature()
-        # Raise warning if nx_is_connected(G) is false.                       
+        # Raise warning if nx_is_connected(G) is false.  
+    
+    # Attribution of nodes from points table (must exost in network)
+    if nodetable is not None:
+        for point in nodes:
+            if point in net.nodes():
+                net.node[point] = nodes[point] 
+                
     return net
 
 def netgeometry(key, data):
