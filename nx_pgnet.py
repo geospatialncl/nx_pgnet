@@ -714,17 +714,16 @@ class write:
                   
         for e in G.edges(data=True):
             data = G.get_edge_data(*e)
-            #print 'edge data', data
             edge_geom = self.netgeometry(e, data)
+
             # Insert the start node
             node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[0]], 
                                                    node_fields)
+                                           
             node_attrs['GraphID'] = graph_id 
-            # Check attribution of nodes?
-            node_geom = self.netgeometry(e[0], G.node[e[0]])            
+            node_geom = self.netgeometry(e[0], G.node[e[0]])          
             node_id = self.pgnet_node(node_attrs, node_geom)
             G[e[0]][e[1]]['Node_F_ID'] = node_id
-            
             # Insert the end node
             node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[1]], 
                                                    node_fields)            
