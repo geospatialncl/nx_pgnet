@@ -402,6 +402,10 @@ class read:
         edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
         # Get lyr by name
         lyr = self.conn.GetLayerByName(edge_tbl_view)
+
+        # Add error catch here if lyr is None. 
+        # Error reading from edge table view, is it broken?        
+        
         # Get current feature        
         feat = lyr.GetNextFeature()
         # Get fields

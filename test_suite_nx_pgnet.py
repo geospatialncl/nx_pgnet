@@ -83,8 +83,9 @@ def main():
 
     #net = nx_pg.read_pg(conn, 'LightRail_Baseline', 'LightRail_Baseline_Stations')
     ##net = nx_pg.read_pg(conn, 'LightRail_Baseline')
-    net = nx_pgnet.read(conn).pgnet('LightRail_Baseline_Wards')
+    net = nx_pgnet.read(conn).pgnet('District_Circle_net2')
     print 'read'
+    exit(0)
     ##print net.edges(data=True)
     #print net.nodes(data=True)
     # Test to write data to schema
