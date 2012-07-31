@@ -290,6 +290,9 @@ class nisql:
         sql = "SELECT * FROM ni_create_node_view('%s')" % prefix
         for row in self.conn.ExecuteSQL(sql):
             viewname = row.ni_create_node_view
+        if viewname == None:
+            error = "Could not create node view for network %s" % prefix
+            raise Error(error)    
         return viewname
         
     def create_edge_view(self, prefix):
@@ -318,7 +321,9 @@ class nisql:
         ##print sql
         for row in self.conn.ExecuteSQL(sql):
             viewname = row.ni_create_edge_view
-            
+        if viewname == None:
+            error = "Could not create edge view for network %s" % prefix
+            raise Error(error)
             
         return viewname
     
@@ -400,6 +405,7 @@ class read:
 
         # Join Edges and Edge_Geom
         edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
+        
         # Get lyr by name
         lyr = self.conn.GetLayerByName(edge_tbl_view)
 
@@ -486,7 +492,8 @@ class read:
         # Get graph attributes
         graph_attrs = self.graph_table(self.prefix)
         if graph_attrs == None:
-            raise Error("Can't find network in Graph table")
+            error = "Can't find network '%s' in Graph table" % self.prefix
+            raise Error(error)
         # Create empty graph (directed/un-directed)
         if graph_attrs['Directed'] == 0:
             G = nx.Graph()

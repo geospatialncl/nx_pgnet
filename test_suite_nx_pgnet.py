@@ -83,7 +83,9 @@ def main():
 
     #net = nx_pg.read_pg(conn, 'LightRail_Baseline', 'LightRail_Baseline_Stations')
     ##net = nx_pg.read_pg(conn, 'LightRail_Baseline')
-    net = nx_pgnet.read(conn).pgnet('District_Circle_net2')
+    net = nx_pgnet.read(conn).pgnet('lr_test')
+    
+    #print nx_pgnet.nisql(conn).create_edge_view('lr_test')
     print 'read'
     exit(0)
     ##print net.edges(data=True)
