@@ -1,9 +1,10 @@
 #!/usr/bin/env  python
 # -*- coding: utf-8 -*-
 """
---------
 nx_pgnet - NetworkX PostGIS network IO module (PostGIS network schema).
---------
+
+B{Introduction}
+
 nx_pgnet is module for reading and writing NetworkX graphs to and from PostGIS 
 tables as specified by the Newcastle University PostGIS network schema.
 
@@ -19,9 +20,9 @@ read: PostGIS (network schema) --> NetworkX
 
 write: PostGIS (network schema) <-- NetworkX    
 
-------------
-Introduction
-------------
+
+B{Description}
+
 NetworkX is a python library for graph analysis. Using edge and node 
 attribution it can be used for spatial network analysis (with geography stored 
 as node/edge attributes). This module supports the use of NetworkX for the
@@ -29,9 +30,8 @@ development of network analysis of spatial networks stored in a PostGIS
 spatial database by acting as an interface to a predefined table structure 
 (the schema) in a PostGIS database from NetworkX Graph classes.
 
---------------
-PostGIS Schema
---------------
+B{PostGIS Schema}
+
 This module assumes that the required PostGIS network schema is available 
 within the target/source PostGIS database. The schema allows for a
 collection of tables to represent a spatial network, storing
@@ -60,10 +60,11 @@ tables:
     - Interdependency_Edges:
         Holds interdependency geometry. Not currently supported.
 
-----------------
-Module structure    
-----------------
+
+B{Module structure    }
+
 The module is split into three key classes:
+
     - read:
         Contains methods to read data from PostGIS network schema to a NetworkX 
         graph.
@@ -86,17 +87,16 @@ The module is split into three key classes:
 Detailed documentation for each class can be found below contained in class 
 document strings. The highest level functions for reading and writing data are:
 
-    Read:    
-    nx_pgnet.read().pgnet()
-    Reads a network from PostGIS network schema into a NetworkX graph instance.
-    
-    Write:
-    nx_pgnet.write().pgnet()
-    Writes a NetworkX graph instance to PostGIS network schema tables.
-    
---------------------
-Database connections
---------------------
+Read:    
+	>>> nx_pgnet.read().pgnet()
+	>>> # Reads a network from PostGIS network schema into a NetworkX graph instance.
+
+Write:
+	>>> nx_pgnet.write().pgnet()
+	>>> # Writes a NetworkX graph instance to PostGIS network schema tables.
+
+B{Database connections}
+
 Connections to PostGIS are created using the OGR simple feature library and are
 passed to the read() and write() classes. See http://www.gdal.ogr/ogr
 
@@ -109,87 +109,80 @@ to work.
 To create a connection using the OGR Python (SWIG) OGR bindings to a database
 on localhost:
     
-    import osgeo.ogr as ogr
-    conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
+    >>> import osgeo.ogr as ogr
+    >>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
                     password='password'")
     
---------
-Examples
---------
+B{Examples}
+
 The following are examples of high level read and write network operations. For
 more detailed information see method documentation below.
 
 Reading a network from PostGIS schema to a NetworkX graph instance:
     
-    import nx_pgnet
-    import osgeo.ogr as ogr
+    >>> import nx_pgnet
+    >>> import osgeo.ogr as ogr
     
-    # Create a connection
-    conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
+    >>> # Create a connection
+    >>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
                     password='password'")
 
-    # Read a network
-    # Note 'my_network' is the name of the network stored in the 'Graphs' table
+    >>> # Read a network
+    >>> # Note 'my_network' is the name of the network stored in the 'Graphs' table
     
-    network = nx_pgnet.read(conn).pgnet('my_network')    
+    >>> network = nx_pgnet.read(conn).pgnet('my_network')    
 
 Writing a NetworkX graph instance to a PostGIS schema:
     
-    # Write the network to the same database but under a different name.
-    # Note 'EPSG' id the epsg code for the output network geometry.
-    # Note if 'overwrite=True' then an existing network in the database of the 
-    # same name will be overwritten.
+Write the network to the same database but under a different name.
+Note 'EPSG' id the epsg code for the output network geometry.
+Note if 'overwrite=True' then an existing network in the database of the 
+same name will be overwritten.
     
-    epsg = 27700
-    nx_pgnet.write(conn).pgnet(network, 'new_network', epsg, overwrite=False)
+    >>> epsg = 27700
+    >>> nx_pgnet.write(conn).pgnet(network, 'new_network', epsg, overwrite=False)
 
-------------
-Dependencies
-------------
+B{Dependencies}
+
 Python 2.6 or later
 NetworkX 1.6 or later
 OGR 1.8.0 or later
 
--------------
-Copyright (C)
--------------
-Tomas Holderness / Newcastle University
+B{Copyright (C)}
+
+Tomas Holderness & Newcastle University
 
 Developed by Tom Holderness at Newcastle University School of Civil Engineering
 and Geosciences, geoinfomatics group:
 
 David Alderson, Alistair Ford, Stuart Barr, Craig Robson.
 
--------
-License
--------
+B{License}
+
 This software is released under a BSD style license. See LICENSE.TXT or type
 nx_pgnet.license() for full details.
 
--------
-Credits
--------
+B{Credits}
+
 Tomas Holderness, David Alderson, Alistair Ford, Stuart Barr and Craig Robson.
 
--------
-Contact
--------
+B{Contact}
+
 tom.holderness@ncl.ac.uk
 www.staff.ncl.ac.uk/tom.holderness
 
------------------
-Development Notes
------------------
-Where possible the PEP8/PEP257 style guide has been implemented.
+B{Development Notes}
+
+Where possible the PEP8/PEP257 style guide has been implemented.\n
 To do:
-    1) Check attribution of nodes from schema and non-schema sources 
-    (blank old id fields are being copied over).
-    2) Error  / warnings module.
-    3) Investigate bug: "Warning 1: Geometry to be inserted is of type 
-    Line String, whereas the layer geometry type is Multi Line String.
-    Insertion is likely to fail!"
-    3) Multi and directed graph support.
-    4) 3D geometry support.
+	1. Check attribution of nodes from schema and non-schema sources 
+    	(blank old id fields are being copied over).
+    	2. Error  / warnings module.
+    	3. Investigate bug: "Warning 1: Geometry to be inserted is of type 
+    		Line String, whereas the layer geometry type is Multi Line String.
+		Insertion is likely to fail!"
+    	4. Multi and directed graph support.
+    	5. 3D geometry support.
     
 """
 __created__ = "January 2012"

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=latex 2011.5.17)  23 MAR 2012 16:27
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=latex 2011.5.17)  31 JUL 2012 15:39
 entering extended mode
  %&-line parsing enabled.
 **api.tex
@@ -521,137 +521,69 @@ File: umsb.fd 2009/06/22 v3.00 AMS symbols B
 \openout2 = `nx_pg-module.aux'.
 
 
-(./nx_pg-module.tex [2
+(./nx_pg-module.tex
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 66.
+ (/usr/share/texmf-texlive/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 66.
 
-] [3] [4] [5]) [6]
+[2
+
+]
+LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <9> not available
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 89.
+LaTeX Font Info:    Try loading font information for OML+cmtt on input line 89.
+
+LaTeX Font Info:    No file OMLcmtt.fd. on input line 89.
+
+
+LaTeX Font Warning: Font shape `OML/cmtt/bx/n' undefined
+(Font)              using `OML/cmm/m/it' instead
+(Font)              for symbol `textgreater' on input line 89.
+
+[3] [4] [5]) [6]
 \openout2 = `nx_pgnet-module.aux'.
 
  (./nx_pgnet-module.tex
-Overfull \hbox (10.16621pt too wide) in paragraph at lines 22--22
-[]\OT1/cmtt/m/n/12 nx[]pgnet is module for reading and writing NetworkX graphs 
-to and from PostGIS[] 
+LaTeX Font Info:    Try loading font information for OML+cmr on input line 33.
+
+(/usr/share/texmf-texlive/tex/latex/base/omlcmr.fd
+File: omlcmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <12> not available
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 33.
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <12> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 57.
+
+Overfull \hbox (18.00357pt too wide) in paragraph at lines 57--59
+[]\OT1/cmr/m/n/12 Graphs: Holds a ref-er-ence to all net-works in the database,
+ ref-er-enc-ing Edge, Edge[]Geometry
  []
 
 
-Overfull \hbox (5.72021pt too wide) in paragraph at lines 25--25
-[]\OT1/cmtt/m/n/12 Note that the terms 'graph' and 'network' are used interchan
-geably within the[] 
- []
-
-
-Overfull \hbox (5.72021pt too wide) in paragraph at lines 27--27
-[]\OT1/cmtt/m/n/12 object (often in memory) with none or limited attribution, w
-hilst a 'network'[] 
- []
-
-LaTeX Font Info:    Try loading font information for OML+cmtt on input line 33.
-
-LaTeX Font Info:    No file OMLcmtt.fd. on input line 33.
-
-LaTeX Font Warning: Font shape `OML/cmtt/m/n' undefined
-(Font)              using `OML/cmm/m/it' instead
-(Font)              for symbol `textgreater' on input line 33.
-
-
-Overfull \hbox (11.89522pt too wide) in paragraph at lines 41--41
-[]\OT1/cmtt/m/n/12 attribution it can be used for spatial network analysis (wit
-h geography stored[] 
+Overfull \hbox (3.90112pt too wide) in paragraph at lines 64--68
+[]\OT1/cmr/m/n/12 Edge[]Geometry: Holds ge-om-e-try (Post-GIS bi-nary LINESTRIN
+G/MULTILINESTRING
  []
 
 [7
 
 
-]
-Overfull \hbox (18.07022pt too wide) in paragraph at lines 83--83
-[]        \OT1/cmtt/m/n/12 Contains methods to read data from PostGIS network s
-chema to a NetworkX[] 
- []
-
-
-Overfull \hbox (11.89522pt too wide) in paragraph at lines 91--91
-[]        \OT1/cmtt/m/n/12 Contains methods which act as a wrapper to the speci
-al PostGIS network[] 
- []
-
-
-Overfull \hbox (18.07022pt too wide) in paragraph at lines 94--94
-[]        \OT1/cmtt/m/n/12 doing! Use the higher-level read/write functions res
-ults in less chance[] 
- []
-
-
-Overfull \hbox (18.07022pt too wide) in paragraph at lines 102--102
-[]\OT1/cmtt/m/n/12 document strings. The highest level functions for reading an
-d writing data are:[] 
- []
-
-[8]
-Overfull \hbox (18.07022pt too wide) in paragraph at lines 106--106
-[]    \OT1/cmtt/m/n/12 Reads a network from PostGIS network schema into a Netwo
-rkX graph instance.[] 
- []
-
-
-Overfull \hbox (18.07022pt too wide) in paragraph at lines 115--115
-[]\OT1/cmtt/m/n/12 Connections to PostGIS are created using the OGR simple feat
-ure library and are[] 
- []
-
-
-Overfull \hbox (18.07022pt too wide) in paragraph at lines 118--118
-[]\OT1/cmtt/m/n/12 Connections are mutually exclusive between read() and write(
-) and are contained[] 
- []
-
-
-Overfull \hbox (5.72021pt too wide) in paragraph at lines 124--124
-[]\OT1/cmtt/m/n/12 To create a connection using the OGR Python (SWIG) OGR bindi
-ngs to a database[] 
- []
-
-
-Overfull \hbox (18.07022pt too wide) in paragraph at lines 134--134
-[]\OT1/cmtt/m/n/12 The following are examples of high level read and write netw
-ork operations. For[] 
- []
-
-
-Overfull \hbox (16.34122pt too wide) in paragraph at lines 147--147
-[]    \OT1/cmtt/m/n/12 # Note 'my[]network' is the name of the network stored i
-n the 'Graphs' table[] 
+] [8]
+Overfull \hbox (20.9488pt too wide) in paragraph at lines 175--177
+[]\OT1/cmr/m/n/12 This soft-ware is re-leased un-der a BSD style li-cense. See 
+LI-CENSE.TXT or type nx[]pgnet.license()
  []
 
 [9]
-Overfull \hbox (11.89522pt too wide) in paragraph at lines 155--155
-[]    \OT1/cmtt/m/n/12 # Note if 'overwrite=True' then an existing network in t
-he database of the[] 
- []
-
-
-Overfull \hbox (2.2622pt too wide) in paragraph at lines 159--159
-[]    \OT1/cmtt/m/n/12 nx[]pgnet.write(conn).pgnet(network, 'new[]network', eps
-g, overwrite=False)[] 
- []
-
-
-Overfull \hbox (18.07022pt too wide) in paragraph at lines 173--173
-[]\OT1/cmtt/m/n/12 Developed by Tom Holderness at Newcastle University School o
-f Civil Engineering[] 
- []
-
-
-Overfull \hbox (11.89522pt too wide) in paragraph at lines 187--187
-[]\OT1/cmtt/m/n/12 Tomas Holderness, David Alderson, Alistair Ford, Stuart Barr
- and Craig Robson.[] 
- []
-
-[10]
 Overfull \hbox (36.86383pt too wide) in paragraph at lines 215--219
 []\OT1/cmr/bx/n/12 Author: \OT1/cmr/m/n/12 Tomas Hold-er-ness (tom.holderness@n
 cl.ac.uk) David Alder-son (david.alderson@ncl.ac.uk)
  []
 
-[11] [12] [13] [14] [15]) [16] (./api.ind
+[10] [11] [12] [13] [14]) [15] (./api.ind
 Overfull \hbox (16.74861pt too wide) in paragraph at lines 15--17
 []| \OT1/cmr/m/n/12 nx[]pgnet.nisql.add[]graph[]record \OT1/cmr/m/it/12 (method
 )\OT1/cmr/m/n/12 ,
@@ -692,54 +624,60 @@ Overfull \hbox (32.522pt too wide) in paragraph at lines 27--29
  []
 
 
-Overfull \hbox (1.35628pt too wide) in paragraph at lines 38--40
+Overfull \hbox (20.40413pt too wide) in paragraph at lines 29--31
+[]| \OT1/cmr/m/n/12 nx[]pgnet.nisql.sql[]function[]check \OT1/cmr/m/it/12 (meth
+od)\OT1/cmr/m/n/12 ,
+ []
+
+
+Overfull \hbox (1.35628pt too wide) in paragraph at lines 40--42
 []| \OT1/cmr/m/n/12 nx[]pgnet.read.pgnet[]edges \OT1/cmr/m/it/12 (method)\OT1/c
 mr/m/n/12 , [][][][][][] 
  []
 
 
-Overfull \hbox (2.9882pt too wide) in paragraph at lines 40--42
+Overfull \hbox (2.9882pt too wide) in paragraph at lines 42--44
 []| \OT1/cmr/m/n/12 nx[]pgnet.read.pgnet[]nodes \OT1/cmr/m/it/12 (method)\OT1/c
 mr/m/n/12 , [][][][][][] 
  []
 
 
-Overfull \hbox (37.24562pt too wide) in paragraph at lines 45--47
+Overfull \hbox (37.24562pt too wide) in paragraph at lines 47--49
 []| \OT1/cmr/m/n/12 nx[]pgnet.write.create[]attribute[]map \OT1/cmr/m/it/12 (me
 thod)\OT1/cmr/m/n/12 ,
  []
 
 
-Overfull \hbox (0.7035pt too wide) in paragraph at lines 47--49
+Overfull \hbox (0.7035pt too wide) in paragraph at lines 49--51
 []| \OT1/cmr/m/n/12 nx[]pgnet.write.create[]feature \OT1/cmr/m/it/12 (method)\O
 T1/cmr/m/n/12 ,
  []
 
 
-Overfull \hbox (8.48454pt too wide) in paragraph at lines 51--53
+Overfull \hbox (8.48454pt too wide) in paragraph at lines 53--55
 []| \OT1/cmr/m/n/12 nx[]pgnet.write.netgeometry \OT1/cmr/m/it/12 (method)\OT1/c
 mr/m/n/12 , [][][][][][] 
  []
 
 
-Overfull \hbox (0.63823pt too wide) in paragraph at lines 55--57
+Overfull \hbox (0.63823pt too wide) in paragraph at lines 57--59
 []| \OT1/cmr/m/n/12 nx[]pgnet.write.pgnet[]edge \OT1/cmr/m/it/12 (method)\OT1/c
 mr/m/n/12 , [][][][][][] 
  []
 
 
-Overfull \hbox (2.27016pt too wide) in paragraph at lines 57--59
+Overfull \hbox (2.27016pt too wide) in paragraph at lines 59--61
 []| \OT1/cmr/m/n/12 nx[]pgnet.write.pgnet[]node \OT1/cmr/m/it/12 (method)\OT1/c
 mr/m/n/12 , [][][][][][] 
  []
 
 
-Overfull \hbox (29.08598pt too wide) in paragraph at lines 59--61
+Overfull \hbox (29.08598pt too wide) in paragraph at lines 61--63
 []| \OT1/cmr/m/n/12 nx[]pgnet.write.update[]graph[]table \OT1/cmr/m/it/12 (meth
 od)\OT1/cmr/m/n/12 ,
  []
 
-[17
+[16
 
 
 ]) (./api.aux (./nx_pg-module.aux) (./nx_pgnet-module.aux))
@@ -748,12 +686,12 @@ LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
  ) 
 Here is how much of TeX's memory you used:
- 4942 strings out of 495062
- 70517 string characters out of 1182644
- 143164 words of memory out of 3000000
- 7998 multiletter control sequences out of 15000+50000
- 13889 words of font info for 53 fonts, out of 3000000 for 9000
+ 4982 strings out of 495062
+ 71168 string characters out of 1182644
+ 146164 words of memory out of 3000000
+ 8030 multiletter control sequences out of 15000+50000
+ 14414 words of font info for 55 fonts, out of 3000000 for 9000
  28 hyphenation exceptions out of 8191
- 38i,13n,43p,328b,431s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 38i,13n,43p,328b,428s stack positions out of 5000i,500n,10000p,200000b,50000s
 
-Output written on api.dvi (17 pages, 77200 bytes).
+Output written on api.dvi (16 pages, 83168 bytes).

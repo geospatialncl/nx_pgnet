@@ -1,7 +1,10 @@
 #!/usr/bin/env  python
 # -*- coding: utf-8 -*-
 """
-------------
+nx_pg.py - Read/write support for PostGIS tables in NetworkX
+
+B{Introduction}
+
 NetworkX is a python library for graph analysis. Using edge and node 
 attribution it can be used for spatial network analysis (with geography stored 
 as node/edge attributes). This module supports the use of NetworkX for the
@@ -9,10 +12,10 @@ development of network analysis of spatial networks stored in a PostGIS
 spatial database by acting as an interface to node and edge tables which 
 contain graph nodes and edges.
 
------
-Notes
------
-Node support
+B{Notes}
+
+I{Node support}
+
 Note that nodes are defined by the edges at network creation and the reading 
 of node tables independently is not currently supported (because without 
 defining a primary key/foreign key relationship this can easily break the :
@@ -20,27 +23,29 @@ network). This issue is solved in nx_pgnet which should be used for proper
 storage of networks in PostGIS tables. To read/write PostGIS networks 
 (as defined by a network schema use) the nx_pgnet module.
 
-Output tables
+I{Output tables}
+
 For each network written two tables are created: edges and nodes. 
 This representation is similar to that of the nx_shp module 
 (for reading/writing network shapefiles). 
 
-Coordinate system support
+I{Coordinate system support}
+
 nx_pg has no support for defining a coordinate system of the output tables. 
 Geometry is written without an SRS value, when viewing using a GIS you must
 specify the correct coordinate system for the network. nx_pgnet has coordinate
 systems support for network tables.
 
-Graph/Network terms
+I{Graph/Network terms}
+
 Note that the terms 'graph' and 'network' are used interchangeably within the 
 software and documentation. To some extent a 'graph' refers to a topological 
 object (often in memory) with none or limited attribution, whilst a 'network' 
 refers to a graph object with attribution of edges and nodes and with 
 geography defined, although this is not always the case.
 
-----------------
-Module structure    
-----------------
+B{Module structure}
+
 The module has two key functions:
     - read_pg:
         Function to create NetworkX graph instance from PostGIS table(s) 
@@ -51,9 +56,8 @@ The module has two key functions:
         
     - Other functions support the read and write operations.
     
---------------------
-Database connections
---------------------
+B{Database connections}
+
 Connections to PostGIS are created using the OGR simple feature library and are
 passed to the read() and write() classes. See http://www.gdal.ogr/ogr
 
@@ -65,93 +69,88 @@ to work.
 To create a connection using the OGR Python (SWIG) OGR bindings to a database
 on localhost:
     
-    import osgeo.ogr as ogr
-    conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
+    >>> import osgeo.ogr as ogr
+    >>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
                     password='password'")
     
---------
-Examples
---------
+B{Examples}
+
 The following are examples of high level read and write network operations. For
 more detailed information see method documentation below.
 
 Reading a network from PostGIS table of LINESTRINGS representing edges:
     
-    import nx_pg
-    import osgeo.ogr as ogr
+    >>> import nx_pg
+    >>> import osgeo.ogr as ogr
     
-    # Create a connection
-    conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
+    >>> # Create a connection
+    >>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
                     password='password'")
 
-    # Read a network
-    # Note 'my_network' is the name of the network stored in the 'Graphs' table
+    >>> # Read a network
+    >>> # Note 'my_network' is the name of the network stored in the 'Graphs' table
     
-    network = nx_pg.read_pg(conn, 'edges_tablename')
+    >>> network = nx_pg.read_pg(conn, 'edges_tablename')
     
-    Adding node attributes
-        Where the user wants to add node attributes from a table of points,
-        use the optional nodes_tablename option in the read function:
-            
-        network = nx_pg.read_pg(conn, 'edge_tablename', 'node_tablename')
-        
-        This will add attributes from the node table to nodes in the network
-        where a network node geometry is equal to a node table point geometry. 
-        
-        Note that this will not necessarily add all points in the nodes table 
-        as not all points may match created nodes.
-        
-        Also note that if two points share the same geometry as a node, only
-        one of the point attributes will be added (whichever occurs further 
-        in the data).
+I{Adding node attributes}
+
+Where the user wants to add node attributes from a table of points,
+use the optional nodes_tablename option in the read function:
+    
+>>> network = nx_pg.read_pg(conn, 'edge_tablename', 'node_tablename')
+
+This will add attributes from the node table to nodes in the network
+where a network node geometry is equal to a node table point geometry. 
+
+Note that this will not necessarily add all points in the nodes table 
+as not all points may match created nodes.
+
+Also note that if two points share the same geometry as a node, only
+one of the point attributes will be added (whichever occurs further 
+in the data).
     
 
-Writing a NetworkX graph instance to a PostGIS schema:
-    
-    # Write the network to the same database but under a different name.
-    # Note if 'overwrite=True' then an existing network in the database of the 
-    # same name will be overwritten.
-    
-    nx_pg.write_pg(conn, network, 'new_network, overwrite=False')
-    
-------------
-Dependencies
-------------
-Python 2.6 or later
-NetworkX 1.6 or later
-OGR 1.8.0 or later
+I{Writing a NetworkX graph instance to a PostGIS schema}:
 
--------------
-Copyright (C)
--------------
+Write the network to the same database but under a different name.
+Note if 'overwrite=True' then an existing network in the database of the 
+same name will be overwritten.
+    
+    >>> nx_pg.write_pg(conn, network, 'new_network, overwrite=False')
+    
+B{Dependencies}
+
+	- Python 2.6 or later
+	- NetworkX 1.6 or later
+	- OGR 1.8.0 or later
+
+B{Copyright (C)}
+
 Tomas Holderness / Newcastle University
 
 Developed by Tom Holderness at Newcastle University School of Civil Engineering
 and Geosciences, geoinfomatics group:
 
----------------
-Acknowledgement 
----------------
+B{Acknowledgement}
+
 Acknowledgement must be made to the nx_shp developers as much of the 
 functionality of this module is the same.
 
--------
-License
--------
+B{License}
+
 This software is released under a BSD style license which must be compatible
 with the NetworkX license because of similarities with NetworkX source code.:
     
 See LICENSE.TXT or type
 nx_pg.license() for full details.
 
--------
-Credits
--------
+B{Credits}
+
 Tomas Holderness, David Alderson, Alistair Ford, Stuart Barr and Craig Robson.
 
--------
-Contact
--------
+
+B{Contact}
+
 tom.holderness@ncl.ac.uk
 www.staff.ncl.ac.uk/tom.holderness
 

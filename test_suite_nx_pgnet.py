@@ -83,10 +83,18 @@ def main():
 
     #net = nx_pg.read_pg(conn, 'LightRail_Baseline', 'LightRail_Baseline_Stations')
     ##net = nx_pg.read_pg(conn, 'LightRail_Baseline')
-    net = nx_pgnet.read(conn).pgnet('lr_test')
-    
+    #net = nx_pgnet.read(conn).pgnet('lr_test')
+    sql = 'SELECT source, dest FROM lightrail_paths GROUP BY source, dest'
+    sys.path.append('/home/a5245228/bin/python/IAM/network/cost')
+    import nxcost
+    import networkx as nx
+    layer = nxcost.preprocessing(conn).custom_query(sql)
+    data = nxcost.preprocessing(conn).get_table_data(layer)
+    costs = {}
+    for pair in data:
+        costs[pair[0]] = nx.single_source_dijkstra_path_length(G, pair[0])
     #print nx_pgnet.nisql(conn).create_edge_view('lr_test')
-    print 'read'
+    print costs[1]
     exit(0)
     ##print net.edges(data=True)
     #print net.nodes(data=True)
