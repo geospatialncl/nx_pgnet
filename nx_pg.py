@@ -18,7 +18,7 @@ I{Node support}
 
 Note that nodes are defined by the edges at network creation and the reading 
 of node tables independently is not currently supported (because without 
-defining a primary key/foreign key relationship this can easily break the :
+defining a primary key/foreign key relationship this can easily break the
 network). This issue is solved in nx_pgnet which should be used for proper
 storage of networks in PostGIS tables. To read/write PostGIS networks 
 (as defined by a network schema use) the nx_pgnet module.
@@ -33,7 +33,7 @@ I{Coordinate system support}
 
 nx_pg has no support for defining a coordinate system of the output tables. 
 Geometry is written without an SRS value, when viewing using a GIS you must
-specify the correct coordinate system for the network. nx_pgnet has coordinate
+specify the correct coordinate system for the network, nx_pgnet has coordinate
 systems support for network tables.
 
 I{Graph/Network terms}
@@ -59,19 +59,19 @@ The module has two key functions:
 B{Database connections}
 
 Connections to PostGIS are created using the OGR simple feature library and are
-passed to the read() and write() classes. See http://www.gdal.ogr/ogr
+passed to the read() and write() classes. See U{http://www.gdal.org/ogr}
 
 Connections are mutually exclusive between read_pg and write_pg, although you 
 can of course read and write to the same database. 
 You must pass a valid connection to the read or write classes for the module 
 to work.
 
-To create a connection using the OGR Python (SWIG) OGR bindings to a database
+To create a connection using the OGR python bindings to a database
 on localhost:
     
     >>> import osgeo.ogr as ogr
     >>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
-                    password='password'")
+    >>>	                password='password'")
     
 B{Examples}
 
@@ -85,7 +85,7 @@ Reading a network from PostGIS table of LINESTRINGS representing edges:
     
     >>> # Create a connection
     >>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
-                    password='password'")
+    >>>	                password='password'")
 
     >>> # Read a network
     >>> # Note 'my_network' is the name of the network stored in the 'Graphs' table
@@ -94,19 +94,19 @@ Reading a network from PostGIS table of LINESTRINGS representing edges:
     
 I{Adding node attributes}
 
-Where the user wants to add node attributes from a table of points,
-use the optional nodes_tablename option in the read function:
+Nodes are created automatically at the start/end of a line, or where there is a break
+in a line. A user can add node attributes from a table of point geometries which represent
+these locations. To add attributes to nodes use the nodes_tablename option in the read function:
     
 >>> network = nx_pg.read_pg(conn, 'edge_tablename', 'node_tablename')
 
 This will add attributes from the node table to nodes in the network
-where a network node geometry is equal to a node table point geometry. 
+where a network node geometry is equal to a point geometry in the specified node table. 
 
-Note that this will not necessarily add all points in the nodes table 
-as not all points may match created nodes.
+Note that this will not add all points in the nodes table if not all points match the geometry of created nodes.
 
 Also note that if two points share the same geometry as a node, only
-one of the point attributes will be added (whichever occurs further 
+one of the point attributes will be added (whichever occurs later 
 in the data).
     
 
@@ -124,12 +124,12 @@ B{Dependencies}
 	- NetworkX 1.6 or later
 	- OGR 1.8.0 or later
 
-B{Copyright (C)}
+B{Copyright}
 
-Tomas Holderness / Newcastle University
+Tomas Holderness & Newcastle University
 
 Developed by Tom Holderness at Newcastle University School of Civil Engineering
-and Geosciences, geoinfomatics group:
+and Geosciences, Geoinfomatics group:
 
 B{Acknowledgement}
 
@@ -151,7 +151,7 @@ Tomas Holderness, David Alderson, Alistair Ford, Stuart Barr and Craig Robson.
 
 B{Contact}
 
-tom.holderness@ncl.ac.uk
+tom.holderness@ncl.ac.uk\n
 www.staff.ncl.ac.uk/tom.holderness
 
 """

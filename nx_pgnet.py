@@ -1,7 +1,7 @@
 #!/usr/bin/env  python
 # -*- coding: utf-8 -*-
 """
-nx_pgnet - NetworkX PostGIS network IO module (PostGIS network schema).
+nx_pgnet - Read/write support for PostGIS network schema in NetworkX.
 
 B{Introduction}
 
@@ -55,11 +55,10 @@ tables:
         performance where more than one edge share the same geometry.
         
     - Interdependency:
-        Holds interdependencies between networks. Not currently supported.
+        Holds interdependencies between networks.
         
     - Interdependency_Edges:
-        Holds interdependency geometry. Not currently supported.
-
+        Holds interdependency geometry. 
 
 B{Module structure    }
 
@@ -76,13 +75,10 @@ The module is split into three key classes:
     - nisql:
         Contains methods which act as a wrapper to the special PostGIS network 
         schema functions. 
-        Note: do not use this class unless you know what you are
-        doing! Use the higher-level read/write functions results in less chance
-        of breaking your networks.
         
     - errors:
         Class containing error catching, reporting and logging methods. 
-        Note: Not yet implemented.
+        
 
 Detailed documentation for each class can be found below contained in class 
 document strings. The highest level functions for reading and writing data are:
@@ -98,7 +94,7 @@ Write:
 B{Database connections}
 
 Connections to PostGIS are created using the OGR simple feature library and are
-passed to the read() and write() classes. See http://www.gdal.ogr/ogr
+passed to the read() and write() classes. See http://www.gdal.org/ogr
 
 Connections are mutually exclusive between read() and write() and are contained 
 within each class (i.e. all methods within those classes inherit the :
@@ -106,16 +102,16 @@ connection), although you can of course read and write to the same database.
 You must pass a valid connection to the read or write classes for the module 
 to work.
 
-To create a connection using the OGR Python (SWIG) OGR bindings to a database
+To create a connection using the OGR python bindings to a database
 on localhost:
     
     >>> import osgeo.ogr as ogr
     >>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
-                    password='password'")
+    >>>	                password='password'")
     
 B{Examples}
 
-The following are examples of high level read and write network operations. For
+The following are examples of read and write network operations. For
 more detailed information see method documentation below.
 
 Reading a network from PostGIS schema to a NetworkX graph instance:
@@ -125,17 +121,16 @@ Reading a network from PostGIS schema to a NetworkX graph instance:
     
     >>> # Create a connection
     >>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
-                    password='password'")
+    >>>	                password='password'")
 
     >>> # Read a network
     >>> # Note 'my_network' is the name of the network stored in the 'Graphs' table
-    
     >>> network = nx_pgnet.read(conn).pgnet('my_network')    
 
 Writing a NetworkX graph instance to a PostGIS schema:
     
 Write the network to the same database but under a different name.
-Note 'EPSG' id the epsg code for the output network geometry.
+'EPSG' is the EPSE code for the output network geometry.
 Note if 'overwrite=True' then an existing network in the database of the 
 same name will be overwritten.
     
