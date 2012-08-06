@@ -869,7 +869,7 @@ BEGIN
 	EXECUTE 'DROP VIEW IF EXISTS'||quote_ident(new_edge_view_name)||' CASCADE';
 	
     --this creates a view of the two edge and edge_geometry tables - this works in QGIS
-    EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_edge_view_name)||' AS SELECT int4(ROW_NUMBER() over (order by edge_table."EdgeID")) as id, edge_table.*, edge_geometry_table.* FROM '||quote_ident(edge_table_name)||' as edge_table, '||quote_ident(edge_geometry_table_name)||' as edge_geometry_table WHERE edge_table."Edge_GeomID" = edge_geometry_table."GeomID"';
+    EXECUTE 'CREATE OR REPLACE VIEW '||quote_ident(new_edge_view_name)||' AS SELECT int4(ROW_NUMBER() over (order by edge_table."EdgeID")) as view_id, edge_table.*, edge_geometry_table.* FROM '||quote_ident(edge_table_name)||' as edge_table, '||quote_ident(edge_geometry_table_name)||' as edge_geometry_table WHERE edge_table."Edge_GeomID" = edge_geometry_table."GeomID"';
     
     --retrieve the SRID of the edge_geometry table
     EXECUTE 'SELECT ST_SRID(geom) FROM '||quote_ident(edge_geometry_table_name) INTO SRID;
