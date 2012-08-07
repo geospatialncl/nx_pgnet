@@ -51,11 +51,17 @@ DECLARE
 	--nodeset A prkey datatype
 	nodeset_A_prkey_datatype varchar := '';
 	
+	nodeset_A_prkey_datatype_length integer := 0;
+	
 	--nodeset B prkey datatype
 	nodeset_B_prkey_datatype varchar := '';
 	
+	nodeset_B_prkey_datatype_length integer := 0;
+	
 	--temporary table name
 	temp_table_name varchar := '';
+		
+	temp_table_sql text := '';	
 		
 BEGIN
 	
@@ -78,16 +84,52 @@ BEGIN
 	--node B id (unknown data type)
 	--node_AB_line - derived geometry between node A and node B (closest)
 	--distance of node_AB_line
-	EXECUTE 'CREATE TEMPORARY TABLE '||quote_ident(temp_table_name)||' ("node_A_id" '||nodeset_A_prkey_datatype||', "node_A_geom" geometry, "node_B_id" '||nodeset_B_prkey_datatype||', "node_B_geom" geometry, "node_AB_line" geometry, "node_AB_distance" numeric)';
+	--switch to non-temp table, then delete after join?
+	--RAISE NOTICE 'create temp table start';
 	
+	IF nodeset_A_prkey_datatype = 'character' OR nodeset_A_prkey_datatype = 'character varying' THEN
+		EXECUTE 'SELECT character_maximum_length FROM information_schema.columns WHERE table_name = '||quote_literal(nodeset_A_table_name)||' AND column_name = '||quote_literal(nodeset_A_prkey) INTO nodeset_A_prkey_datatype_length;
+	END IF;
+	
+	IF nodeset_B_prkey_datatype = 'character' OR nodeset_B_prkey_datatype = 'character varying' THEN
+		EXECUTE 'SELECT character_maximum_length FROM information_schema.columns WHERE table_name = '||quote_literal(nodeset_B_table_name)||' AND column_name = '||quote_literal(nodeset_B_prkey) INTO nodeset_B_prkey_datatype_length;
+	END IF;
+	
+	IF nodeset_A_prkey_datatype = 'character' OR nodeset_A_prkey_datatype = 'character varying' THEN	
+		temp_table_sql := 'CREATE TEMPORARY TABLE '||quote_ident(temp_table_name)||' ("node_A_id" '||nodeset_A_prkey_datatype||' ('||nodeset_A_prkey_datatype_length||'), "node_A_geom" geometry, ';
+	ELSE
+		temp_table_sql := 'CREATE TEMPORARY TABLE '||quote_ident(temp_table_name)||' ("node_A_id" '||nodeset_A_prkey_datatype||', "node_A_geom" geometry, ';
+	END IF;
+	
+	IF nodeset_B_prkey_datatype = 'character' OR nodeset_B_prkey_datatype = 'character varying' THEN	
+		temp_table_sql := temp_table_sql || '"node_B_id" '||nodeset_B_prkey_datatype||' ('||nodeset_B_prkey_datatype_length||'), "node_B_geom" geometry, "node_AB_line" geometry, "node_AB_distance" numeric)';
+	ELSE
+		temp_table_sql := temp_table_sql || '"node_B_id" '||nodeset_B_prkey_datatype||', "node_B_geom" geometry, "node_AB_line" geometry, "node_AB_distance" numeric)';
+	END IF;
+	
+	EXECUTE temp_table_sql;
+	
+	--RAISE NOTICE 'create temp table end';
+	--EXECUTE 'INSERT INTO '||quote_ident(temp_table_name)||' ("node_A_id", "node_A_geom", "node_B_id", "node_B_geom", "node_AB_line", "node_AB_distance") SELECT DISTINCT ON("node_A_set".'||quote_ident(nodeset_A_prkey)||') "node_A_set".'||quote_ident(nodeset_A_prkey)||', "node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||', "node_B_set".'||quote_ident(nodeset_B_prkey)||', "node_B_set".'||quote_ident(nodeset_B_geometry_column_name)||', ST_MakeLine("node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||', "node_B_set".'||quote_ident(nodeset_B_geometry_column_name)||'), ST_Distance("node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||', "node_B_set".'||quote_ident(nodeset_B_geometry_column_name)||') FROM '||quote_ident(nodeset_A_table_name)||' AS "node_A_set", '||quote_ident(nodeset_B_table_name)||' AS "node_B_set" ORDER BY "node_A_set".'||quote_ident(nodeset_A_prkey)||', "node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||' <-> "node_B_set".'||quote_ident(nodeset_B_geometry_column_name);
+	
+	--do we need to use ST_DWithin at this point or something similar to limit the number of necessary searches?
+	
+	--RAISE NOTICE 'insert in to temp table';
+	--RAISE NOTICE 'nodeset_A_prkey: %', nodeset_A_prkey;
 	--find the closest node from set B to each node in set A
-	EXECUTE 'INSERT INTO '||quote_ident(temp_table_name)||' ("node_A_id", "node_A_geom", "node_B_id", "node_B_geom", "node_AB_line", "node_AB_distance") SELECT DISTINCT ON("node_A_set".'||quote_ident(nodeset_A_prkey)||') "node_A_set".'||quote_ident(nodeset_A_prkey)||', "node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||', "node_B_set".'||quote_ident(nodeset_B_prkey)||', "node_B_set".'||quote_ident(nodeset_B_geometry_column_name)||', ST_MakeLine("node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||', "node_B_set".'||quote_ident(nodeset_B_geometry_column_name)||'), ST_Distance("node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||', "node_B_set".'||quote_ident(nodeset_B_geometry_column_name)||') FROM '||quote_ident(nodeset_A_table_name)||' AS "node_A_set", '||quote_ident(nodeset_B_table_name)||' AS "node_B_set" WHERE "node_A_set".'||quote_ident(nodeset_A_prkey)||' < 10 ORDER BY "node_A_set".'||quote_ident(nodeset_A_prkey)||', "node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||' <-> "node_B_set".'||quote_ident(nodeset_B_geometry_column_name);
-	
+	EXECUTE 'INSERT INTO '||quote_ident(temp_table_name)||' ("node_A_id", "node_A_geom", "node_B_id", "node_B_geom", "node_AB_line", "node_AB_distance") SELECT DISTINCT ON("node_A_set".'||quote_ident(nodeset_A_prkey)||') "node_A_set".'||quote_ident(nodeset_A_prkey)||', "node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||', "node_B_set".'||quote_ident(nodeset_B_prkey)||', "node_B_set".'||quote_ident(nodeset_B_geometry_column_name)||', ST_MakeLine("node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||', "node_B_set".'||quote_ident(nodeset_B_geometry_column_name)||'), ST_Distance("node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||', "node_B_set".'||quote_ident(nodeset_B_geometry_column_name)||') FROM '||quote_ident(nodeset_A_table_name)||' AS "node_A_set", '||quote_ident(nodeset_B_table_name)||' AS "node_B_set" ORDER BY "node_A_set".'||quote_ident(nodeset_A_prkey)||', "node_A_set".'||quote_ident(nodeset_A_geometry_column_name)||' <-> "node_B_set".'||quote_ident(nodeset_B_geometry_column_name);
+	--RAISE NOTICE 'finish insert in to temp table';
+	--how can we speed this up?
+	--INSERT INTO closest_elecsubstation_to_os_airports_temp ("node_A_id", "node_A_geom", "node_B_id", "node_B_geom", "node_AB_line", "node_AB_distance") SELECT DISTINCT ON("node_A_set".gid) "node_A_set".gid, "node_A_set".geom, "node_B_set".gid, "node_B_set".geom, ST_MakeLine("node_A_set".geom, "node_B_set".geom), ST_Distance("node_A_set".geom, "node_B_set".geom) FROM "OS_Airports" AS "node_A_set", "OS_ElectricitySubStations" AS "node_B_set" ORDER BY "node_A_set".geom <-> "node_B_set".geom, "node_A_set".gid
+	--RAISE NOTICE 'pre-join';
 	--drop the previous table
 	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(output_table_name);
 	
 	--create the output table joined back to the original input node set A table
 	EXECUTE 'CREATE TABLE '||quote_ident(output_table_name)||' AS SELECT * FROM '||quote_ident(temp_table_name)||' LEFT OUTER JOIN '||quote_ident(nodeset_A_table_name)||' ON ('||quote_ident(temp_table_name)||'."node_A_id" = '||quote_ident(nodeset_A_table_name)||'.'||quote_ident(nodeset_A_prkey)||')';
+	
+	--delete old temp table
+	EXECUTE 'DROP TABLE IF EXISTS '||quote_ident(temp_table_name);
 	
 	--add the output to the geometry columns table
 	IF add_to_geometry_columns IS TRUE THEN
