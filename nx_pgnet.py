@@ -664,6 +664,9 @@ class write:
 
     def pgnet(self, network, tablename_prefix, srs, overwrite=False,
         directed = False, multigraph = False):
+            
+        print "fuck!!!"    
+            
         '''Write NetworkX instance to PostGIS network schema tables.
         
         Updates Graph table with new network.
@@ -712,6 +715,7 @@ class write:
                   'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
                   
         for e in G.edges(data=True):
+            print 'edge!'
             data = G.get_edge_data(*e)
             edge_geom = self.netgeometry(e, data)
 
@@ -722,6 +726,8 @@ class write:
             node_attrs['GraphID'] = graph_id 
             node_geom = self.netgeometry(e[0], G.node[e[0]])          
             node_id = self.pgnet_node(node_attrs, node_geom)
+            print 'Node_F_ID', node_id
+            print 'Node_F_geom', node_geom
             G[e[0]][e[1]]['Node_F_ID'] = node_id
             # Insert the end node
             node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[1]], 
@@ -731,7 +737,8 @@ class write:
             node_geom = self.netgeometry(e[1], G.node[e[1]])            
             node_id = self.pgnet_node(node_attrs, node_geom)
             G[e[0]][e[1]]['Node_T_ID'] = node_id
-
+            print "Node_T_ID", node_id    
+            print 'Node_T_geom', node_geom
             # Set graph id.
             G[e[0]][e[1]]['GraphID'] = graph_id
             
