@@ -241,9 +241,9 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
         attributes = dict(zip(flds, flddata))
         # Get the geometry for that feature
         geom = f.GetGeometryRef()
-        # We've got Multiline geometry so split into line segments
+        # Check for multilinestring
         if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
-            raise Error('MULTILINESTRING DATA NOT SUPPORTED!')
+            raise Error('Multilinestring data are not supported.')
         #print f.GetGeomertyTypeName()
             for line in geom:
                 # Get points in line
