@@ -300,7 +300,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False,
     if nodetable is not None:
         for point in nodes:
             if point in net.nodes():
-                net.node[point] = nodes[pint] 
+                net.node[point] = nodes[point] 
                 
     # End of function, return the network            
     return net
