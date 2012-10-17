@@ -182,11 +182,20 @@ def getfieldinfo(lyr, feature, flds):
     f = feature
     return [f.GetField(f.GetFieldIndex(x)) for x in flds]
     
-def read_pg(conn, edgetable, nodetable=None, directed=False):
+def read_pg(conn, edgetable, nodetable=None, directed=False,
+    geom_precision=2):
     '''Read a network from PostGIS table of line geometry. 
        
        Optionally takes a table of points and where point geometry is equal
        to that of nodes created, point attributes will be added to nodes.
+       
+       directed flag indicates whether network is directed or undirected.
+       
+       geom_precision applies the round() function to geometry of nodes (to 
+       fix precision errors between edge vertices and nodes). Precision is 
+       in the units of the geometry CRS. For example in BNG (EPSG:27700) a 
+       precision of 2 (default) will round to two units (i.e. the decimeter 
+       level).
        
        Returns instance of networkx.Graph().'''    
     if conn == None:
@@ -224,14 +233,11 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
                             'Node table does not contain point geometry')
                     else:
                         node_coord = geom.GetPoint_2D(0)
-                        
-                        node_coord_t=(round(node_coord[0],2),round(node_coord[1],2))
-                        #print 'node_coord', node_coord_t
+                        # Get the coordinate of the node and apply a precition
+                        node_coord_t=(round(node_coord[0],geom_precision),
+                                      round(node_coord[1],geom_precision))
                         nodes[node_coord_t] = attributes
                         f = nlyr.GetNextFeature()
-                        #nodes[geom.GetPoint_2D(0)] = attributes
-                        
-                        #f = nlyr.GetNextFeature()
 
     f = lyr.GetNextFeature()        
     flds = [x.GetName() for x in lyr.schema]
@@ -241,50 +247,23 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
         attributes = dict(zip(flds, flddata))
         # Get the geometry for that feature
         geom = f.GetGeometryRef()
-        # Check for multilinestring
+        # Check for multilinestring, not supported as breaks topology.
         if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
-            raise Error('Multilinestring data are not supported.')
-        #print f.GetGeomertyTypeName()
-            for line in geom:
-                # Get points in line
-                n = line.GetPointCount()
-                # Get the attributes (akin to nx_shp)
-                attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
-                attributes["Wkt"] = ogr.Geometry.ExportToWkb(line)
-                attributes["Json"] = ogr.Geometry.ExportToWkb(line)
-                nodef = line.GetPoint_2D(0)
-                nodet = line.GetPoint_2D(n-1)
-                
-                # Old attribution of nodes
-                '''
-                if nodetable is not None:
-                    for node, attrs in nodes.iteritems():
-                        if node == nodef:
-                            # Overwrite with values from node table
-                            net.add_node(nodef, attrs)
-                        elif node == nodet:
-                            net.add_node(nodet, attrs)
-                '''            
-                net.add_edge(nodef, nodet, attributes)
-                f = lyr.GetNextFeature()
-                
+            raise Error('Multi-linestring data are not supported.')
+                        
         elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
             n = geom.GetPointCount()
             attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
-            attributes["Wkt"] = ogr.Geometry.ExportToWkb(geom)
-            attributes["Json"] = ogr.Geometry.ExportToWkb(geom)  
-            
-            # Get the from and to nodes
-            #nodef = geom.GetPoint_2D(0)
-            #nodet = geom.GetPoint_2D(n-1)
-            
-            
-            
+            attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
+            attributes["Json"] = ogr.Geometry.ExportToJson(geom)  
+
             node_coord = geom.GetPoint_2D(0)
-            node_coord_t=(round(node_coord[0],2),round(node_coord[1],2))
+            node_coord_t=(round(node_coord[0],geom_precision),
+                          round(node_coord[1],geom_precision))
             nodef = node_coord_t
             node_coord = geom.GetPoint_2D(n-1)
-            node_coord_t=(round(node_coord[0],2),round(node_coord[1],2))          
+            node_coord_t=(round(node_coord[0],geom_precision),
+                          round(node_coord[1],geom_precision))          
             nodet=node_coord_t
 
             #print 'line nodes', nodef, nodet            
