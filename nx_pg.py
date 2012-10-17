@@ -223,13 +223,15 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
                         raise Error('Error:'\
                             'Node table does not contain point geometry')
                     else:
-                        #node_coord = geom.GetPoint_2D(0)
-                        #node_coord_t=(round(node_coord[0],2),round(node_coord[1],2))
-                        #nodes[node_coord_t] = attributes
-                        #f = nlyr.GetNextFeature()
-                        nodes[geom.GetPoint_2D(0)] = attributes
-                        print geom.GetPoint_2D(0)
+                        node_coord = geom.GetPoint_2D(0)
+                        
+                        node_coord_t=(round(node_coord[0],2),round(node_coord[1],2))
+                        #print 'node_coord', node_coord_t
+                        nodes[node_coord_t] = attributes
                         f = nlyr.GetNextFeature()
+                        #nodes[geom.GetPoint_2D(0)] = attributes
+                        
+                        #f = nlyr.GetNextFeature()
 
     f = lyr.GetNextFeature()        
     flds = [x.GetName() for x in lyr.schema]
@@ -241,6 +243,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
         geom = f.GetGeometryRef()
         # We've got Multiline geometry so split into line segments
         if ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING':
+            raise Error('MULTILINESTRING DATA NOT SUPPORTED!')
         #print f.GetGeomertyTypeName()
             for line in geom:
                 # Get points in line
@@ -272,17 +275,19 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
             attributes["Json"] = ogr.Geometry.ExportToWkb(geom)  
             
             # Get the from and to nodes
-            nodef = geom.GetPoint_2D(0)
-            nodet = geom.GetPoint_2D(n-1)
+            #nodef = geom.GetPoint_2D(0)
+            #nodet = geom.GetPoint_2D(n-1)
             
-            print nodef, nodet
             
-            #node_coord = geom.GetPoint_2D(0)
-            #node_coord_t=(round(node_coord[0],2),round(node_coord[1],2))
-            #nodef = node_coord_t
-            #node_coord = geom.GetPoint_2D(0)
-            #node_coord_t=(round(node_coord[0],2),round(node_coord[1],2))          
-            #nodet=node_coord_t
+            
+            node_coord = geom.GetPoint_2D(0)
+            node_coord_t=(round(node_coord[0],2),round(node_coord[1],2))
+            nodef = node_coord_t
+            node_coord = geom.GetPoint_2D(n-1)
+            node_coord_t=(round(node_coord[0],2),round(node_coord[1],2))          
+            nodet=node_coord_t
+
+            #print 'line nodes', nodef, nodet            
             
             # Old attribution of nodes
             '''
@@ -310,8 +315,8 @@ def read_pg(conn, edgetable, nodetable=None, directed=False):
     if nodetable is not None:
         for point in nodes:
             if point in net.nodes():
-                print 'whoop!'
-                print nodes[point]
+                #print 'whoop!'
+                #print nodes[point]
                 net.node[point] = nodes[point] 
                 
     return net
