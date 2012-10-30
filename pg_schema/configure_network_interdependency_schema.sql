@@ -66,7 +66,7 @@ ALTER FUNCTION ni_reset_database(varchar) OWNER TO postgres;
 
 --function to delete a network (only removes the _Nodes, _Edges, _Edge_Geometry tables); 
 --$1 = table_prefix
-CREATE OR REPLACE FUNCTION ni_delete_network(varchar)
+CREATE OR REPLACE FUNCTION ni_delete_network(varchar (25))
 RETURNS void AS
 $BODY$
 DECLARE
@@ -179,7 +179,7 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_delete_network(varchar) OWNER TO postgres; 
+ALTER FUNCTION ni_delete_network(varchar (25)) OWNER TO postgres; 
 
 
 --function to check that the supplied SRID number, matches a record in the spatial_ref_sys table
@@ -222,7 +222,7 @@ ALTER FUNCTION ni_check_srid(integer) OWNER TO postgres;
 --$2 = SRID used for the nodes and edge_geometry tables
 --$3 = directed network
 --$4 = multigraph network
-CREATE OR REPLACE FUNCTION ni_create_network_tables(varchar, integer, boolean, boolean)
+CREATE OR REPLACE FUNCTION ni_create_network_tables(varchar (25), integer, boolean, boolean)
 RETURNS boolean AS
 $BODY$
 DECLARE
@@ -291,12 +291,12 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_create_network_tables(varchar, integer, boolean, boolean) OWNER TO postgres;      
+ALTER FUNCTION ni_create_network_tables(varchar (25), integer, boolean, boolean) OWNER TO postgres;      
 
 --function to create an empty nodes table
 --$1 = table_prefix
 --$2 = SRID (as geometry stored in nodes table)
-CREATE OR REPLACE FUNCTION ni_create_network_table_nodes(varchar, integer)
+CREATE OR REPLACE FUNCTION ni_create_network_table_nodes(varchar (25), integer)
 RETURNS boolean AS
 $BODY$ 
 DECLARE
@@ -379,11 +379,11 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_create_network_table_nodes(varchar, integer) OWNER TO postgres;  
+ALTER FUNCTION ni_create_network_table_nodes(varchar (25), integer) OWNER TO postgres;  
 
 --function to create an empty edge table
 --$1 = table_prefix
-CREATE OR REPLACE FUNCTION ni_create_network_table_edges(varchar)
+CREATE OR REPLACE FUNCTION ni_create_network_table_edges(varchar (25))
 RETURNS boolean AS
 $BODY$ 
 DECLARE
@@ -467,12 +467,12 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_create_network_table_edges(varchar) OWNER TO postgres;  
+ALTER FUNCTION ni_create_network_table_edges(varchar (25)) OWNER TO postgres;  
 
 --function to create an empty edge geometry table
 --$1 = table_prefix
 --$2 = SRID (as geometry stored in edge geometry table)
-CREATE OR REPLACE FUNCTION ni_create_network_table_edge_geometry(varchar, integer)
+CREATE OR REPLACE FUNCTION ni_create_network_table_edge_geometry(varchar (25), integer)
 RETURNS boolean AS
 $BODY$ 
 DECLARE
@@ -544,7 +544,7 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_create_network_table_edge_geometry(varchar, integer) OWNER TO postgres;  
+ALTER FUNCTION ni_create_network_table_edge_geometry(varchar (25), integer) OWNER TO postgres;  
 
 --generic function to remove a reference from the geometry columns table
 --$1 = table_name
@@ -554,7 +554,7 @@ ALTER FUNCTION ni_create_network_table_edge_geometry(varchar, integer) OWNER TO 
 --$5 = coordinate dimension of input geometry
 --$6 = coordinate reference system (EPSG code)
 --$7 = geometry type e.g. POINT, LINESTRING, MULTILINESTRING
-CREATE OR REPLACE FUNCTION ni_remove_from_geometry_columns(varchar, varchar, varchar, varchar, integer, integer, varchar)
+CREATE OR REPLACE FUNCTION ni_remove_from_geometry_columns(varchar (25), varchar, varchar, varchar, integer, integer, varchar)
 RETURNS boolean AS
 $BODY$ 
 DECLARE
@@ -602,7 +602,7 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_remove_from_geometry_columns(varchar, varchar, varchar, varchar, integer, integer, varchar) OWNER TO postgres;  
+ALTER FUNCTION ni_remove_from_geometry_columns(varchar (25), varchar, varchar, varchar, integer, integer, varchar) OWNER TO postgres;  
 
 --generic function to add table to geometry columns table
 --$1 = table_name
@@ -612,7 +612,7 @@ ALTER FUNCTION ni_remove_from_geometry_columns(varchar, varchar, varchar, varcha
 --$5 = coordinate dimension of input geometry
 --$6 = coordinate reference system (EPSG code)
 --$7 = geometry type e.g. POINT, LINESTRING, MULTILINESTRING
-CREATE OR REPLACE FUNCTION ni_add_to_geometry_columns(varchar, varchar, varchar, varchar, integer, integer, varchar)
+CREATE OR REPLACE FUNCTION ni_add_to_geometry_columns(varchar (25), varchar, varchar, varchar, integer, integer, varchar)
 RETURNS boolean AS
 $BODY$ 
 DECLARE
@@ -664,12 +664,12 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_add_to_geometry_columns(varchar, varchar, varchar, varchar, integer, integer, varchar) OWNER TO postgres;  
+ALTER FUNCTION ni_add_to_geometry_columns(varchar (25), varchar, varchar, varchar, integer, integer, varchar) OWNER TO postgres;  
 
 
 --function to add the appropriate foreign key relationships to the nodes, edges and edge_geometry tables
 --$1 table prefix
-CREATE OR REPLACE FUNCTION ni_add_fr_constraints(varchar)
+CREATE OR REPLACE FUNCTION ni_add_fr_constraints(varchar (25))
 RETURNS boolean AS
 $BODY$ 
 DECLARE
@@ -714,13 +714,13 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_add_fr_constraints(varchar) OWNER TO postgres;  
+ALTER FUNCTION ni_add_fr_constraints(varchar (25)) OWNER TO postgres;  
 
 --function to add a new record to the Graphs table i.e. define a new graph
 --$1 = table prefix i.e. graph name
 --$2 = boolean denoting if the graph is directed
 --$3 = boolean denoting if the graph is a multigraph
-CREATE OR REPLACE FUNCTION ni_add_graph_record(varchar, boolean, boolean) RETURNS void AS
+CREATE OR REPLACE FUNCTION ni_add_graph_record(varchar (25), boolean, boolean) RETURNS void AS
 $BODY$ 
 DECLARE
     
@@ -748,11 +748,11 @@ $BODY$
 LANGUAGE 
 plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_add_graph_record(varchar, boolean, boolean) OWNER TO postgres;  
+ALTER FUNCTION ni_add_graph_record(varchar (25), boolean, boolean) OWNER TO postgres;  
 
 --function to create a view that allows the node table to be read in to QGIS
 --$1 = table prefix
-CREATE OR REPLACE FUNCTION ni_create_node_view(varchar) RETURNS varchar AS
+CREATE OR REPLACE FUNCTION ni_create_node_view(varchar (25)) RETURNS varchar AS
 $BODY$
 DECLARE
     --user supplied table prefix
@@ -813,11 +813,11 @@ $BODY$
 LANGUAGE 
 plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_create_node_view(varchar) OWNER TO postgres;  
+ALTER FUNCTION ni_create_node_view(varchar (25)) OWNER TO postgres;  
 
 --function to create a view that joins the edge and edge_geometry tables, based on the supplied table prefix
 --$1 = table prefix
-CREATE OR REPLACE FUNCTION ni_create_edge_view(varchar) RETURNS varchar AS
+CREATE OR REPLACE FUNCTION ni_create_edge_view(varchar (25)) RETURNS varchar AS
 $BODY$
 DECLARE
     --user supplied table prefix
@@ -891,11 +891,11 @@ $BODY$
 LANGUAGE 
 plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_create_edge_view(varchar) OWNER TO postgres;  
+ALTER FUNCTION ni_create_edge_view(varchar (25)) OWNER TO postgres;  
 
 --function to create a view that joins the interdependency and interdependency_edge tables, based on the supplied table prefix
 --$1 = table prefix
-CREATE OR REPLACE FUNCTION ni_create_interdependency_edge_view(varchar) RETURNS varchar AS
+CREATE OR REPLACE FUNCTION ni_create_interdependency_edge_view(varchar (25)) RETURNS varchar AS
 $BODY$
 DECLARE
     
@@ -973,7 +973,7 @@ $BODY$
 LANGUAGE 
 plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_create_interdependency_edge_view(varchar) OWNER TO postgres;
+ALTER FUNCTION ni_create_interdependency_edge_view(varchar (25)) OWNER TO postgres;
 
 
 -----------------------------------HANDLING CREATION OF INTERDEPENDENCIES-----------------------------
@@ -981,7 +981,7 @@ ALTER FUNCTION ni_create_interdependency_edge_view(varchar) OWNER TO postgres;
 --two prefixes are required because the interdependency exists between two networks/graphs
 --$1 = table prefix for first network
 --$2 = table prefix for second network
-CREATE OR REPLACE FUNCTION ni_create_interdependency_tables(varchar, varchar) RETURNS boolean AS
+CREATE OR REPLACE FUNCTION ni_create_interdependency_tables(varchar (25), varchar (25)) RETURNS boolean AS
 $BODY$ 
 DECLARE
     --network prefixes

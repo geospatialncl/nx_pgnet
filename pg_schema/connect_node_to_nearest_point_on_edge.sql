@@ -11,7 +11,7 @@
 --$7 - output table name (will be suffixed with _join when joined back to the original edge data
 --$8 - add output to geometry columns (adds default geom column, additional_geom, and additional_combined_geom to geometry columns table)
 --$9 - search distance (m)
-CREATE OR REPLACE FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_in_search(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric)
+CREATE OR REPLACE FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_in_search(varchar (25), varchar, varchar, varchar (25), varchar, varchar, varchar, boolean, numeric)
 RETURNS SETOF RECORD AS 
 $BODY$
 DECLARE
@@ -360,4 +360,4 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_in_search(varchar, varchar, varchar, varchar, varchar, varchar, varchar, boolean, numeric) OWNER TO postgres; 
+ALTER FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_in_search(varchar (25), varchar, varchar, varchar (25), varchar, varchar, varchar, boolean, numeric) OWNER TO postgres; 

@@ -30,7 +30,7 @@
 	--$10 - output table name (will be suffixed with _join when joined back to the original edge data
 	--$11 - add output to geometry columns (adds default geom column, additional_geom, and additional_combined_geom to geometry columns table)	
 	
-CREATE OR REPLACE FUNCTION ni_data_proc_connect_hanging_edges_to_node_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean)
+CREATE OR REPLACE FUNCTION ni_data_proc_connect_hanging_edges_to_node_like(varchar (25), varchar, varchar, varchar, varchar (25), varchar, varchar, varchar, integer, varchar, boolean)
 RETURNS SETOF RECORD AS 
 $BODY$
 DECLARE
@@ -400,7 +400,7 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-ALTER FUNCTION ni_data_proc_connect_hanging_edges_to_node_like(varchar, varchar, varchar, varchar, varchar, varchar, varchar, varchar, integer, varchar, boolean) OWNER TO postgres; 	
+ALTER FUNCTION ni_data_proc_connect_hanging_edges_to_node_like(varchar (25), varchar, varchar, varchar, varchar (25), varchar, varchar, varchar, integer, varchar, boolean) OWNER TO postgres; 	
 	
 	--using SIMILAR TO from http://www.postgresql.org/docs/9.1/static/functions-matching.html
 	--true returned if it matches the "entire" string - this would act as a single function
