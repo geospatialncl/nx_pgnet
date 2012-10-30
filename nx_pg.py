@@ -87,23 +87,24 @@ Reading a network from PostGIS table of LINESTRINGS representing edges:
     >>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
     >>>                    password='password'")
 
-    >>> # Read a network
-    >>> # Note 'my_network' is the name of the network stored in the 'Graphs' table
-    
+    >>> # Read a network    
     >>> network = nx_pg.read_pg(conn, 'edges_tablename')
     
 I{Adding node attributes}
 
-Nodes are created automatically at the start/end of a line, or where there is a break
-in a line. A user can add node attributes from a table of point geometries which represent
-these locations. To add attributes to nodes use the nodes_tablename option in the read function:
+Nodes are created automatically at the start/end of a line, or where there is a 
+break in a line. A user can add node attributes from a table of point 
+geometries which represent these locations. To add attributes to nodes use the
+nodes_tablename option in the read function:
     
 >>> network = nx_pg.read_pg(conn, 'edge_tablename', 'node_tablename')
 
 This will add attributes from the node table to nodes in the network
-where a network node geometry is equal to a point geometry in the specified node table. 
+where a network node geometry is equal to a point geometry in the specified 
+node table. 
 
-Note that this will not add all points in the nodes table if not all points match the geometry of created nodes.
+Note that this will not add all points in the nodes table if not all points 
+match the geometry of created nodes.
 
 Also note that if two points share the same geometry as a node, only
 one of the point attributes will be added (whichever occurs later 
@@ -159,7 +160,7 @@ __author__ = "Tom Holderness"
 __created__ = "Thu Jan 19 15:55:13 2012"
 __year__ = "2011"
 __version__ = "0.9.1"
-import sys
+
 import networkx as nx
 import osgeo.ogr as ogr
 
@@ -202,6 +203,14 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
        Optionally takes a table of points and where point geometry is equal
        to that of nodes created, point attributes will be added to nodes.
        
+       directed flag indicates whether network is directed or undirected.
+       
+       geometry_precision applies the round() function to geometry of nodes (to 
+       fix precision errors between edge vertices and nodes). Precision is 
+       in the units of the geometry CRS. For example in BNG (EPSG:27700) a 
+       precision of 2 (default) will round to two units (i.e. the decimeter 
+       level).
+       
        Returns instance of networkx.Graph().'''    
     
     if conn == None:
@@ -219,9 +228,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
     elif directed == True:
         # Create Directed graph to store output  
         net = nx.DiGraph()    
-    # Create temporary node storage if needed.
-    
-    node_counter = 0
+    # Create temporary node storage if needed.       
     
     if nodetable is not None:        
         nodes = {}
@@ -239,15 +246,14 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                     # Check that we're dealing with point data'
                     if ogr.Geometry.GetGeometryName(geom) != 'POINT':
                         raise Error('Error:'\
-                            'Node table does not contain point geometry')
+                            'Node table does not contain point geometry')                    
                     else:                        
-                        # Get the coordinate of the node and apply a precition                        
+                        # Get the coordinate of the node and apply a precision                        
                         node_coord=round_coordinate(geom, 0, geometry_precision)
                         nodes[node_coord] = attributes                      
-                        
+                                            
                         f = nlyr.GetNextFeature()
-                    node_counter = node_counter + 1
-        
+                    
     #looping the edge layer
     f = lyr.GetNextFeature()    
     flds = [x.GetName() for x in lyr.schema]
@@ -259,8 +265,9 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
         attributes = dict(zip(flds, flddata))
         
         # Get the geometry for that feature
-        geom = f.GetGeometryRef()        
-        
+        geom = f.GetGeometryRef()
+
+        #We've got Multiline geometry so split into line segments
         #assume that the multilinestring is fully connected i.e. no gaps
         if geom is not None:
               
@@ -310,33 +317,32 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                 #set the to and from node value
                 nodef = node_coord_f
                 nodet = node_coord_t
+                                          
+                net.add_edge(nodef, nodet, attributes)
+                f = lyr.GetNextFeature()
                 
                 # Create the edge and nodes in the network
                 net.add_edge(nodef, nodet, attributes)
                 
-            elif ogr.Geometry.GetGeometryName(geom) == 'POINT':
-                add_point_counter = add_point_counter + 1
-                net.add_node((geom.GetPoint_2D(0)), attributes)
-                
+            elif ogr.Geometry.GetGeometryName(geom) == 'POINT':                
+                net.add_node((geom.GetPoint_2D(0)), attributes)                                        
             else:
                 raise ValueError, "PostGIS geometry type not"\
-                                    " supported."#        
-        f = lyr.GetNextFeature()
-        # Raise warning if nx_is_connected(G) is false.      
-    
-    # Attribution of nodes from points table (must exost in network)       
-    point_match_counter = 0
-    if nodetable is not None:        
-        for point in nodes:            
-            if point in net.nodes():                
-                net.node[point] = nodes[point]                            
-                point_match_counter = point_match_counter + 1    
-    
+                                    " supported."#                
+        f = lyr.GetNextFeature()        
+        # Raise warning if nx_is_connected(G) is false.
+
+    # Attribution of nodes from points table (must exist in network)
+    if nodetable is not None:
+        for point in nodes:
+            if point in net.nodes():
+                net.node[point] = nodes[point] 
+                
+    # End of function, return the network            
     return net
 
 def netgeometry(key, data):
     '''Create OGR geometry from a NetworkX Graph using Wkb/Wkt attributes.
-    
     '''
     
     if data.has_key('Wkb'):
@@ -375,13 +381,17 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
     
     '''
         
+    # Check connection    
     if conn == None:
         raise Error('No connection to database.')
-        
+    # Initialise network and prefixes    
     G = network
+    
     tbledges = tablename_prefix+'_Edges'
     tblnodes = tablename_prefix+'_Nodes'
     
+    # Overwrite details
+    # Overwrite details
     if overwrite is True:
         try:
             conn.DeleteLayer(tbledges)
@@ -391,11 +401,12 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
             conn.DeleteLayer(tblnodes)
         except:
             pass    
-                                        
-    #create edge and node tables
-    edges = conn.CreateLayer(tbledges, None, ogr.wkbMultiLineString) #ogr.wkbLineString)
+    edges = conn.CreateLayer(tbledges, None, ogr.wkbLineString)
+                    ing) #ogr.wkbLineString)
+    # Create the tables for edges and nodes
+    edges = conn.CreateLayer(tbledges, None, ogr.wkbLineString)
     nodes = conn.CreateLayer(tblnodes, None, ogr.wkbPoint)
-    
+    # Get node geometry
     #nodes
     for n in G:        
         data = G.node[n].values() or [{}]
@@ -405,7 +416,9 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
         
         g = netgeometry(n, data[0])
         create_feature(g, nodes)
+    
         
+    # Get edges and their attributes
     fields = {}
     attributes = {}
     OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}    
@@ -434,6 +447,7 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
                   # Create dict of single feature's attributes
                 else:
                     attributes[key] = data
-        
-        create_feature(g, edges, attributes)        
+         # Create the re(g, edges, attributes)        
+        create_feature(g, edges, attributes)
+    # Destroy nodes and edges features as per OGR recommendations.    
     nodes, edges = None, None    

@@ -191,6 +191,9 @@ __license__ = 'BSD style. See LICENSE.TXT'
 import networkx as nx
 import osgeo.ogr as ogr
 import osgeo.gdal as gdal
+import csv
+import sys
+import re
 
 # Ask ogr to use Python exceptions rather than stderr messages.
 ogr.UseExceptions()
@@ -251,7 +254,16 @@ class nisql:
         for row in self.conn.ExecuteSQL(sql):   
         
             result = row.ni_create_network_tables
-                    
+        '''
+        # Add geometry column
+        sql = ("SELECT * FROM ni_add_geometry_columns ('%s', %i);" % (prefix,
+               epsg))
+        print sql
+        self.conn.ExecuteSQL(sql)
+        # Add foreign key constraints
+        sql = ("SELECT * FROM ni_add_fr_constraints ('%s');" % (prefix,))
+        self.conn.ExecuteSQL(sql)        
+        '''
         return result
         
     def create_node_view(self, prefix):
@@ -282,7 +294,7 @@ class nisql:
         Returns view name if succesful.'''        
         viewname = None
         sql = "SELECT * FROM ni_create_edge_view('%s')" % prefix
-        
+
         for row in self.conn.ExecuteSQL(sql):
             viewname = row.ni_create_edge_view
         if viewname == None:
@@ -331,8 +343,7 @@ class nisql:
         result = None
         
         for row in self.conn.ExecuteSQL(sql):            
-            result = row.ni_node_geometry_equality_check
-            
+            result = row.ni_node_geometry_equality_check           
         return result
     
     def ni_edge_snap_geometry_equality_check(self, prefix, wkt, srs, snap):
@@ -533,11 +544,11 @@ class write:
         elif data.has_key('Wkt'):            
             geom = ogr.CreateGeometryFromWkt(data['Wkt'])
         elif type(key[0]) == 'tuple': # edge keys are packed tuples            
-            #geom = ogr.Geometry(ogr.wkbLineString)
-            geom = ogr.Geometry(ogr.wkbMultiLineString)
+            geom = ogr.Geometry(ogr.wkbLineString)
+            #geom = ogr.Geometry(ogr.wkbMultiLineString)
             _from, _to = key[0], key[1]
-            geom.SetPoint(0, *_from)
-            geom.SetPoint(1, *_to)
+            geom.SetPoint_2D(0, *_from)
+            geom.SetPoint_2D(1, *_to)
         else:                         
             geom = ogr.Geometry(ogr.wkbPoint)
             geom.SetPoint_2D(0, *key)
@@ -591,20 +602,22 @@ class write:
     def update_graph_table(self, graph):
         '''Update the Graph table and return newly assigned Graph ID.'''
         result = nisql(self.conn).add_graph_record(self.prefix)
-               
+
         sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC\
                     LIMIT 1;')
         GraphID = None
         for row in self.conn.ExecuteSQL(sql):
             GraphID = row.GraphID
-        
+
         return GraphID
         
     def pgnet_edge(self, edge_attributes, edge_geom):
         '''Write an edge to Edge and Edge_Geometry tables.'''
+
+        edge_wkt = edge_geom.ExportToWkt()
         
-        #get the edge wkt
-        edge_wkt = edge_geom.ExportToWkt()        
+        #get the edge wkt        
+        edge_wkt = edge_geom.ExportToWkt()
         # Get table definitions        
         featedge = ogr.Feature(self.lyredges.GetLayerDefn())
         featedge_geom = ogr.Feature(self.lyredge_geom.GetLayerDefn())
@@ -612,15 +625,10 @@ class write:
         # Test for geometry existance       
         GeomID = nisql(self.conn).edge_geometry_equality_check(self.prefix, 
                         edge_wkt, self.srs)
-        
+
         if GeomID == None: # Need to create new geometry:            
             featedge_geom.SetGeometry(edge_geom)            
-            
-            ##for field, data in edge_attributes.iteritems():
-             ##   featedge_geom.SetField(field, data)
-            
-            self.lyredge_geom.CreateFeature(featedge_geom)                       
-            
+            self.lyredge_geom.CreateFeature(featedge_geom)
             #Get created edge_geom primary key (GeomID)
             sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;'
                     % self.tbledge_geom)
@@ -662,6 +670,7 @@ class write:
 
     def pgnet(self, network, tablename_prefix, srs, overwrite=False,
         directed = False, multigraph = False):
+            
         '''Write NetworkX instance to PostGIS network schema tables.
         
         Updates Graph table with new network.
@@ -706,12 +715,9 @@ class write:
         self.lyredge_geom = self.getlayer(self.tbledge_geom)  
         self.lyrnodes_def =  self.lyrnodes.GetLayerDefn()
         
-        import sys
         node_fields = {'GraphID':ogr.OFTInteger}  
         edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 
                   'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
-                      
-        import csv
         
         for e in G.edges(data=True):
             
@@ -725,10 +731,8 @@ class write:
             
             node_attrs['GraphID'] = graph_id 
 
-            node_geom = self.netgeometry(e[0], G.node[e[0]])
-            node_geom_from = node_geom
-            node_id = self.pgnet_node(node_attrs, node_geom)            
-            
+            node_geom = self.netgeometry(e[0], G.node[e[0]])            
+            node_id = self.pgnet_node(node_attrs, node_geom)                        
             G[e[0]][e[1]]['Node_F_ID'] = node_id
             
             # Insert the end node            
@@ -737,14 +741,12 @@ class write:
             node_attrs['GraphID'] = graph_id
             # Check attribution of nodes
             node_geom = self.netgeometry(e[1], G.node[e[1]])            
-            node_geom_to = node_geom
-            
-            node_id = self.pgnet_node(node_attrs, node_geom)            
-            G[e[0]][e[1]]['Node_T_ID'] = node_id            
+            node_id = self.pgnet_node(node_attrs, node_geom)
+            G[e[0]][e[1]]['Node_T_ID'] = node_id
                         
             # Set graph id.
             G[e[0]][e[1]]['GraphID'] = graph_id
-                    
+
             edge_attrs = self.create_attribute_map(self.lyredges, e[2], 
                                                    edge_fields)
                                      
@@ -782,9 +784,6 @@ class write:
         - edge_geometry table written out as csv (to output_csv_folder + tablename_prefix + '_Edge_Geometry' e.g. OSMeridian2_Rail_CSV_w_nt_Edge_Geometry.csv)
         - use PostgreSQL COPY command to copy csv file to PostGIS / PostgreSQL tables
         '''
-        
-        import csv
-        import sys
         
         # Disable pg use copy or NodeID not-null error will be raised
         if gdal.GetConfigOption("PG_USE_COPY") == "YES":
@@ -1093,8 +1092,7 @@ class write:
         edge_geom_csv_file.close()
         edge_csv_file.close()
                 
-        #checking capitals for table names
-        import re
+        #checking capitals for table names        
         matches = re.findall('[A-Z]', self.prefix)
         
         if len(matches) > 0:
