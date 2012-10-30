@@ -401,8 +401,7 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
             conn.DeleteLayer(tblnodes)
         except:
             pass    
-    edges = conn.CreateLayer(tbledges, None, ogr.wkbLineString)
-                    ing) #ogr.wkbLineString)
+    
     # Create the tables for edges and nodes
     edges = conn.CreateLayer(tbledges, None, ogr.wkbLineString)
     nodes = conn.CreateLayer(tblnodes, None, ogr.wkbPoint)

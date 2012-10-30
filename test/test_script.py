@@ -44,8 +44,8 @@ def main():
     # Make sure ogr can see non-spatial tables
     gdal.SetConfigOption("PG_LIST_ALL_TABLES", "YES")
     # Establish a connection (you need to configure these settings).    
-    conn = ogr.Open("PG: host='server' dbname = 'database_name'" 
-    " user='postgres' password='password'")
+    conn = ogr.Open("PG: host='localhost' dbname = 'network_interdependency_test_database'" 
+    " user='postgres' password='*p05tgr3s!'")
     
     # Create a networkx instance using line and points table from the 
     # lightrail lines in GLA
@@ -53,7 +53,7 @@ def main():
     # directed network flag, geometry coordinate precision value.
     net = nx_pg.read_pg(conn, 'LightRail_Baseline_import', 
                         nodetable='LightRail_Baseline_Stations_import', 
-                        directed=False, geom_precision=2)    
+                        directed=False, geometry_precision=2)    
                         
     # Once the network is read, create a PostGIS network schema instance
     # nx_pgnet.write().pgnet takes connection into the write class and the 
