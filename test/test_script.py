@@ -44,8 +44,8 @@ def main():
     # Make sure ogr can see non-spatial tables
     gdal.SetConfigOption("PG_LIST_ALL_TABLES", "YES")
     # Establish a connection (you need to configure these settings).    
-    conn = ogr.Open("PG: host='localhost' dbname = 'network_interdependency_test_database'" 
-    " user='postgres' password='*p05tgr3s!'")
+    conn = ogr.Open("PG: host='<HOST>' dbname = '<DATABASE>'" 
+    " user='<USERNAME>' password='<PASSWORD>'")
     
     # Create a networkx instance using line and points table from the 
     # lightrail lines in GLA

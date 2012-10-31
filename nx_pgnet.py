@@ -91,6 +91,10 @@ Write:
     >>> nx_pgnet.write().pgnet()
     >>> # Writes a NetworkX graph instance to PostGIS network schema tables.
 
+Write (via csv):
+	>>> nx_pgnet.write().pgnet_via_csv()
+	>>> # Writes a NetworkX graph instance to PostGIS network schema tables, using the COPY CSV function available in PostgreSQL
+	
 B{Database connections}
 
 Connections to PostGIS are created using the OGR simple feature library and are

@@ -302,8 +302,8 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                 n = geom.GetPointCount()
                 
                 #round the coordinates of the first and last points of the line string geometry, based on the geometry precision value
-                node_coord_t = round_coordinate(geom, 0, geometry_precision)
-                node_coord_f = round_coordinate(geom, (n-1), geometry_precision)
+                node_coord_t = round_coordinate(geom, (n-1), geometry_precision)
+                node_coord_f = round_coordinate(geom, 0, geometry_precision)
                 
                 #reset the start and the end points of the line string to correspond with the newly rounded coordinates
                 geom.SetPoint_2D(0, node_coord_f[0], node_coord_f[1])
@@ -317,10 +317,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                 #set the to and from node value
                 nodef = node_coord_f
                 nodet = node_coord_t
-                                          
-                net.add_edge(nodef, nodet, attributes)
-                f = lyr.GetNextFeature()
-                
+				
                 # Create the edge and nodes in the network
                 net.add_edge(nodef, nodet, attributes)
                 
