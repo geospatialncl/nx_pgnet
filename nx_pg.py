@@ -264,6 +264,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, g
 	   nodetable - optional table name of node table in PostGIS database to read
 	   directed - boolean denoting whether network to create is directed (True = directed, False = undirected)
 	   multigraph - boolean denoting whether network to create is multigraph (True = multigraph, False = graph)
+	   geometry_precision - integer denoting precision to round geometry coordinates to
 	   '''    
     
     if conn == None:
