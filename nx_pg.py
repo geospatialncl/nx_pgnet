@@ -127,9 +127,9 @@ B{Dependencies}
 
 B{Copyright}
 
-David Alderson, Tomas Holderness & Newcastle University
+Tomas Holderness & David Alderson, Newcastle University
 
-Developed by David Alderson & Tom Holderness at Newcastle University School of Civil Engineering
+Developed by Tomas Holderness & David Alderson at Newcastle University School of Civil Engineering
 and Geosciences, geoinfomatics group:
 
 Alistair Ford, Stuart Barr, Craig Robson.
@@ -149,19 +149,19 @@ nx_pg.license() for full details.
 
 B{Credits}
 
-David Alderson, Tomas Holderness, Alistair Ford, Stuart Barr and Craig Robson.
+Tomas Holderness, David Alderson, Alistair Ford, Stuart Barr and Craig Robson.
 
 
 B{Contact}
 
-david.alderson@ncl.ac.uk\n
-http://www.ncl.ac.uk/ceg/staff/profile/david.alderson
-
 tom.holderness@ncl.ac.uk\n
 www.staff.ncl.ac.uk/tom.holderness
 
+david.alderson@ncl.ac.uk\n
+http://www.ncl.ac.uk/ceg/staff/profile/david.alderson
+
 """
-__author__ = "Tom Holderness"
+__author__ = "Tom Holderness, David Alderson"
 __created__ = "Thu Jan 19 15:55:13 2012"
 __year__ = "2011"
 __version__ = "0.9.1"
