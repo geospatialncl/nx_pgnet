@@ -127,10 +127,12 @@ B{Dependencies}
 
 B{Copyright}
 
-Tomas Holderness & Newcastle University
+David Alderson, Tomas Holderness & Newcastle University
 
-Developed by Tom Holderness at Newcastle University School of Civil Engineering
-and Geosciences, Geoinfomatics group:
+Developed by David Alderson & Tom Holderness at Newcastle University School of Civil Engineering
+and Geosciences, geoinfomatics group:
+
+Alistair Ford, Stuart Barr, Craig Robson.
 
 B{Acknowledgement}
 
@@ -147,10 +149,13 @@ nx_pg.license() for full details.
 
 B{Credits}
 
-Tomas Holderness, David Alderson, Alistair Ford, Stuart Barr and Craig Robson.
+David Alderson, Tomas Holderness, Alistair Ford, Stuart Barr and Craig Robson.
 
 
 B{Contact}
+
+david.alderson@ncl.ac.uk\n
+http://www.ncl.ac.uk/ceg/staff/profile/david.alderson
 
 tom.holderness@ncl.ac.uk\n
 www.staff.ncl.ac.uk/tom.holderness
@@ -161,6 +166,9 @@ __created__ = "Thu Jan 19 15:55:13 2012"
 __year__ = "2011"
 __version__ = "0.9.1"
 
+import sys
+import os
+import uuid
 import networkx as nx
 import osgeo.ogr as ogr
 
@@ -177,16 +185,54 @@ class Error(Exception):
     def __str__(self):
         return repr(self.parameter)
 
+def check_encoding(value, encoding):
+	'''check encoding type of string value
+	
+	value - any python value, usually a string
+	encoding - string encoding representation e.g. utf-8
+	
+	'''
+    if type(value) == str:
+        try:
+            output = value.encode(encoding)
+        except UnicodeEncodeError:
+            raise Error('Error whilst trying to encode %s to utf-8' % (field_value))
+        else:
+            output = value
+    else:
+        output = value
+    return output
+        
 def getfieldinfo(lyr, feature, flds):
-    '''Get information about fields from a table (as OGR feature).'''
+    '''Get information about fields from a table (as OGR feature).
+	
+	lyr - layer created via OGR database connection CreateLayer method
+	feature - OGR features from lyr
+	flds - field name list from lyr layer
+	
+	'''
     
-    f = feature
-    return [f.GetField(f.GetFieldIndex(x)) for x in flds]
+    f = feature    
+    values = []
+    for x in flds:
+        field_value = f.GetField(f.GetFieldIndex(x))        
+        if type(field_value) == str:  
+            output = check_encoding(field_value, 'utf-8')                        
+            values.append(output)            
+        else:
+            values.append(field_value)    
+    #return [f.GetField(f.GetFieldIndex(x)) for x in flds]
+    return values
 
     
 def round_coordinate(geom, point_index, precision):
     '''
     Provide an OGR Geometry (geom=LINESTRING, geom=MULTILINESTRING), an index to the point to extract (point_index), and precision to round to (precision)
+	
+	geom - OGR geometry
+	point_index - integer, point to extract from geometry (0=Node, greater than 0=Edge)
+	precision - integer, coordinate precision to round geometry coordinates to 
+	
     '''
     node_coord = geom.GetPoint_2D(point_index)
     
@@ -197,7 +243,7 @@ def round_coordinate(geom, point_index, precision):
     # return the node coordinate tuple e.g. (0, 0)
     return node_coord_tuple
     
-def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=2):
+def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, geometry_precision=2):
     '''Read a network from PostGIS table of line geometry. 
        
        Optionally takes a table of points and where point geometry is equal
@@ -211,7 +257,14 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
        precision of 2 (default) will round to two units (i.e. the decimeter 
        level).
        
-       Returns instance of networkx.Graph().'''    
+       Returns instance of networkx.Graph().
+	   
+	   conn - database connection as OGR database connection
+	   edgetable - table name of edge table in PostGIS database to read
+	   nodetable - optional table name of node table in PostGIS database to read
+	   directed - boolean denoting whether network to create is directed (True = directed, False = undirected)
+	   multigraph - boolean denoting whether network to create is multigraph (True = multigraph, False = graph)
+	   '''    
     
     if conn == None:
         raise Error('No connection to database.')
@@ -222,13 +275,19 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
             lyr = tbl        
     if lyr == None:
         raise Error('Table not found in database: %s.' % (edgetable))
-    
-    if directed == False:
+   
+    #not directed, not multigraph
+    if ((directed == False) and (multigraph == False)):        
         net = nx.Graph()
-    elif directed == True:
-        # Create Directed graph to store output  
-        net = nx.DiGraph()    
-    # Create temporary node storage if needed.       
+    #not directed, multigraph
+    elif ((directed == False) and (multigraph == True)):        
+        net = nx.MultiGraph()    
+    #directed, not multigraph
+    elif ((directed == True) and (multigraph == False)):        
+        net = nx.DiGraph()
+    #directed, multigraph
+    elif ((directed == True) and (multigraph == True)):        
+        net = nx.MultiDiGraph()
     
     if nodetable is not None:        
         nodes = {}
@@ -238,8 +297,9 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                 f = nlyr.GetNextFeature()
                 flds = [x.GetName() for x in nlyr.schema]
                 while f is not None:
-                    flddata = getfieldinfo(nlyr, f, flds )
+                    flddata = getfieldinfo(nlyr, f, flds )                    
                     attributes = dict(zip(flds, flddata))
+                    
                     # Get the geometry for that feature
                     geom = f.GetGeometryRef()
                     
@@ -253,12 +313,15 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                         nodes[node_coord] = attributes                      
                                             
                         f = nlyr.GetNextFeature()
-                    
+
     #looping the edge layer
     f = lyr.GetNextFeature()    
     flds = [x.GetName() for x in lyr.schema]
     
+    edge_counter = 0
+    
     while f is not None:
+        edge_counter += 1
         flddata = getfieldinfo(lyr, f, flds )
         
         # Get the attributes for that feature
@@ -266,7 +329,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
         
         # Get the geometry for that feature
         geom = f.GetGeometryRef()
-
+        
         #We've got Multiline geometry so split into line segments
         #assume that the multilinestring is fully connected i.e. no gaps
         if geom is not None:
@@ -286,7 +349,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                     line.SetPoint_2D((n-1), node_coord_t[0], node_coord_t[1])
                     
                     # set the attributes (akin to nx_shp)
-                    attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)
+                    attributes["Wkb"] = ogr.Geometry.ExportToWkb(line)                    
                     attributes["Wkt"] = ogr.Geometry.ExportToWkt(line)
                     attributes["Json"] = ogr.Geometry.ExportToJson(line)                    
                     
@@ -294,7 +357,15 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                     nodef = node_coord_f
                     nodet = node_coord_t
                     
-                    net.add_edge(nodef, nodet, attributes)                
+                    #check if multigraph
+                    if not multigraph:                
+                        net.add_edge(nodef, nodet, attributes)
+                    else:
+                        #define a unique key (helps networkx determine the difference between two edges that start and end at the same place, but may have different attributes)
+                        uuid_ = uuid.uuid4().int
+                        #add the key to the attribute table of the edge, as we will need this later
+                        attributes['uuid'] = uuid_                    
+                        net.add_edge(nodef, nodet, key=uuid_, attr_dict=attributes)
                     
             elif ogr.Geometry.GetGeometryName(geom) == 'LINESTRING':
                 
@@ -310,25 +381,33 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                 geom.SetPoint_2D((n-1), node_coord_t[0], node_coord_t[1])
                 
                 # set the attributes (akin to nx_shp)
-                attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
+                attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)                                               
                 attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
                 attributes["Json"] = ogr.Geometry.ExportToJson(geom)  
                 
                 #set the to and from node value
                 nodef = node_coord_f
                 nodet = node_coord_t
-				
-                # Create the edge and nodes in the network
-                net.add_edge(nodef, nodet, attributes)
+                                                
+                #check if multigraph
+                if not multigraph:                
+                    net.add_edge(nodef, nodet, attributes)
+                else:
+                    #define a unique key (helps networkx determine the difference between two edges that start and end at the same place, but may have different attributes)
+                    uuid_ = uuid.uuid4().int
+                    #add the key to the attribute table of the edge, as we will need this later
+                    attributes['uuid'] = uuid_                    
+                    net.add_edge(nodef, nodet, key=uuid_, attr_dict=attributes)
                 
             elif ogr.Geometry.GetGeometryName(geom) == 'POINT':                
                 net.add_node((geom.GetPoint_2D(0)), attributes)                                        
             else:
                 raise ValueError, "PostGIS geometry type not"\
-                                    " supported."#                
+                                    " supported."#               
+        #print 'has_edge: %s', has_edge
         f = lyr.GetNextFeature()        
         # Raise warning if nx_is_connected(G) is false.
-
+    
     # Attribution of nodes from points table (must exist in network)
     if nodetable is not None:
         for point in nodes:
@@ -337,9 +416,13 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, geometry_precision=
                 
     # End of function, return the network            
     return net
-
+	
 def netgeometry(key, data):
     '''Create OGR geometry from a NetworkX Graph using Wkb/Wkt attributes.
+	
+	key - tuple of coordinates
+	data - dictionary of attributes, potentially containing Wkb/Wkt representation of geometry to create
+	
     '''
     
     if data.has_key('Wkb'):
@@ -357,9 +440,12 @@ def netgeometry(key, data):
     return geom
 
 def create_feature(geometry, lyr, attributes=None):
-    '''Wrapper for OGR CreateFeature function.
-            
+    '''Wrapper for OGR CreateFeature function.            
     Creates a feature in the specified table with geometry and attributes.
+	
+	geometry - OGR geometry
+	lyr - layer created in database
+	attributes - attribute dictionary
     '''        
     feature = ogr.Feature(lyr.GetLayerDefn())    
     feature.SetGeometry(geometry)
@@ -376,6 +462,10 @@ def create_feature(geometry, lyr, attributes=None):
 def write_pg(conn, network, tablename_prefix, overwrite=False):
     '''Write NetworkX instance to PostGIS edge and node tables.
     
+	network - networkx network type
+	tablename_prefix - prefix for tables written to PostGIS i.e. a name for the network
+	overwrite - boolean, if true tables of same name as <tablename_prefix>_Nodes and <tablename_prefix>_Edges will be overwritten
+	
     '''
         
     # Check connection    
@@ -387,8 +477,7 @@ def write_pg(conn, network, tablename_prefix, overwrite=False):
     tbledges = tablename_prefix+'_Edges'
     tblnodes = tablename_prefix+'_Nodes'
     
-    # Overwrite details
-    # Overwrite details
+    # Overwrite details    
     if overwrite is True:
         try:
             conn.DeleteLayer(tbledges)
