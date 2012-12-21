@@ -1605,7 +1605,7 @@ class read:
 				edge_geometry_wkt_raw = edge_geometry_row['geom']
 				edge_geometry_srid = edge_geometry_wkt_raw[:edge_geometry_wkt_raw.find(';')]
 				edge_geometry_wkt = edge_geometry_wkt_raw[edge_geometry_wkt_raw.find(';')+1:]
-												
+
 				#create an OGR LineString geometry
 				edge_geometry = ogr.CreateGeometryFromWkt(edge_geometry_wkt)
 				

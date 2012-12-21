@@ -186,12 +186,12 @@ class Error(Exception):
         return repr(self.parameter)
 
 def check_encoding(value, encoding):
-	'''check encoding type of string value
-	
-	value - any python value, usually a string
-	encoding - string encoding representation e.g. utf-8
-	
-	'''
+    '''check encoding type of string value
+    
+    value - any python value, usually a string
+    encoding - string encoding representation e.g. utf-8
+    
+    '''
     if type(value) == str:
         try:
             output = value.encode(encoding)
@@ -205,12 +205,12 @@ def check_encoding(value, encoding):
         
 def getfieldinfo(lyr, feature, flds):
     '''Get information about fields from a table (as OGR feature).
-	
-	lyr - layer created via OGR database connection CreateLayer method
-	feature - OGR features from lyr
-	flds - field name list from lyr layer
-	
-	'''
+    
+    lyr - layer created via OGR database connection CreateLayer method
+    feature - OGR features from lyr
+    flds - field name list from lyr layer
+    
+    '''
     
     f = feature    
     values = []
@@ -228,11 +228,11 @@ def getfieldinfo(lyr, feature, flds):
 def round_coordinate(geom, point_index, precision):
     '''
     Provide an OGR Geometry (geom=LINESTRING, geom=MULTILINESTRING), an index to the point to extract (point_index), and precision to round to (precision)
-	
-	geom - OGR geometry
-	point_index - integer, point to extract from geometry (0=Node, greater than 0=Edge)
-	precision - integer, coordinate precision to round geometry coordinates to 
-	
+    
+    geom - OGR geometry
+    point_index - integer, point to extract from geometry (0=Node, greater than 0=Edge)
+    precision - integer, coordinate precision to round geometry coordinates to 
+    
     '''
     node_coord = geom.GetPoint_2D(point_index)
     
@@ -258,14 +258,14 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, g
        level).
        
        Returns instance of networkx.Graph().
-	   
-	   conn - database connection as OGR database connection
-	   edgetable - table name of edge table in PostGIS database to read
-	   nodetable - optional table name of node table in PostGIS database to read
-	   directed - boolean denoting whether network to create is directed (True = directed, False = undirected)
-	   multigraph - boolean denoting whether network to create is multigraph (True = multigraph, False = graph)
-	   geometry_precision - integer denoting precision to round geometry coordinates to
-	   '''    
+       
+       conn - database connection as OGR database connection
+       edgetable - table name of edge table in PostGIS database to read
+       nodetable - optional table name of node table in PostGIS database to read
+       directed - boolean denoting whether network to create is directed (True = directed, False = undirected)
+       multigraph - boolean denoting whether network to create is multigraph (True = multigraph, False = graph)
+       geometry_precision - integer denoting precision to round geometry coordinates to
+       '''    
     
     if conn == None:
         raise Error('No connection to database.')
@@ -417,13 +417,13 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, g
                 
     # End of function, return the network            
     return net
-	
+    
 def netgeometry(key, data):
     '''Create OGR geometry from a NetworkX Graph using Wkb/Wkt attributes.
-	
-	key - tuple of coordinates
-	data - dictionary of attributes, potentially containing Wkb/Wkt representation of geometry to create
-	
+    
+    key - tuple of coordinates
+    data - dictionary of attributes, potentially containing Wkb/Wkt representation of geometry to create
+    
     '''
     
     if data.has_key('Wkb'):
@@ -443,10 +443,10 @@ def netgeometry(key, data):
 def create_feature(geometry, lyr, attributes=None):
     '''Wrapper for OGR CreateFeature function.            
     Creates a feature in the specified table with geometry and attributes.
-	
-	geometry - OGR geometry
-	lyr - layer created in database
-	attributes - attribute dictionary
+    
+    geometry - OGR geometry
+    lyr - layer created in database
+    attributes - attribute dictionary
     '''        
     feature = ogr.Feature(lyr.GetLayerDefn())    
     feature.SetGeometry(geometry)
@@ -463,10 +463,10 @@ def create_feature(geometry, lyr, attributes=None):
 def write_pg(conn, network, tablename_prefix, overwrite=False):
     '''Write NetworkX instance to PostGIS edge and node tables.
     
-	network - networkx network type
-	tablename_prefix - prefix for tables written to PostGIS i.e. a name for the network
-	overwrite - boolean, if true tables of same name as <tablename_prefix>_Nodes and <tablename_prefix>_Edges will be overwritten
-	
+    network - networkx network type
+    tablename_prefix - prefix for tables written to PostGIS i.e. a name for the network
+    overwrite - boolean, if true tables of same name as <tablename_prefix>_Nodes and <tablename_prefix>_Edges will be overwritten
+    
     '''
         
     # Check connection    
