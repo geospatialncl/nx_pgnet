@@ -1,14 +1,11 @@
 
-CREATE OR REPLACE FUNCTION ni_delete_network(character varying, character varying)
+CREATE OR REPLACE FUNCTION ni_delete_network(character varying)
   RETURNS void AS
 $BODY$
 DECLARE
     --table prefix to assign to nodes, edge and edge_geometry table
     table_prefix ALIAS for $1;
     
-	--database schema name
-    schema_name ALIAS for $2;
-	
     --constant node table suffix
     node_table_suffix varchar := '_Nodes';
     --constant edge table suffix
@@ -54,10 +51,10 @@ DECLARE
     --constant geometry column table name
     geometry_column_table_name varchar := 'geometry_columns';
     
-    
+    --database schema name
+    schema_name varchar := '';
 BEGIN
-	
-	--set the node, edge and interdependency edge table names
+
 	node_view_name := table_prefix||node_view_suffix;
 	edge_edge_geometry_view_name := table_prefix||edge_edge_geometry_view_suffix;
 	interdependency_interdependency_edge_view_name := table_prefix||interdependency_interdependency_edge_view_suffix;
@@ -71,7 +68,7 @@ BEGIN
     
     --remove the views from the geometry columns table    
 	FOR information_schema_record IN EXECUTE 'SELECT * FROM information_schema.views WHERE table_schema = '||quote_literal(schema_name)||' AND table_name ILIKE '||quote_literal(edge_edge_geometry_view_name)||' OR table_name ILIKE '||quote_literal(interdependency_interdependency_edge_view_name)||' OR table_name LIKE '||quote_literal(node_view_name)||'' LOOP
-		
+		RAISE NOTICE 'information_schema_record.table_name: %', information_schema_record.table_name;
         --remove the interdependency and edge views
         EXECUTE 'DROP VIEW IF EXISTS'||quote_ident(information_schema_record.table_name)||' CASCADE';
         EXECUTE 'DELETE FROM '||quote_ident(geometry_column_table_name)||' WHERE f_table_name = '||quote_literal(information_schema_record.table_name);
@@ -124,4 +121,4 @@ END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION ni_delete_network(character varying, character varying) OWNER TO postgres;
+ALTER FUNCTION ni_delete_network(character varying) OWNER TO postgres;
