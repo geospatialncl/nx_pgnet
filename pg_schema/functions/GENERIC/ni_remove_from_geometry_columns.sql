@@ -1,6 +1,3 @@
-﻿-- Function: ni_remove_from_geometry_columns(character varying, character varying, character varying, character varying, integer, integer)
-
--- DROP FUNCTION ni_remove_from_geometry_columns(character varying, character varying, character varying, character varying, integer, integer);
 
 CREATE OR REPLACE FUNCTION ni_remove_from_geometry_columns(character varying, character varying, character varying, character varying, integer, integer)
   RETURNS boolean AS

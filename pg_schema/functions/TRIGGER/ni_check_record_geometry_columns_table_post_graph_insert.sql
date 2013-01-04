@@ -1,6 +1,3 @@
-﻿-- Function: ni_check_record_geometry_columns_table_post_graph_insert()
-
--- DROP FUNCTION ni_check_record_geometry_columns_table_post_graph_insert();
 
 CREATE OR REPLACE FUNCTION ni_check_record_geometry_columns_table_post_graph_insert()
   RETURNS trigger AS

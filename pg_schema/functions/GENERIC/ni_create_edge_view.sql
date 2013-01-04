@@ -1,6 +1,3 @@
-﻿-- Function: ni_create_edge_view(character varying, character varying, character varying, integer, integer)
-
--- DROP FUNCTION ni_create_edge_view(character varying, character varying, character varying, integer, integer);
 
 CREATE OR REPLACE FUNCTION ni_create_edge_view(character varying, character varying, character varying, integer, integer)
   RETURNS character varying AS

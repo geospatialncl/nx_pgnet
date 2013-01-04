@@ -1,6 +1,3 @@
-﻿-- Function: ni_find_junctions(character varying, character varying, character varying, character varying, character varying)
-
--- DROP FUNCTION ni_find_junctions(character varying, character varying, character varying, character varying, character varying);
 
 CREATE OR REPLACE FUNCTION ni_find_junctions(character varying, character varying, character varying, character varying, character varying)
   RETURNS void AS

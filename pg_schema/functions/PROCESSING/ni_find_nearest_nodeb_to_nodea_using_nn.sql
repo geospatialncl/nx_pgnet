@@ -1,6 +1,3 @@
-﻿-- Function: ni_find_nearest_nodeb_to_nodea_using_nn(character varying, character varying, character varying, character varying, character varying, character varying, character varying, boolean)
-
--- DROP FUNCTION ni_find_nearest_nodeb_to_nodea_using_nn(character varying, character varying, character varying, character varying, character varying, character varying, character varying, boolean);
 
 CREATE OR REPLACE FUNCTION ni_find_nearest_nodeb_to_nodea_using_nn(character varying, character varying, character varying, character varying, character varying, character varying, character varying, boolean)
   RETURNS SETOF record AS

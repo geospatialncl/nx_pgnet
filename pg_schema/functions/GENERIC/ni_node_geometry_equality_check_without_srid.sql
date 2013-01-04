@@ -1,6 +1,3 @@
-﻿-- Function: ni_node_geometry_equality_check(character varying, character varying)
-
--- DROP FUNCTION ni_node_geometry_equality_check(character varying, character varying);
 
 CREATE OR REPLACE FUNCTION ni_node_geometry_equality_check(character varying, character varying)
   RETURNS integer AS

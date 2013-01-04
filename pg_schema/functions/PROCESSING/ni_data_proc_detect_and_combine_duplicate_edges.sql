@@ -1,6 +1,3 @@
-﻿-- Function: ni_data_proc_detect_and_combine_duplicate_edges(character varying, character varying, character varying, integer, character varying, character varying)
-
--- DROP FUNCTION ni_data_proc_detect_and_combine_duplicate_edges(character varying, character varying, character varying, integer, character varying, character varying);
 
 CREATE OR REPLACE FUNCTION ni_data_proc_detect_and_combine_duplicate_edges(character varying, character varying, character varying, integer, character varying, character varying)
   RETURNS character varying AS

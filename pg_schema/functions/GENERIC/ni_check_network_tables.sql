@@ -1,6 +1,3 @@
-﻿-- Function: ni_check_network_tables(character varying)
-
--- DROP FUNCTION ni_check_network_tables(character varying);
 
 CREATE OR REPLACE FUNCTION ni_check_network_tables(character varying)
   RETURNS boolean AS

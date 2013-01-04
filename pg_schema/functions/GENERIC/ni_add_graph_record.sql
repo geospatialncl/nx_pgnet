@@ -1,6 +1,3 @@
-﻿-- Function: ni_add_graph_record(character varying, boolean, boolean)
-
--- DROP FUNCTION ni_add_graph_record(character varying, boolean, boolean);
 
 CREATE OR REPLACE FUNCTION ni_add_graph_record(character varying, boolean, boolean)
   RETURNS void AS

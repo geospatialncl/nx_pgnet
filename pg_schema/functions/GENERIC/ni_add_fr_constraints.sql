@@ -1,6 +1,3 @@
-﻿-- Function: ni_add_fr_constraints(character varying)
-
--- DROP FUNCTION ni_add_fr_constraints(character varying);
 
 CREATE OR REPLACE FUNCTION ni_add_fr_constraints(character varying)
   RETURNS boolean AS

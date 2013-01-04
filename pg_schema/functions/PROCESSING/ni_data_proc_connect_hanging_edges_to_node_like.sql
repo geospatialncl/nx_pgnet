@@ -1,6 +1,3 @@
-﻿-- Function: ni_data_proc_connect_hanging_edges_to_node_like(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, integer, character varying, boolean)
-
--- DROP FUNCTION ni_data_proc_connect_hanging_edges_to_node_like(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, integer, character varying, boolean);
 
 CREATE OR REPLACE FUNCTION ni_data_proc_connect_hanging_edges_to_node_like(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, integer, character varying, boolean)
   RETURNS SETOF record AS

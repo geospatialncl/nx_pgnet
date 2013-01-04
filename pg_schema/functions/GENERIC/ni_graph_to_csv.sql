@@ -1,6 +1,3 @@
-﻿-- Function: ni_graph_to_csv(character varying, character varying, character varying, character varying)
-
--- DROP FUNCTION ni_graph_to_csv(character varying, character varying, character varying, character varying);
 
 CREATE OR REPLACE FUNCTION ni_graph_to_csv(character varying, character varying, character varying, character varying)
   RETURNS void AS

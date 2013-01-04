@@ -1,10 +1,3 @@
---ni_graph_to_gephi_edge_list
---$1 - output_path text/varchar - path to export graph to 
---$2 - node view name e.g. NationalGrid_Gas_View_Nodes
---$3 - edge view name e.g. NationalGrid_Gas_View_Edges_Edge_Geometry
---$4 - geometry column name for node view e.g. geom
---$5 - geometry column name for edge view e.g. geom
---$6 - edge type ('Undirected', 'Directed')
 
 CREATE OR REPLACE FUNCTION ni_graph_to_gephi_edge_list(varchar, varchar, varchar, varchar, varchar, varchar)
 RETURNS varchar AS 

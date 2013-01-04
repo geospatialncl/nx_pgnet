@@ -1,6 +1,3 @@
-﻿-- Function: ni_add_to_geometry_columns(character varying, character varying, character varying, character varying, integer, integer, character varying)
-
--- DROP FUNCTION ni_add_to_geometry_columns(character varying, character varying, character varying, character varying, integer, integer, character varying);
 
 CREATE OR REPLACE FUNCTION ni_add_to_geometry_columns(character varying, character varying, character varying, character varying, integer, integer, character varying)
   RETURNS boolean AS

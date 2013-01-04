@@ -1,6 +1,3 @@
-﻿-- Function: ni_delete_network(character varying, character varying)
-
--- DROP FUNCTION ni_delete_network(character varying, character varying);
 
 CREATE OR REPLACE FUNCTION ni_delete_network(character varying, character varying)
   RETURNS void AS

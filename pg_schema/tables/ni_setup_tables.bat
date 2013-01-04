@@ -21,9 +21,11 @@ REM - 5="<path_executing_batch_file"> REM this is autoset based upon where the n
 set argcount=0
 for %%x in (%*) do Set /A argcount+=1
 
-IF %argcount% LSS 4 (
-	echo "Input argument missing. Parameter 1 = host, Parameter 2 = user, Parameter 3 = postgres bin folder, Parameter 4 = database name. e.g. ni_setup_database.bat 'localhost' 'postgres' 'C:\Program Files (x86)\PostgreSQL\9.0\bin\' 'empty'
+IF %argcount% LSS 5 (
+	echo "Input argument missing. Parameter 1 = host, Parameter 2 = user, Parameter 3 = postgres bin folder, Parameter 4 = database name e.g. ni_setup_database.bat 'localhost' 'postgres' 'C:\Program Files (x86)\PostgreSQL\9.0\bin\' 'empty'
+	pause
 	GOTO :eof
+	
 )
 
 IF %argcount% == 4 (
@@ -33,23 +35,24 @@ IF %argcount% == 4 (
 C:
 CD %3%
 REM - graphs
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_graphs.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_graphs.sql"
 
 REM - global_interdependency
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_global_interdependency.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_global_interdependency.sql"
 
 REM - interdependency
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_interdependency.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_interdependency.sql"
 
 REM - interdependency_edges
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_interdependency_edges.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_interdependency_edges.sql"
 
 REM - nodes
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_nodes.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_nodes.sql"
 
 REM - edges
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_edges.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_edges.sql"
 
 REM - edge_geometry
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_edge_geometry.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_edge_geometry.sql"
 CD %5%
+pause

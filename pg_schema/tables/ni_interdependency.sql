@@ -1,6 +1,3 @@
-﻿-- Table: "Interdependency"
-
-DROP TABLE IF EXISTS "Interdependency"  CASCADE;
 
 CREATE TABLE "Interdependency"
 (
@@ -20,4 +17,3 @@ WITH (
   OIDS=FALSE
 );
 ALTER TABLE "Interdependency" OWNER TO postgres;
-

@@ -1,6 +1,3 @@
-﻿-- Function: ni_build_spatial_index(character varying, character varying)
-
--- DROP FUNCTION ni_build_spatial_index(character varying, character varying);
 
 CREATE OR REPLACE FUNCTION ni_build_spatial_index(character varying, character varying)
   RETURNS void AS

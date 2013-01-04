@@ -1,6 +1,3 @@
-﻿-- Function: ni_nearest_point_to_line_segment(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, double precision, double precision, character varying, boolean)
-
--- DROP FUNCTION ni_nearest_point_to_line_segment(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, double precision, double precision, character varying, boolean);
 
 CREATE OR REPLACE FUNCTION ni_nearest_point_to_line_segment(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, double precision, double precision, character varying, boolean)
   RETURNS SETOF record AS

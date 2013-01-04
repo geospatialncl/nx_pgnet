@@ -1,6 +1,3 @@
-﻿-- Table: "Nodes"
-
-DROP TABLE IF EXISTS "Nodes" CASCADE;
 
 CREATE TABLE "Nodes"
 (
@@ -8,9 +5,9 @@ CREATE TABLE "Nodes"
   geom geometry NOT NULL,
   CONSTRAINT "Nodes_Graphs_GraphID_frkey" FOREIGN KEY ("GraphID")
       REFERENCES "Graphs" ("GraphID") MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT enforce_dims_geom CHECK (st_ndims(geom) = 2),
-  CONSTRAINT enforce_geotype_geom CHECK (geometrytype(geom) = 'POINT'::text OR geom IS NULL)
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+  --CONSTRAINT enforce_dims_geom CHECK (st_ndims(geom) = 2),
+  --CONSTRAINT enforce_geotype_geom CHECK (geometrytype(geom) = 'POINT'::text OR geom IS NULL)
 )
 WITH (
   OIDS=FALSE

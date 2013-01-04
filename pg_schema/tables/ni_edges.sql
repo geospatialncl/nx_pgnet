@@ -1,6 +1,3 @@
-﻿-- Table: "Edges"
-
-DROP TABLE IF EXISTS "Edges" CASCADE;
 
 CREATE TABLE "Edges"
 (
@@ -16,5 +13,3 @@ WITH (
   OIDS=FALSE
 );
 ALTER TABLE "Edges" OWNER TO postgres;
-
-

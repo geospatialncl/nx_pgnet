@@ -23,15 +23,16 @@ IF %argcount% == 4 (
 REM - install all trigger functions to given database
 C:
 CD %3%
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_check_record_geometry_columns_table_post_graph_edges_update.sql"
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_check_record_geometry_columns_table_post_graph_nodes_update.sql"
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_check_record_geometry_columns_table_post_graph_insert.sql" 
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_delete_edges_table_post_delete_graph.sql"
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_delete_edges_geometry_table_post_delete_graph.sql"
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_delete_global_int_record_post_graph_record_delete.sql"
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_delete_int_edge_table_post_int_record_delete.sql"
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_delete_int_table_post_int_record_delete.sql"
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_delete_int_tables_post_delete_graph.sql"
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_delete_nodes_table_post_delete_graph.sql"
-psql -h %1 -U %2 -d %4 -f "%~dp0ni_delete_record_geometry_columns_table_post_delete_graph.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_check_record_geometry_columns_table_post_graph_edges_update.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_check_record_geometry_columns_table_post_graph_nodes_update.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_check_record_geometry_columns_table_post_graph_insert.sql" 
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_delete_edges_table_post_delete_graph.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_delete_edges_geometry_table_post_delete_graph.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_delete_global_int_record_post_graph_record_delete.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_delete_int_edge_table_post_int_record_delete.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_delete_int_table_post_int_record_delete.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_delete_int_tables_post_delete_graph.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_delete_nodes_table_post_delete_graph.sql"
+psql -h %1 -U %2 -d %4 -w -f "%~dp0ni_delete_record_geometry_columns_table_post_delete_graph.sql"
 CD %5%
+pause

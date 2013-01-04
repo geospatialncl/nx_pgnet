@@ -1,6 +1,3 @@
-﻿-- Function: ni_delete_int_tables_post_delete_graph()
-
--- DROP FUNCTION ni_delete_int_tables_post_delete_graph();
 
 CREATE OR REPLACE FUNCTION ni_delete_int_tables_post_delete_graph()
   RETURNS trigger AS

@@ -1,12 +1,9 @@
-﻿-- Table: "Edge_Geometry"
-
-DROP TABLE IF EXISTS "Edge_Geometry" CASCADE;
 
 CREATE TABLE "Edge_Geometry"
 (
-  geom geometry NOT NULL,
-  CONSTRAINT enforce_dims_geom CHECK (st_ndims(geom) = 2),
-  CONSTRAINT enforce_geotype_geom CHECK (geometrytype(geom) = 'LINESTRING'::text OR geom IS NULL)
+  geom geometry NOT NULL
+  --CONSTRAINT enforce_dims_geom CHECK (st_ndims(geom) = 2),
+  --CONSTRAINT enforce_geotype_geom CHECK (geometrytype(geom) = 'LINESTRING'::text OR geom IS NULL)
 )
 WITH (
   OIDS=FALSE

@@ -1,6 +1,3 @@
-﻿-- Function: ni_create_network_table_nodes(character varying, character varying, character varying, integer, integer)
-
--- DROP FUNCTION ni_create_network_table_nodes(character varying, character varying, character varying, integer, integer);
 
 CREATE OR REPLACE FUNCTION ni_create_network_table_nodes(character varying, character varying, character varying, integer, integer)
   RETURNS boolean AS
@@ -54,6 +51,7 @@ BEGIN
     EXECUTE 'SELECT * FROM ni_check_srid('||table_srid||')' INTO srid_exists;    
     
     --the supplied srid code does not exist in the spatial_ref_sys table on the current database i.e. an invalid SRID integer has been supplied
+	--(-1 is allowed to denote an aspatial network where node and edge geometries are both empty)
     IF srid_exists IS FALSE THEN
         RETURN FALSE;
     END IF;
@@ -69,6 +67,12 @@ BEGIN
         --add spatial constraints - srid check             
         EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD CONSTRAINT "enforce_srid_geom" CHECK (st_srid(geom) = '||table_srid||')';
         
+		--add the enforce_dims check
+		EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD CONSTRAINT "enforce_dims_geom" CHECK (st_ndims('||quote_ident(node_geometry_column_name)||') = 2)';
+		
+		--add the enforce_geotype check
+		EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD CONSTRAINT "enforce_geotype_geom" CHECK (geometrytype('||quote_ident(node_geometry_column_name)||') = ''POINT''::text OR '||quote_ident(node_geometry_column_name)||' IS NULL)';
+		
         --to ensure that a new sequence exists for each new node table
         EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD COLUMN "NodeID" bigserial';
         
@@ -78,6 +82,18 @@ BEGIN
         --add this new node table to the geometry columns table
         EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_table_name)||', '||quote_literal(catalog_name)||', '||quote_literal(schema_name)||', '||quote_literal(node_geometry_column_name)||', '||node_geometry_coordinate_dim||','||table_srid||','||quote_literal(node_geometry_type)||')';
         
+		--aspatial network being stored 
+		IF srid = -1 THEN
+			
+			--drop the srid constraint
+			EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' DROP CONSTRAINT "enforce_srid_geom"';
+			--drop the enforce_dims constraint
+			EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' DROP CONSTRAINT "enforce_dims_geom"';
+			--drop the enforce_geotype constraint
+			EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' DROP CONSTRAINT "enforce_geotype_geom"';
+			
+		END IF;
+		
         RETURN TRUE;
     END IF;
     

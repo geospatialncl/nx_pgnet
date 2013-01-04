@@ -1,6 +1,3 @@
-﻿-- Function: ni_create_network_table_edges(character varying)
-
--- DROP FUNCTION ni_create_network_table_edges(character varying);
 
 CREATE OR REPLACE FUNCTION ni_create_network_table_edges(character varying)
   RETURNS boolean AS

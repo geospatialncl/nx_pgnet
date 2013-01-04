@@ -1,6 +1,3 @@
-﻿-- Function: ni_create_new_column_names_for_join(character varying, character varying)
-
--- DROP FUNCTION ni_create_new_column_names_for_join(character varying, character varying);
 
 CREATE OR REPLACE FUNCTION ni_create_new_column_names_for_join(character varying, character varying)
   RETURNS text AS

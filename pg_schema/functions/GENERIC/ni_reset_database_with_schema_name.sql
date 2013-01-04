@@ -1,6 +1,3 @@
-﻿-- Function: ni_reset_database(character varying)
-
--- DROP FUNCTION ni_reset_database(character varying);
 
 CREATE OR REPLACE FUNCTION ni_reset_database(character varying)
   RETURNS void AS

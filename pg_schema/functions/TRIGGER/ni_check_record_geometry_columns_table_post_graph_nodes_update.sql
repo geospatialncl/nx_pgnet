@@ -1,7 +1,3 @@
-﻿-- Function: ni_check_record_geometry_columns_table_post_graph_nodes_update()
-
--- DROP FUNCTION ni_check_record_geometry_columns_table_post_graph_nodes_update();
-
 CREATE OR REPLACE FUNCTION ni_check_record_geometry_columns_table_post_graph_nodes_update()
   RETURNS trigger AS
 $BODY$

@@ -1,6 +1,3 @@
-﻿-- Function: ni_create_network_tables(character varying, integer, boolean, boolean)
-
--- DROP FUNCTION ni_create_network_tables(character varying, integer, boolean, boolean);
 
 CREATE OR REPLACE FUNCTION ni_create_network_tables(character varying, integer, boolean, boolean)
   RETURNS boolean AS
@@ -10,7 +7,7 @@ DECLARE
     --table prefix to assign to nodes, edge and edge_geometry table
     table_prefix ALIAS for $1;
 	
-    --srid to apply to the nodes and edge_geometry tables
+    --srid to apply to the nodes and edge_geometry tables (if -1, then assume an aspatial network i.e. empty geometries for all nodes and edges will be supplied)
     srid ALIAS for $2;
 
     --directed network boolean
@@ -30,6 +27,7 @@ DECLARE
 BEGIN
     
 	--check that the srid exists
+	--(-1 denotes an aspatial network is being stored)
 	EXECUTE 'SELECT * FROM ni_check_srid('||srid||')' INTO check_srid_result;
 	
 	IF check_srid_result IS FALSE THEN

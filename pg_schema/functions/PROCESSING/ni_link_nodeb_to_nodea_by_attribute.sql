@@ -1,6 +1,3 @@
-﻿-- Function: ni_link_nodeb_to_nodea_by_attribute(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, boolean)
-
--- DROP FUNCTION ni_link_nodeb_to_nodea_by_attribute(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, boolean);
 
 CREATE OR REPLACE FUNCTION ni_link_nodeb_to_nodea_by_attribute(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, boolean)
   RETURNS SETOF record AS

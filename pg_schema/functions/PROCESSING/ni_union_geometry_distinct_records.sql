@@ -1,6 +1,3 @@
-﻿-- Function: ni_union_geometry_distinct_records(character varying, character varying, character varying, character varying, boolean)
-
--- DROP FUNCTION ni_union_geometry_distinct_records(character varying, character varying, character varying, character varying, boolean);
 
 CREATE OR REPLACE FUNCTION ni_union_geometry_distinct_records(character varying, character varying, character varying, character varying, boolean)
   RETURNS SETOF record AS

@@ -1,6 +1,3 @@
-﻿-- Function: ni_add_global_interdependency_record(integer, integer, character varying, character varying)
-
--- DROP FUNCTION ni_add_global_interdependency_record(integer, integer, character varying, character varying);
 
 CREATE OR REPLACE FUNCTION ni_add_global_interdependency_record(integer, integer, character varying, character varying)
   RETURNS void AS

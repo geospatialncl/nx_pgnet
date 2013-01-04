@@ -1,6 +1,3 @@
-﻿-- Function: ni_node_separation_distance(character varying, character varying, integer)
-
--- DROP FUNCTION ni_node_separation_distance(character varying, character varying, integer);
 
 CREATE OR REPLACE FUNCTION ni_node_separation_distance(character varying, character varying, integer)
   RETURNS integer AS

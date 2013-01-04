@@ -19,17 +19,31 @@ IF NOT %argcount% == 4 (
 )
 
 REM - install the processing functions (1)
-call %~dp0FUNCTIONS\PROCESSING\ni_setup_processing_functions.bat %1 %2 %3 %4 %~dp0
+CD %~dp0functions\processing\
+call %~dp0functions\processing\ni_setup_processing_functions.bat %1 %2 %3 %4 %~dp0
+CD..
+CD..
 
 REM - install the trigger functions (1)
-call %~dp0FUNCTIONS\TRIGGER\ni_setup_trigger_functions.bat %1 %2 %3 %4 %~dp0
+CD %~dp0functions\trigger\
+call %~dp0functions\trigger\ni_setup_trigger_functions.bat %1 %2 %3 %4 %~dp0
+CD..
+CD..
 
 REM - install the tables (1)
-call %~dp0TABLES\ni_setup_tables.bat %1 %2 %3 %4 %~dp0
+CD %~dp0tables\
+call %~dp0tables\ni_setup_tables.bat %1 %2 %3 %4 %~dp0
+CD..
+CD..
 
 REM - install the generic functions (1)
-call %~dp0FUNCTIONS\GENERIC\ni_setup_generic_functions.bat %1 %2 %3 %4 %~dp0
+CD %~dp0functions\generic\
+call %~dp0functions\generic\ni_setup_generic_functions.bat %1 %2 %3 %4 %~dp0
+CD..
+CD..
 
 REM - return to executing directory
 CD %~dp0
+
+pause
 

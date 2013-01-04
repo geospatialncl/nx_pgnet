@@ -1,6 +1,3 @@
-﻿-- Function: ni_add_interdependency_record(character varying, integer, integer, integer, integer, integer)
-
--- DROP FUNCTION ni_add_interdependency_record(character varying, integer, integer, integer, integer, integer);
 
 CREATE OR REPLACE FUNCTION ni_add_interdependency_record(character varying, integer, integer, integer, integer, integer)
   RETURNS void AS

@@ -1,6 +1,3 @@
-﻿-- Function: ni_data_proc_connect_nodes_to_point_on_nearest_edge_like(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, integer, character varying, boolean)
-
--- DROP FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_like(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, integer, character varying, boolean);
 
 CREATE OR REPLACE FUNCTION ni_data_proc_connect_nodes_to_point_on_nearest_edge_like(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, integer, character varying, boolean)
   RETURNS SETOF record AS

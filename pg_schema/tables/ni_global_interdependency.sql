@@ -1,6 +1,3 @@
-﻿-- Table: "Global_Interdependency"
-
-DROP TABLE IF EXISTS "Global_Interdependency" CASCADE;
 
 CREATE TABLE "Global_Interdependency"
 (
@@ -23,24 +20,13 @@ WITH (
   OIDS=FALSE
 );
 ALTER TABLE "Global_Interdependency" OWNER TO postgres;
-
--- Trigger: ni_delete_int_edge_table_post_int_record_delete on "Global_Interdependency"
-
--- DROP TRIGGER ni_delete_int_edge_table_post_int_record_delete ON "Global_Interdependency";
-
 CREATE TRIGGER ni_delete_int_edge_table_post_int_record_delete
   AFTER DELETE
   ON "Global_Interdependency"
   FOR EACH ROW
   EXECUTE PROCEDURE ni_delete_int_edge_table_post_int_record_delete();
-
--- Trigger: ni_delete_int_table_post_int_record_delete on "Global_Interdependency"
-
--- DROP TRIGGER ni_delete_int_table_post_int_record_delete ON "Global_Interdependency";
-
 CREATE TRIGGER ni_delete_int_table_post_int_record_delete
   AFTER DELETE
   ON "Global_Interdependency"
   FOR EACH ROW
   EXECUTE PROCEDURE ni_delete_int_table_post_int_record_delete();
-

@@ -270,11 +270,11 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, g
     if conn == None:
         raise Error('No connection to database.')
 
-    lyr = None
+    edge_lyr = None
     for tbl in conn:             
         if tbl.GetName() == edgetable:
-            lyr = tbl        
-    if lyr == None:
+            edge_lyr = tbl        
+    if edge_lyr == None:
         raise Error('Table not found in database: %s.' % (edgetable))
    
     #not directed, not multigraph
@@ -291,14 +291,13 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, g
         net = nx.MultiDiGraph()
     
     if nodetable is not None:        
-        nodes = {}
-        nodes_geom = {}
-        for nlyr in conn:             
-            if nlyr.GetName() == nodetable:
-                f = nlyr.GetNextFeature()
-                flds = [x.GetName() for x in nlyr.schema]
+        nodes = {}        
+        for node_lyr in conn:             
+            if node_lyr.GetName() == nodetable:
+                f = node_lyr.GetNextFeature()
+                flds = [x.GetName() for x in node_lyr.schema]
                 while f is not None:
-                    flddata = getfieldinfo(nlyr, f, flds )                    
+                    flddata = getfieldinfo(node_lyr, f, flds )                    
                     attributes = dict(zip(flds, flddata))
                     
                     # Get the geometry for that feature
@@ -313,17 +312,17 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, g
                         node_coord=round_coordinate(geom, 0, geometry_precision)
                         nodes[node_coord] = attributes                      
                                             
-                        f = nlyr.GetNextFeature()
+                        f = node_lyr.GetNextFeature()
 
     #looping the edge layer
-    f = lyr.GetNextFeature()    
-    flds = [x.GetName() for x in lyr.schema]
+    f = edge_lyr.GetNextFeature()    
+    flds = [x.GetName() for x in edge_lyr.schema]
     
     edge_counter = 0
     
     while f is not None:
         edge_counter += 1
-        flddata = getfieldinfo(lyr, f, flds )
+        flddata = getfieldinfo(edge_lyr, f, flds )
         
         # Get the attributes for that feature
         attributes = dict(zip(flds, flddata))
@@ -406,7 +405,7 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, g
                 raise ValueError, "PostGIS geometry type not"\
                                     " supported."#               
         #print 'has_edge: %s', has_edge
-        f = lyr.GetNextFeature()        
+        f = edge_lyr.GetNextFeature()        
         # Raise warning if nx_is_connected(G) is false.
     
     # Attribution of nodes from points table (must exist in network)

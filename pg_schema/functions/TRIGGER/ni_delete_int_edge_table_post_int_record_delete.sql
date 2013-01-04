@@ -1,6 +1,3 @@
-﻿-- Function: ni_delete_int_edge_table_post_int_record_delete()
-
--- DROP FUNCTION ni_delete_int_edge_table_post_int_record_delete();
 
 CREATE OR REPLACE FUNCTION ni_delete_int_edge_table_post_int_record_delete()
   RETURNS trigger AS

@@ -1,6 +1,3 @@
-﻿-- Function: ni_check_interdependency_tables(character varying, character varying)
-
--- DROP FUNCTION ni_check_interdependency_tables(character varying, character varying);
 
 CREATE OR REPLACE FUNCTION ni_check_interdependency_tables(character varying, character varying)
   RETURNS boolean AS

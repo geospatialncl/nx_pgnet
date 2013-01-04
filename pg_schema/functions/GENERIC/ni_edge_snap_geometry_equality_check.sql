@@ -1,6 +1,3 @@
-﻿-- Function: ni_edge_snap_geometry_equality_check(character varying, character varying, integer, double precision)
-
--- DROP FUNCTION ni_edge_snap_geometry_equality_check(character varying, character varying, integer, double precision);
 
 CREATE OR REPLACE FUNCTION ni_edge_snap_geometry_equality_check(character varying, character varying, integer, double precision)
   RETURNS integer AS
