@@ -37,7 +37,7 @@ BEGIN
         RETURN FALSE;
     ELSE 
         
-		EXECUTE 'DELETE FROM '||quote_ident(geometry_column_table_name)'|| WHERE f_table_catalog = '||quote_literal(table_catalog)||' AND f_table_schema = '||quote_literal(table_schema)||' AND f_table_name = '||quote_literal(table_name)||' AND f_geometry_column = '||quote_literal(geometry_column_name)||' AND coordinate_dimensionension = '||coordinate_dimension||' AND srid = '||SRID;
+		EXECUTE 'DELETE FROM '||quote_ident(geometry_column_table_name)'|| WHERE f_table_catalog = '||quote_literal(table_catalog)||' AND f_table_schema = '||quote_literal(table_schema)||' AND f_table_name = '||quote_literal(table_name)||' AND f_geometry_column = '||quote_literal(geometry_column_name)||' AND coord_dimension = '||coordinate_dimension||' AND srid = '||SRID;
 		
         RETURN TRUE;
     END IF;

@@ -29,7 +29,7 @@ DECLARE
     schema_name varchar := 'public';
     
     --default geometry column name
-    node_geometry_col_name varchar := 'geom';
+    node_geometry_column_name varchar := 'geom';
     
     --default coord dim
     node_geometry_coord_dim integer := 2;
@@ -66,6 +66,12 @@ BEGIN
         --add spatial constraints - srid check             
         EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD CONSTRAINT "enforce_srid_geom" CHECK (st_srid(geom) = '||table_srid||')';
         
+		--add the enforce_dims check
+		EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD CONSTRAINT "enforce_dims_geom" CHECK (st_ndims('||quote_ident(node_geometry_column_name)||') = 2)';
+		
+		--add the enforce_geotype check
+		EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD CONSTRAINT "enforce_geotype_geom" CHECK (geometrytype('||quote_ident(node_geometry_column_name)||') = ''POINT''::text OR '||quote_ident(node_geometry_column_name)||' IS NULL)';
+        
         --to ensure that a new sequence exists for each new node table
         EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD COLUMN "NodeID" bigserial';
         
@@ -73,8 +79,20 @@ BEGIN
         EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD CONSTRAINT '||new_node_table_name||'_prkey PRIMARY KEY ("NodeID")';       
         
         --add this new node table to the geometry columns table
-        EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_table_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(node_geometry_col_name)||', '||node_geometry_coord_dim||','||table_srid||','||quote_literal(node_geometry_type)||')';
+        EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_table_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(node_geometry_column_name)||', '||node_geometry_coord_dim||','||table_srid||','||quote_literal(node_geometry_type)||')';
         
+		--aspatial network being stored 
+		IF table_srid < 0 THEN
+			
+			--drop the srid constraint
+			EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' DROP CONSTRAINT "enforce_srid_geom"';
+			--drop the enforce_dims constraint
+			EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' DROP CONSTRAINT "enforce_dims_geom"';
+			--drop the enforce_geotype constraint
+			EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' DROP CONSTRAINT "enforce_geotype_geom"';
+			
+		END IF;
+		
         RETURN TRUE;
     END IF;
     

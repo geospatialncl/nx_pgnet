@@ -81,7 +81,7 @@ BEGIN
         EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_geometry_table_name)||', '||quote_literal(catalog_name)||', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||coordinate_dimension||','||table_srid||','||quote_literal(edge_geometry_type)||')';
         
 		--aspatial network being stored 
-		IF srid = -1 THEN
+		IF table_srid < 0 THEN
 			
 			--drop the srid constraint
 			EXECUTE 'ALTER TABLE '||quote_ident(new_edge_geometry_table_name)||' DROP CONSTRAINT "enforce_srid_geom"';

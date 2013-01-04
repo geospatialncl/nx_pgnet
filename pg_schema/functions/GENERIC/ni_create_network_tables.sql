@@ -36,7 +36,7 @@ BEGIN
 	
     --create network node table
     EXECUTE 'SELECT * FROM ni_create_network_table_nodes('||quote_literal(table_prefix)||', '||srid||')' INTO create_network_table_nodes_result;
-    RAISE NOTICE 'create_network_table_nodes_result: %', create_network_table_nodes_result;
+    
     IF create_network_table_nodes_result IS FALSE THEN
         --need to rollback things created by nodes table
         RETURN FALSE;
@@ -44,7 +44,7 @@ BEGIN
     
     --create network edge_geometry table
     EXECUTE 'SELECT * FROM ni_create_network_table_edge_geometry('||quote_literal(table_prefix)||', '||srid||')' INTO create_network_table_edge_geometry_result;   
-    RAISE NOTICE 'create_network_table_edge_geometry_result: %', create_network_table_edge_geometry_result;
+    
     IF create_network_table_edge_geometry_result IS FALSE THEN
         --need to rollback things created by edge_geometry table
         RETURN FALSE;
@@ -52,7 +52,7 @@ BEGIN
     
     --create network edges table
     EXECUTE 'SELECT * FROM ni_create_network_table_edges('||quote_literal(table_prefix)||')' INTO create_network_table_edge_result;
-    RAISE NOTICE 'create_network_table_edge_result: %', create_network_table_edge_result; 
+    
     IF create_network_table_edge_result IS FALSE THEN
         --need to rollback things created by edges table
         RETURN FALSE;

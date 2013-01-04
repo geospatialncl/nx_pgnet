@@ -17,7 +17,7 @@ DECLARE
     
     --equivalent edge_geometry table added
     new_edge_geometry_table_name varchar := '';
-    equivalent_edge_geometry_suffix varchar := '_Edge_Geometry';
+    equivalent_edge_geometry_suffix varchar := 'Edge_Geometry';
     
     --constant 'Edges' table suffix
     edges_table_suffix varchar := 'Edges';

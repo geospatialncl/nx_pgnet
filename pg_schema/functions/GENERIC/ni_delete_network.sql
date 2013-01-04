@@ -68,7 +68,7 @@ BEGIN
     
     --remove the views from the geometry columns table    
 	FOR information_schema_record IN EXECUTE 'SELECT * FROM information_schema.views WHERE table_schema = '||quote_literal(schema_name)||' AND table_name ILIKE '||quote_literal(edge_edge_geometry_view_name)||' OR table_name ILIKE '||quote_literal(interdependency_interdependency_edge_view_name)||' OR table_name LIKE '||quote_literal(node_view_name)||'' LOOP
-		RAISE NOTICE 'information_schema_record.table_name: %', information_schema_record.table_name;
+		
         --remove the interdependency and edge views
         EXECUTE 'DROP VIEW IF EXISTS'||quote_ident(information_schema_record.table_name)||' CASCADE';
         EXECUTE 'DELETE FROM '||quote_ident(geometry_column_table_name)||' WHERE f_table_name = '||quote_literal(information_schema_record.table_name);

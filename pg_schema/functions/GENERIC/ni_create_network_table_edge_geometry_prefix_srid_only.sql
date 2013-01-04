@@ -29,8 +29,8 @@ DECLARE
     geometry_column_name varchar := 'geom';
     dims integer := 2;
     --need to decide whether this is going to cause a problem, or whether we can make this a parameter to feed in to the function
-    --edge_geometry_type varchar := 'LINESTRING';
-    edge_geometry_type varchar := 'GEOMETRY';
+    edge_geometry_type varchar := 'LINESTRING';
+    --edge_geometry_type varchar := 'GEOMETRY';
     
     
 BEGIN
@@ -45,6 +45,7 @@ BEGIN
     EXECUTE 'SELECT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '||quote_literal(new_edge_geometry_table_name)||')' INTO edge_geometry_table_exists;
 	
     --the supplied srid code does not exist in the spatial_ref_sys table on the current database i.e. an invalid SRID integer has been supplied
+	--(-1 is allowed to denote an aspatial network where node and edge geometries are both empty)
     IF srid_exists IS FALSE THEN
         RETURN FALSE;
     END IF;
@@ -57,7 +58,13 @@ BEGIN
         EXECUTE 'CREATE TABLE '||quote_ident(new_edge_geometry_table_name)||'() INHERITS ('||quote_ident(inherit_edge_geometry_table_name)||')';
 
         EXECUTE 'ALTER TABLE '||quote_ident(new_edge_geometry_table_name)||' ADD CONSTRAINT "enforce_srid_geom" CHECK (st_srid(geom) = '||table_srid||')';
-             
+        
+		--add the enforce_dims check
+		EXECUTE 'ALTER TABLE '||quote_ident(new_edge_geometry_table_name)||' ADD CONSTRAINT "enforce_dims_geom" CHECK (st_ndims('||quote_ident(geometry_column_name)||') = 2)';
+		
+		--add the enforce_geotype check
+		EXECUTE 'ALTER TABLE '||quote_ident(new_edge_geometry_table_name)||' ADD CONSTRAINT "enforce_geotype_geom" CHECK (geometrytype('||quote_ident(geometry_column_name)||') = ''MULTILINESTRING''::text OR geometrytype('||quote_ident(geometry_column_name)||') = ''LINESTRING''::text OR '||quote_ident(geometry_column_name)||' IS NULL)';
+		
         --to ensure that a new sequence exists for each new edge table
         EXECUTE 'ALTER TABLE '||quote_ident(new_edge_geometry_table_name)||' ADD COLUMN "GeomID" bigserial';
         
@@ -67,6 +74,18 @@ BEGIN
         --add the edge_geometry table to the geometry_columns table
         EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_geometry_table_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||table_srid||','||quote_literal(edge_geometry_type)||')';
         
+		--aspatial network being stored 
+		IF table_srid < 0 THEN
+			
+			--drop the srid constraint
+			EXECUTE 'ALTER TABLE '||quote_ident(new_edge_geometry_table_name)||' DROP CONSTRAINT "enforce_srid_geom"';
+			--drop the enforce_dims constraint
+			EXECUTE 'ALTER TABLE '||quote_ident(new_edge_geometry_table_name)||' DROP CONSTRAINT "enforce_dims_geom"';
+			--drop the enforce_geotype constraint
+			EXECUTE 'ALTER TABLE '||quote_ident(new_edge_geometry_table_name)||' DROP CONSTRAINT "enforce_geotype_geom"';
+			
+		END IF;
+		
         RETURN TRUE;
     END IF;
 END;

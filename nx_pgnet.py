@@ -265,9 +265,7 @@ class nisql:
 		'''
 		
 		# Create network tables
-		sql = ("SELECT * FROM ni_create_network_tables ('%s', %i, \
-		CAST(%i AS BOOLEAN), CAST(%i AS BOOLEAN));" % (
-		prefix, epsg, directed, multigraph))
+		sql = ("SELECT * FROM ni_create_network_tables ('%s', %i, CAST(%i AS BOOLEAN), CAST(%i AS BOOLEAN));" % (prefix, epsg, directed, multigraph))
 		
 		result = None
 		for row in self.conn.ExecuteSQL(sql):   
@@ -1278,8 +1276,6 @@ class export_graph:
 		#define the sql to execute for generating a Gephi-compatible csv dump of the edge view
 		edge_sql = ("COPY (SELECT edge_table.*, ST_AsText(edge_table.%s) as geometry_text, ST_SRID(edge_table.%s) as srid, \"Node_F_ID\" as \"Source\", \"Node_T_ID\" as \"Target\", '%s' as \"Type\", ST_X(ST_Transform(ST_StartPoint(edge_table.%s), 900913)) as google_startpoint_x, ST_Y(ST_Transform(ST_StartPoint(edge_table.%s), 900913)) as google_startpoint_y, ST_X(ST_Transform(ST_EndPoint(edge_table.%s), 900913)) as google_endpoint_x, ST_Y(ST_Transform(ST_EndPoint(edge_table.%s), 900913)) as google_endpoint_y, ST_X(ST_Transform(ST_StartPoint(edge_table.%s), 4326)) as wgs84_startpoint_x, ST_Y(ST_Transform(ST_StartPoint(edge_table.%s), 4326)) as wgs84_startpoint_y, ST_X(ST_Transform(ST_EndPoint(edge_table.%s), 4326)) as wgs84_endpoint_x, ST_Y(ST_Transform(ST_EndPoint(edge_table.%s), 4326)) as wgs84_endpoint_y FROM \"%s\" AS edge_table) TO '%s' DELIMITER AS ',' CSV HEADER" % (edge_geometry_column_name, edge_geometry_column_name, gephi_directed_value, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_viewname, edge_file_name))
 		
-		print 'node_sql: %s', node_sql
-		
 		#execute the node view to csv query
 		node_result = self.conn.ExecuteSQL(node_sql)  
 		
@@ -1492,16 +1488,16 @@ class read:
 		
 		#not directed, not multigraph
 		if ((directed == False) and (multigraph == False)):			
-			net = nx.Graph()
+			net = nx.Graph(name=network_name)
 		#not directed, multigraph
 		elif ((directed == False) and (multigraph == True)):			
-			net = nx.MultiGraph()	
+			net = nx.MultiGraph(name=network_name)	
 		#directed, not multigraph
 		elif ((directed == True) and (multigraph == False)):			
-			net = nx.DiGraph()
+			net = nx.DiGraph(name=network_name)
 		#directed, multigraph
 		elif ((directed == True) and (multigraph == True)):			
-			net = nx.MultiDiGraph()
+			net = nx.MultiDiGraph(name=network_name)
 		
 		#define node, edge, and edge geometry files
 		node_csv_file = open(node_csv_file_name, 'r')
@@ -1542,8 +1538,7 @@ class read:
 				node_first_line_contents = node_row				
 				node_first_line = False				
 				for generic_node_fieldname in generic_node_fieldnames:
-					if generic_node_fieldname not in node_row:
-						#print 'error: generic node fieldname does not exist: %s', generic_node_fieldname
+					if generic_node_fieldname not in node_row:						
 						raise Error('The field name %s does not exist in the input node csv file (%s)' % (generic_node_fieldname, node_csv_file_name))
 						missing_node_fieldname = True
 						break;
@@ -1632,8 +1627,7 @@ class read:
 				edge_geometry_first_line_contents = edge_geometry_row
 				edge_geometry_first_line = False				
 				for generic_edge_geometry_fieldname in generic_edge_geometry_fieldnames:
-					if generic_edge_geometry_fieldname not in edge_geometry_row:
-						#print 'error: generic edge geometry fieldname does not exist: %s', generic_edge_geometry_fieldname
+					if generic_edge_geometry_fieldname not in edge_geometry_row:						
 						raise Error('The field name %s does not exist in the input edge geometry csv file (%s)' % (generic_edge_geometry_fieldname, edge_geometry_csv_file_name))
 						missing_edge_geometry_fieldname = True
 					break;
@@ -1791,7 +1785,6 @@ class read:
 					net[matched_edge_tuples[0]][matched_edge_tuples[1]] = new_edge_attributes
 		#no edges have been added because the edge geometries supplied are all blank edges
 		else:
-			print 'no edges added yet because the edge geometry has blank wkt'
 			
 			for edge_row in edge_csv_reader:
 				if edge_first_line == True:
@@ -2592,8 +2585,7 @@ class write:
 		
 		#create the network tables in the database
 		#this OK to leave in the CSV writing version of the function because we need the correct GraphID inside each CSV file
-		result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
-		
+		result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)		
 		#create network tables
 		if result == 0 or result == None:
 			if overwrite is True:

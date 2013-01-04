@@ -42,11 +42,11 @@ BEGIN
     ELSE 
         
 		--count records from geometry_columns table of same given values (to determine if record of same values already exists)
-        EXECUTE 'SELECT COUNT(*) FROM '||quote_ident(geometry_column_table_name)||' WHERE f_table_catalog = '||quote_literal(table_catalog)||' AND f_table_schema = '||quote_literal(table_schema)||' AND f_table_name = '||quote_literal(table_name)||' AND f_geometry_column = '||quote_literal(geometry_column_name)||' AND coordinate_dimensionension = '||coordinate_dimension||' AND srid = '||SRID INTO geometry_column_record_exists;
+        EXECUTE 'SELECT COUNT(*) FROM '||quote_ident(geometry_column_table_name)||' WHERE f_table_catalog = '||quote_literal(table_catalog)||' AND f_table_schema = '||quote_literal(table_schema)||' AND f_table_name = '||quote_literal(table_name)||' AND f_geometry_column = '||quote_literal(geometry_column_name)||' AND coord_dimension = '||coordinate_dimension||' AND srid = '||SRID INTO geometry_column_record_exists;
         
         IF geometry_column_record_exists < 1 THEN
             --insert a record into the geometry_columns table
-            EXECUTE 'INSERT INTO '||quote_ident(geometry_column_table_name)||' (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coordinate_dimensionension, srid, "type") VALUES ('||quote_literal(table_catalog)||', '||quote_literal(table_schema)||', '||quote_literal(table_name)||', '||quote_literal(geometry_column_name)||', '||coordinate_dimension||', '||srid||', '||quote_literal(geometry_type)||')';
+            EXECUTE 'INSERT INTO '||quote_ident(geometry_column_table_name)||' (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, "type") VALUES ('||quote_literal(table_catalog)||', '||quote_literal(table_schema)||', '||quote_literal(table_name)||', '||quote_literal(geometry_column_name)||', '||coordinate_dimension||', '||srid||', '||quote_literal(geometry_type)||')';
         END IF;
         RETURN TRUE;
     END IF;

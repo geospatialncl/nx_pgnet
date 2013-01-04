@@ -13,7 +13,7 @@ DECLARE
 BEGIN
 	
 	--if -1 then assume an aspatial network is being stored
-	IF srid = -1 THEN
+	IF srid < 0 THEN
 		RETURN TRUE;
 	ELSE
 		
