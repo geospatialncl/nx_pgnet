@@ -62,7 +62,8 @@ BEGIN
     EXECUTE 'SELECT ST_SRID(geom) FROM '||quote_ident(interdependency_edge_table_name) INTO SRID;
     
     --retrieve the coordinate_dimension of the edge_geometry table
-    EXECUTE 'SELECT ST_Dimension(geom) FROM '||quote_ident(interdependency_edge_table_name) INTO coordinate_dimension;    
+    --EXECUTE 'SELECT ST_Dimension(geom) FROM '||quote_ident(interdependency_edge_table_name) INTO coordinate_dimension;    
+	EXECUTE 'SELECT ST_NDims(geom) FROM '||quote_ident(interdependency_edge_table_name) INTO coordinate_dimension;    
         
     --retrieve the geometry type for the interdependency edge geometry table
     EXECUTE 'SELECT GeometryType(geom) FROM '||quote_ident(interdependency_edge_table_name) INTO interdependency_edge_geometry_type;
