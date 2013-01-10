@@ -2051,8 +2051,7 @@ class write:
 		#add a graph record based on the prefix (graph / network name)
 		result = nisql(self.conn).add_graph_record(self.prefix)
 
-		sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC\
-					LIMIT 1;')
+		sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC LIMIT 1;')
 		GraphID = None
 		for row in self.conn.ExecuteSQL(sql):
 			GraphID = row.GraphID
@@ -2360,15 +2359,16 @@ class write:
 			#if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName'):
 			# Reject data not for attribute table 
 			##NEW
-			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'nodeid' and key != 'edgeid' and key != 'viewid' and key != 'view_id' and key != 'geomid'):
+			
+			##if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'nodeid' and key != 'edgeid' and key != 'viewid' and key != 'view_id' and key != 'geomid'):
+			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'nodeid' and key != 'edgeid' and key != 'viewid' and key != 'view_id' and key != 'geomid' and key != 'GeomID' and key != 'EdgeID' and key != 'NodeID'):
 				if key not in fields:
 					if type(data) in OGRTypes:
 						fields[key] = OGRTypes[type(data)]
 					else:
 						fields[key] = ogr.OFTString
 					newfield = ogr.FieldDefn(key, fields[key])
-					lyr.CreateField(newfield)
-					 
+					lyr.CreateField(newfield)					
 					attrs[key] = data			   
 				else:
 					attrs[key] = data
@@ -2422,8 +2422,7 @@ class write:
 		if result == 0 or result == None:
 			if overwrite is True:
 				nisql(self.conn).delete_network(self.prefix)
-				nisql(self.conn).create_network_tables(self.prefix, self.srs, 
-														directed, multigraph)
+				nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
 			else:
 				raise Error('Network already exists.')
 									
@@ -2431,7 +2430,7 @@ class write:
 		self.lyredges = self.getlayer(self.tbledges)
 		self.lyrnodes = self.getlayer(self.tblnodes)		
 		self.lyredge_geom = self.getlayer(self.tbledge_geom)  
-		self.lyrnodes_def =  self.lyrnodes.GetLayerDefn()
+		#self.lyrnodes_def =  self.lyrnodes.GetLayerDefn()
 		
 		#set the network
 		G = network
@@ -2494,12 +2493,12 @@ class write:
 		#define node, edge, edge_geometry csv file writers
 		node_csv_writer = csv.writer(node_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
 		edge_csv_writer = csv.writer(edge_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-		edge_geom_csv_writer = csv.writer(edge_geom_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+		edge_geometry_csv_writer = csv.writer(edge_geom_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
 		
 		#write the headers to the node, edge and edge_geometry csv files
 		node_csv_writer.writerow(node_table_fieldnames)
 		edge_csv_writer.writerow(edge_table_fieldnames)
-		edge_geom_csv_writer.writerow(edge_geometry_table_fieldnames)
+		edge_geometry_csv_writer.writerow(edge_geometry_table_fieldnames)
 			
 		#this OK to leave in the CSV writing version of the function because we need the correct GraphID inside each CSV file
 		graph_id = self.update_graph_table()
@@ -2699,7 +2698,7 @@ class write:
 				node_csv_writer.writerow(node_to_attrs)
 			
 			#need to write the contents of the edge_geometry_attrs to the edge_geometry table
-			edge_geom_csv_writer.writerow(edge_geometry_attrs)
+			edge_geometry_csv_writer.writerow(edge_geometry_attrs)
 			
 			#need to write the contents of the edge_attrs to the edge table
 			edge_csv_writer.writerow(edge_attrs)
@@ -2744,10 +2743,279 @@ class write:
 		#execute create edge view sql
 		nisql(self.conn).create_edge_view(self.prefix)
 	
-	#def pgnet_via_csv_empty_geometry(self, network, tablename_prefix, srs=-1, overwrite=False, directed = False, multigraph = False, output_csv_folder='D://Spyder//NetworkInterdependency//network_scripts//pgnet_via_csv//'):
+	def pgnet_via_csv_empty_geometry(self, network, tablename_prefix, overwrite=False, directed = False, multigraph = False, output_csv_folder='D://Spyder//NetworkInterdependency//network_scripts//pgnet_via_csv//'):
+		'''
 		
+		function to write an aspatial network to the database schema, via csv, using SQL COPY
+		cannot use the standard function write -> pgnet_via_csv as this utilises the geometry of nodes and edges for equality
+		NOTE: srid/srs/epsg auto-set to -1 for aspatial, so no parameter provided to call
 		
-	
+		network - networkx network instance
+		tablename_prefix - string - network name
+		overwrite - boolean - true to overwrite network stored in db with same name, false otherwise.
+		directed - boolean - true to state directed network being built, false otherwise
+		multigraph - boolean - true to state multigraph network being built, false otherwise
+		output_csv_folder - string - folder on disk to write temporary CSV files to before COPY
+		
+		'''
+		# Disable pg use copy or NodeID not-null error will be raised
+		if gdal.GetConfigOption("PG_USE_COPY") == "YES":
+			raise Error('Attempting to write database schema with GDAL option '
+						'"PG_USE_COPY=YES". Please do: '
+						'gdal.SetConfigOption("PG_USE_COPY", "NO") and reset '
+						'database connection.')		
+		
+		#check that the output csv folder exists before proceeding
+		if not os.path.isdir(output_csv_folder):
+			raise Error('The output path does not exist at: %s' % (output_csv_folder))
+		
+		# First create network tables in database
+		self.prefix = tablename_prefix		
+		self.tbledges = tablename_prefix+'_Edges'
+		self.tblnodes = tablename_prefix+'_Nodes'
+		self.tbledge_geom = tablename_prefix+'_Edge_Geometry'
+		self.srs = -1
+		
+		#create the network tables in the database
+		#this OK to leave in the CSV writing version of the function because we need the correct GraphID inside each CSV file
+		result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
+		
+		#create network tables
+		if result == 0 or result == None:
+			if overwrite is True:				
+				nisql(self.conn).delete_network(self.prefix)
+				nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
+			else:
+				raise Error('Network already exists.')
+		
+		self.lyredges = self.getlayer(self.tbledges)
+		self.lyrnodes = self.getlayer(self.tblnodes)		
+		self.lyredge_geom = self.getlayer(self.tbledge_geom)  
+		
+		#this OK to leave in the CSV writing version of the function because we need the correct GraphID inside each CSV file
+		graph_id = self.update_graph_table()
+				
+		#defines the 'base' fields for each table type (as is seen in the schema)
+		node_fields = {'GraphID':ogr.OFTInteger}  
+		edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
+		
+		#set the network
+		G = network
+				
+		#grab the node and edge data
+		node_data = G.nodes(data=True)
+		edge_data = G.edges(data=True)[2]
+		
+		#stores all field names to be written to csv, which are then written to PostGIS
+		node_table_fieldnames = []
+		edge_table_fieldnames = []
+		edge_geometry_table_fieldnames = []
+		
+		#to store fieldnames specific to the data being loaded i.e. for nodes not "GraphID", "geom", "NodeID"
+		node_table_specific_fieldnames = []
+		#to store fieldnames specific to the data being loaded i.e. for edges not "Node_F_ID", "Node_T_ID", "GraphID", "Edge_GeomID", "EdgeID"
+		edge_table_specific_fieldnames = []
+				
+		#add the base schema fields to the node table fieldnames dict
+		node_table_fieldnames.insert(0, 'GraphID')
+		node_table_fieldnames.append('geom')
+		node_table_fieldnames.append('NodeID')
+		
+		first_edge = False
+		
+		for edge in G.edges(data=True):	
+			#test if first edge
+			if first_edge == False:						
+				#add the edge table attributes to the edge table that are not in edge_fields
+				edge_attrs_test = self.add_attribute_fields(self.lyredges, edge[2], edge_fields)				
+				#loop until you find a node with a populated list of attributes
+				for edge_ in G.edges(data=True):
+					if len(G.node[edge_[1]]) > 0:
+						#add the node table attributes to the node table that are not in node_fields
+						node_attrs_test = self.add_attribute_fields(self.lyrnodes, G.node[edge_[1]], node_fields)
+						break;				
+				first_edge = True	
+			else:
+				break;
+				
+		#define the node fields
+		for key, data in node_data:			
+			if len(data) > 0:
+				for datakey, data_ in data.iteritems():
+					if datakey != 'ShpName' and datakey != 'Wkt' and datakey != 'Wkb' and datakey != 'Json':
+						if datakey not in node_table_fieldnames:
+							node_table_fieldnames.append(datakey)
+						if datakey not in node_table_specific_fieldnames:
+							node_table_specific_fieldnames.append(datakey)
+				break;
+		
+		#add the base schema fields to the edge table fieldnames dict
+		edge_table_fieldnames.insert(0, 'Node_F_ID')
+		edge_table_fieldnames.insert(1, 'Node_T_ID')
+		edge_table_fieldnames.insert(2, 'GraphID')
+		edge_table_fieldnames.append('Edge_GeomID')
+		edge_table_fieldnames.append('EdgeID')
+		
+		#define the edge table fields
+		for key in edge_data[2].keys():
+			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'geomid' and key != 'GeomID'): 
+				if key not in edge_table_fieldnames:
+					edge_table_fieldnames.append(key)
+				if key not in edge_table_specific_fieldnames:
+					edge_table_specific_fieldnames.append(key)
+		
+		#define the edge geometry table fields
+		edge_geometry_table_fieldnames.append('geom')
+		edge_geometry_table_fieldnames.append('GeomID')
+		
+		#define the file names and paths for csv files for nodes, edges, edge_geometry
+		node_csv_filename = '%s%s.csv' % (output_csv_folder, self.tblnodes)
+		edge_csv_filename = '%s%s.csv' % (output_csv_folder, self.tbledges)
+		edge_geom_csv_filename = '%s%s.csv' % (output_csv_folder, self.tbledge_geom)
+			
+		#define node, edge, edge_geometry csv file
+		node_csv_file = open(node_csv_filename, 'wb')
+		edge_csv_file = open(edge_csv_filename, 'wb')
+		edge_geom_csv_file = open(edge_geom_csv_filename, 'wb')
+		
+		#define node, edge, edge_geometry csv file writers
+		node_csv_writer = csv.writer(node_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+		edge_csv_writer = csv.writer(edge_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+		edge_geometry_csv_writer = csv.writer(edge_geom_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+		
+		#write the headers to the node, edge and edge_geometry csv files
+		node_csv_writer.writerow(node_table_fieldnames)
+		edge_csv_writer.writerow(edge_table_fieldnames)
+		edge_geometry_csv_writer.writerow(edge_geometry_table_fieldnames)
+				
+		if graph_id == None:
+			raise Error('Could not load network from Graphs table.')
+				
+		#defines the 'base' fields for each table type (as is seen in the schema)
+		node_fields = {'GraphID':ogr.OFTInteger}  
+		edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
+		
+		#to detect first edge
+		first_edge = False
+		
+		#assign 1 as default starting id for nodes and edges
+		current_node_id = 1
+		current_edge_id = 1
+		
+		#reset the dictionaries storing the relevant data		
+		node_attrs = []
+		
+		#Node_F_ID, Node_T_ID, GraphID, .. .. .., Edge_GeomID, EdgeID
+		edge_attrs = []
+		#GeomID, geom
+		edge_geometry_attrs = []
+		
+		#to store records of all
+		node_ids = []
+		node_coords = []
+		
+		from_check = False
+		
+		#loop all nodes in the network to create nodes csv file to copy
+		#GraphID, geom, NodeID, other attributes
+		for n in G.nodes(data=True):
+			node_attrs = []
+			for node_attribute in node_table_fieldnames:
+				if node_attribute != 'Wkt' and node_attribute != 'Wkb' and node_attribute != 'Json' and node_attribute != 'view_id' and node_attribute != 'nodeid' and node_attribute != 'ShpName':
+					if node_attribute == 'GraphID' and n[1].has_key(node_attribute):
+						node_attrs.append(graph_id)
+					elif node_attribute == 'geom':
+						node_attrs.append('srid=-1;POINT EMPTY')
+					elif node_attribute == 'NodeID' and n[1].has_key(node_attribute):
+						node_attrs.append(n[1][node_attribute])
+					else:
+						if n[1].has_key(node_attribute):						
+							node_attrs.append(n[1][node_attribute])
+				
+			if len(node_attrs) > 0:							
+				#need to write the contents of the node_to_attrs to the node table
+				node_csv_writer.writerow(node_attrs)
+		
+		#loop all edges in the network to create edges and edge geometry csv file to copy		
+		for e in G.edges(data=True):
+			edge_attrs = []
+			edge_geometry_attrs = []
+			if not multigraph:
+				data = G.get_edge_data(*e)
+			else:
+				data = G.get_edge_data(e[0], e[1], e[2]['uuid'])
+			
+			for edge_attribute in edge_table_fieldnames:				
+				if edge_attribute != 'Wkt' and edge_attribute != 'Wkb' and edge_attribute != 'Json' and edge_attribute != 'view_id' and edge_attribute != 'geomid' and edge_attribute != 'ShpName':
+					if edge_attribute == 'GraphID' and data.has_key(edge_attribute):
+						edge_attrs.insert(2, graph_id)																					
+					elif edge_attribute == 'Node_F_ID' and data.has_key(edge_attribute):
+						edge_attrs.insert(0, data[edge_attribute])
+					elif edge_attribute == 'Node_T_ID' and data.has_key(edge_attribute):
+						edge_attrs.insert(1, data[edge_attribute])
+					elif edge_attribute == 'Edge_GeomID' and data.has_key(edge_attribute):
+						edge_attrs.insert(3, data[edge_attribute])
+						edge_geometry_attrs.insert(1, data[edge_attribute])
+					elif edge_attribute == 'EdgeID' and data.has_key(edge_attribute):
+						edge_attrs.insert(4, data[edge_attribute])
+					else:
+						if data.has_key(edge_attribute):
+							edge_attrs.append(data[edge_attribute])
+			edge_geometry_attrs.insert(0, 'srid=-1;LINESTRING EMPTY')		
+			
+			if len(edge_attrs) > 0:
+				edge_csv_writer.writerow(edge_attrs)
+			if len(edge_geometry_attrs) > 0:
+				edge_geometry_csv_writer.writerow(edge_geometry_attrs)
+			
+		#close csv files
+		node_csv_file.close()
+		edge_geom_csv_file.close()
+		edge_csv_file.close()
+		
+		#checking capitals for table names		
+		matches = re.findall('[A-Z]', self.prefix)
+		
+		#determine if to add double-quotes to table names
+		if len(matches) > 0:
+			tblnodes = '"%s"' % self.tblnodes
+			tbledge_geom = '"%s"' % self.tbledge_geom
+			tbledges = '"%s"' % self.tbledges			
+		else:
+			tblnodes = self.tblnodes
+			tbledge_geom = self.tbledge_geom
+			tbledges = self.tbledge
+		
+		#load the nodes
+		node_load_sql_from_csv = "COPY %s FROM '%s' DELIMITERS ',' CSV HEADER; " % (tblnodes, node_csv_filename)					
+		self.conn.ExecuteSQL(node_load_sql_from_csv)
+		
+		#load the edge geometry
+		edge_geometry_load_sql_from_csv = "COPY %s FROM '%s' DELIMITERS ',' CSV HEADER; " % (tbledge_geom, edge_geom_csv_filename)					
+		self.conn.ExecuteSQL(edge_geometry_load_sql_from_csv)
+		
+		#load the edges
+		edge_sql_from_csv = "COPY %s FROM '%s' DELIMITERS ',' CSV HEADER; " % (tbledges, edge_csv_filename)					
+		self.conn.ExecuteSQL(edge_sql_from_csv)
+		
+		#execute create node view sql
+		nisql(self.conn).create_node_view(self.prefix)			
+		
+		#execute create edge view sql
+		nisql(self.conn).create_edge_view(self.prefix)
+		
+		#remove the node file
+		if os.path.isfile(node_csv_filename):
+			os.remove(node_csv_filename)
+			
+		#remove the edge geometry file
+		if os.path.isfile(edge_geom_csv_filename):
+			os.remove(edge_geom_csv_filename)
+			
+		#remove the edge file
+		if os.path.isfile(edge_csv_filename):
+			os.remove(edge_csv_filename)
+		
 	def pgnet_read_empty_geometry_from_csv_file_write_to_db(self, network, tablename_prefix, flnodes, fledges, fledge_geometry, srs=-1, overwrite=False, directed=False, multigraph=False, output_csv_folder='D://Spyder//NetworkInterdependency//network_scripts//pgnet_via_csv//'):
 	
 		'''
