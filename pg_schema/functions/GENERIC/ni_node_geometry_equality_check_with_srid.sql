@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION ni_node_geometry_equality_check(character varying, ch
   RETURNS integer AS
 $BODY$ 
 DECLARE
-    --table prefix used to identify which edge_geometry tables to check
+    --table prefix used to identify which node tables to check
     table_prefix ALIAS for $1;    
     
     --geometry as WKT to compare against
@@ -12,10 +12,10 @@ DECLARE
     --srid of new geometry
     SRID ALIAS for $3;
     
-    --geometry ID of matched edge_geometry record (do we need this to be a value only we know e.g. -1)
+    --geometry ID of matched node record (do we need this to be a value only we know e.g. -1)
     matched_node_id integer := -1;
 
-    --edge geometry table name derived from table_prefix and node_table_suffix
+    --node geometry table name derived from table_prefix and node_table_suffix
     node_table_name varchar := '';
     --constant suffixes used on different network tables
     node_table_suffix varchar := '_Nodes';

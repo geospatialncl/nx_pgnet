@@ -77,8 +77,17 @@ BEGIN
         --to ensure that the new sequence is used as the primary key
         EXECUTE 'ALTER TABLE '||quote_ident(new_edge_geometry_table_name)||' ADD CONSTRAINT '||new_edge_geometry_table_name||'_prkey PRIMARY KEY ("GeomID")';
         
-        --add the edge_geometry table to the geometry_columns table
-        EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_geometry_table_name)||', '||quote_literal(catalog_name)||', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||coordinate_dimension||','||table_srid||','||quote_literal(edge_geometry_type)||')';
+		IF table_srid > 0 THEN
+		
+			--add the edge_geometry table to the geometry_columns table
+			EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_geometry_table_name)||', '||quote_literal(catalog_name)||', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||coordinate_dimension||','||table_srid||','||quote_literal(edge_geometry_type)||')';
+			
+		ELSE
+			
+			--add the edge_geometry table to the geometry_columns table
+			EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_geometry_table_name)||', '||quote_literal(catalog_name)||', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', 0,'||table_srid||',''LINESTRING EMPTY'')';
+			
+		END IF;
         
 		--aspatial network being stored 
 		IF table_srid < 0 THEN

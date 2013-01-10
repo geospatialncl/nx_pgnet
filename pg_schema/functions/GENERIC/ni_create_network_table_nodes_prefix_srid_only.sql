@@ -78,8 +78,16 @@ BEGIN
         --to ensure that the new sequence is used as the primary key
         EXECUTE 'ALTER TABLE '||quote_ident(new_node_table_name)||' ADD CONSTRAINT '||new_node_table_name||'_prkey PRIMARY KEY ("NodeID")';       
         
-        --add this new node table to the geometry columns table
-        EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_table_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(node_geometry_column_name)||', '||node_geometry_coord_dim||','||table_srid||','||quote_literal(node_geometry_type)||')';
+		IF table_srid > 0 THEN
+		
+			--add this new node table to the geometry columns table
+			EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_table_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(node_geometry_column_name)||', '||node_geometry_coord_dim||','||table_srid||','||quote_literal(node_geometry_type)||')';
+			
+		ELSE
+			
+			EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_table_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(node_geometry_column_name)||', 0,'||table_srid||',''POINT EMPTY'')';
+			
+		END IF;
         
 		--aspatial network being stored 
 		IF table_srid < 0 THEN

@@ -64,8 +64,17 @@ BEGIN
     --retrieve the geometry type for the edge geometry table
     EXECUTE 'SELECT GeometryType(geom) FROM '||quote_ident(edge_geometry_table_name) INTO edge_geometry_type;
     
-	--add the edge view to the geometry columns table
-	EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(edge_geometry_type)||')';
+	IF SRID > 0 THEN
+		
+		--add the edge view to the geometry columns table
+		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(edge_geometry_type)||')';
+		
+	ELSE
+		
+		--add the edge view to the geometry columns table
+		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_edge_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', 0,'||SRID||','||quote_literal(edge_geometry_type)||')';
+	
+	END IF;
 	
     --return the new view name to the user
     RETURN new_edge_view_name;

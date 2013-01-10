@@ -308,7 +308,7 @@ class nisql:
 		
 		'''		
 		viewname = None
-		sql = "SELECT * FROM ni_create_edge_view('%s')" % prefix
+		sql = ("SELECT * FROM ni_create_edge_view('%s')" % (prefix))
 
 		for row in self.conn.ExecuteSQL(sql):
 			viewname = row.ni_create_edge_view
@@ -316,8 +316,9 @@ class nisql:
 			raise Error("Could not create edge view for network %s" % (prefix))				
 		return viewname
 	
-	def add_graph_record(self, prefix, directed=False, multipath=False):
-		'''Wrapper for ni_add_graph_record function.
+	def add_graph_record(self, prefix, directed=False, multigraph=False):
+		'''
+		Wrapper for ni_add_graph_record function.
 		
 		Creates a record in the Graphs table based on graph attributes.
 		
@@ -325,12 +326,20 @@ class nisql:
 		
 		prefix - string - graph / network name to add to Graphs table
 		directed - boolean - true if a directed network will be written, false otherwise
-		multigraph - boolean - true if a multigraph network will be written, false otherwise
-		
+		multigraph - boolean - true if a multigraph network will be written, false otherwise		
 		'''  
-	
-		sql = ("SELECT * FROM ni_add_graph_record('%s', FALSE, FALSE);" % 
-				(prefix))
+		
+		if ((directed==False) and (multigraph == False)):		
+			sql = ("SELECT * FROM ni_add_graph_record('%s', FALSE, FALSE);" % (prefix))
+		
+		elif ((directed == False) and (multigraph == True)):			
+			sql = ("SELECT * FROM ni_add_graph_record('%s', FALSE, TRUE);" % (prefix))
+			
+		elif ((directed == True) and (multigraph == False)):		
+			sql = ("SELECT * FROM ni_add_graph_record('%s', TRUE, FALSE);" % (prefix))
+			
+		elif ((directed == True) and (multigraph == True)):		
+			sql = ("SELECT * FROM ni_add_graph_record('%s', TRUE, TRUE);" % (prefix))
 				
 		result = self.conn.ExecuteSQL(sql)		
 		return result
@@ -348,8 +357,7 @@ class nisql:
 		snap - float - snapping precision value
 		
 		'''
-		sql = ("SELECT * FROM ni_node_snap_geometry_equality_check('%s', '%s', %s, %s);" 
-				% (prefix, wkt, srs, snap))
+		sql = ("SELECT * FROM ni_node_snap_geometry_equality_check('%s', '%s', %s, %s);" % (prefix, wkt, srs, snap))
 		result = None
 		
 		for row in self.conn.ExecuteSQL(sql):			
@@ -357,6 +365,37 @@ class nisql:
 		
 		return result
 		
+	def node_attribute_equality_check(self, prefix, node_attribute_equality_key, node_attribute_equality_value):
+		'''
+			Wrapper for ni_node_attribute_equality_check function.
+		
+		Checks if a node with the same attribute (node_attribute_equality_key) value (node_attribute_equality_value) already exists in the nodes table
+		
+		If not, returns None
+		
+		prefix - string - graph / network name
+		node_attribute_equality_key - string - name of a key (must exist in node table) to check against
+		node_attribute_equality_value - unknown type - value to check against
+		'''
+		
+		#need to map python types to PostgreSQL types (currently only support string, integer, and float
+		
+		if ((type(node_attribute_equality_value) == str) or (type(node_attribute_equality_value) == 'str')):			
+			sql = ("SELECT * FROM ni_node_attribute_equality_check('%s', '%s', '%s'::text);" % (prefix, node_attribute_equality_key, node_attribute_equality_value))
+		elif ((type(node_attribute_equality_value) == int) or (type(node_attribute_equality_value) == 'int')):
+			sql = ("SELECT * FROM ni_node_attribute_equality_check('%s', '%s', %s::integer);" % (prefix, node_attribute_equality_key, node_attribute_equality_value))
+		elif ((type(node_attribute_equality_value) == float) or (type(node_attribute_equality_value) == 'float')):
+			sql = ("SELECT * FROM ni_node_attribute_equality_check('%s', '%s', %s::float);" % (prefix, node_attribute_equality_key, node_attribute_equality_value))
+		elif ((type(node_attribute_equality_value) == long) or (type(node_attribute_equality_value) == 'long')):
+			sql = ("SELECT * FROM ni_node_attribute_equality_check('%s', '%s', %s::long);" % (prefix, node_attribute_equality_key, node_attribute_equality_value))
+		
+		result = None
+		
+		for row in self.conn.ExecuteSQL(sql):
+			result = row.ni_node_attribute_equality_check
+			
+		return result
+	
 	def node_geometry_equality_check(self, prefix, wkt, srs=27700):
 		'''Wrapper for ni_node_geometry_equality_check function.
 		
@@ -370,8 +409,7 @@ class nisql:
 		
 		'''
 		
-		sql = ("SELECT * FROM ni_node_geometry_equality_check('%s', '%s', %s);" 
-				% (prefix, wkt, srs))
+		sql = ("SELECT * FROM ni_node_geometry_equality_check('%s', '%s', %s);" % (prefix, wkt, srs))
 		result = None
 		
 		for row in self.conn.ExecuteSQL(sql):			
@@ -392,8 +430,7 @@ class nisql:
 		
 		'''
 		
-		sql = ("SELECT * FROM ni_edge_snap_geometry_equality_check('%s', '%s', %s, %s);" 
-				% (prefix, wkt, srs, snap))
+		sql = ("SELECT * FROM ni_edge_snap_geometry_equality_check('%s', '%s', %s, %s);" % (prefix, wkt, srs, snap))
 		result = None
 		
 		for row in self.conn.ExecuteSQL(sql):			
@@ -414,8 +451,7 @@ class nisql:
 		
 		'''
 		
-		sql = ("SELECT * FROM ni_edge_geometry_equality_check('%s', '%s', %s);" 
-				% (prefix, wkt, srs))
+		sql = ("SELECT * FROM ni_edge_geometry_equality_check('%s', '%s', %s);" % (prefix, wkt, srs))
 				
 		result = None
 		for row in self.conn.ExecuteSQL(sql):
@@ -487,12 +523,7 @@ class import_graph:
 		- GEPHI - compatible CSV node / edge lists
 	
     '''
-	# def __init__(self, db_conn):
-		# '''Setup connection to be inherited by methods.'''
-		# self.conn = db_conn
-		# if self.conn == None:
-			# raise Error('No connection to database.')
-
+	
 	def import_from_gexf(self, path, graphname, node_type=str, relabel=False):
 		''' Import graph from Graph Exchange XML Format (GEXF) 
 		
@@ -968,9 +999,6 @@ class export_graph:
 			#set the full output path to save the gexf file to
 			full_path = '%s/%s.gexf' % (path, output_filename)
 			
-			#create a deepcopy of the graph to export
-			#graph_copy = copy.deepcopy(graph)
-			
 			#create a networkx copy of the graph to export
 			graph_copy = nx.copy(graph)
 			
@@ -1086,9 +1114,6 @@ class export_graph:
 			#set the full output path to save the YAML file to
 			full_path = '%s/%s.yaml' % (path, output_filename)
 		
-			#create a deepcopy of the graph to export
-			#graph_copy = copy.deepcopy(graph)
-			
 			#create a networkx copy of the graph to export
 			graph_copy = nx.copy(graph)
 
@@ -1122,8 +1147,6 @@ class export_graph:
 		
 		#check that the output path exists
 		if os.path.isdir(path):
-			#create a deepcopy of the graph to export
-			#graph_copy = copy.deepcopy(graph)
 			
 			#set the full output path to save the GraphML file to
 			full_path = '%s/%s.graphml' % (path, output_filename)
@@ -1297,6 +1320,7 @@ class read:
 		db_conn - ogr connection
 		
 		'''
+		
 		self.conn = db_conn
 		
 		if self.conn == None:
@@ -1320,24 +1344,40 @@ class read:
 		
 		'''
 
+		#how do we go about setting the spatial filter to NULL for non-spatial tables
+		
 		# Join Edges and Edge_Geom
 		edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
 		
 		# Get lyr by name
 		lyr = self.conn.GetLayerByName(edge_tbl_view)
-
-		# Add error catch here if lyr is None. 
-		# Error reading from edge table view, is it broken?		
+		#reset to read from start of edge view
+		lyr.ResetReading()
 		
 		# Get current feature		
 		feat = lyr.GetNextFeature()
+		
 		# Get fields
 		flds = [x.GetName() for x in lyr.schema]
 		# Loop features
 		while feat is not None:
 			# Read edge attrs.
+			
 			flddata = self.getfieldinfo(lyr, feat, flds)
 			attributes = dict(zip(flds, flddata))
+			
+			#delete view_id from previous view
+			if attributes.has_key('view_id'):
+				del attributes['view_id']
+			
+			#delete edgeid from previous view
+			if attributes.has_key('edgeid'):
+				del attributes['edgeid']
+				
+			#delete geomid from previous view
+			if attributes.has_key('geomid'):
+				del attributes['geomid']
+			
 			#attributes['network'] = network_name
 			geom = feat.GetGeometryRef()
 			
@@ -1352,15 +1392,22 @@ class read:
 					graph.add_edge(attributes['Node_F_ID'], attributes['Node_T_ID'], attributes)			
 				
 				# Line geometry
-				elif (ogr.Geometry.GetGeometryName(geom) == 'LINESTRING'):
-					n = geom.GetPointCount()
+				elif (ogr.Geometry.GetGeometryName(geom) == 'LINESTRING'):					
 					attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
 					attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
 					attributes["Json"] = ogr.Geometry.ExportToJson(geom) 
-					graph.add_edge(attributes['Node_F_ID'], 
-									 attributes['Node_T_ID'], attributes)
+					graph.add_edge(attributes['Node_F_ID'], attributes['Node_T_ID'], attributes)
+					
+				#aspatial (need to be careful here, or a better test for null / empty geometries)
+				elif (ogr.Geometry.GetGeometryName(geom) == 'GEOMETRYCOLLECTION') and (str(geom) == 'GEOMETRYCOLLECTION EMPTY'):
+					
+					attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
+					attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
+					attributes["Json"] = ogr.Geometry.ExportToJson(geom)
+					
+					graph.add_edge(attributes['Node_F_ID'], attributes['Node_T_ID'], attributes)			
 			feat = lyr.GetNextFeature() 
-			
+
 	def pgnet_nodes(self, graph):
 		'''Reads nodes from node table and add to graph.
 		
@@ -1369,23 +1416,36 @@ class read:
 		'''
 
 		# Join Edges and Edge_Geom
-		node_tbl = nisql(self.conn).create_node_view(self.prefix)
+		node_tbl_view = nisql(self.conn).create_node_view(self.prefix)
+		
 		# Get lyr by name
-		lyr = self.conn.GetLayerByName(node_tbl)
+		lyr = self.conn.GetLayerByName(node_tbl_view)
+		#reset to read from start of node view
+		lyr.ResetReading()
+				
 		# Get fields
 		flds = [x.GetName() for x in lyr.schema]
 		# Get current feature
 		feat = lyr.GetNextFeature()
+		
 		# Loop features
 		while feat is not None:
 			# Read node attrs.
 			flddata = self.getfieldinfo(lyr, feat, flds)
 			attributes = dict(zip(flds, flddata))
-			#attributes['network'] = network_name
-			geom = feat.GetGeometryRef()
-			##if geom != None:
+			
+			#delete view_id from previous view
+			if attributes.has_key('view_id'):
+				del attributes['view_id']
+			
+			if attributes.has_key('nodeid'):
+				del attributes['nodeid']
+			
+			geom = feat.GetGeometryRef()			
 			attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
 			attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
+			attributes["Json"] = ogr.Geometry.ExportToJson(geom)
+			
 			graph.add_node((attributes['NodeID']), attributes)
 			feat = lyr.GetNextFeature()
 		
@@ -1413,41 +1473,35 @@ class read:
 		prefix - string - graph / network name
 		
 		'''
-		
+				
 		# Set up variables
 		self.prefix = prefix
 		# Get graph attributes
 		graph_attrs = self.graph_table(self.prefix)
+		
 		if graph_attrs == None:
 			error = "Can't find network '%s' in Graph table" % self.prefix
 			raise Error(error)
-		#ORIGINAL
-		# Create empty graph (directed/un-directed)
-		#if graph_attrs['Directed'] == 0:
-			#G = nx.Graph()
-		#else:
-			#G.nx.DiGraph()
 		
 		#NEW handles multi and directed graphs
 		if ((graph_attrs['Directed'] == 0) and (graph_attrs['MultiGraph'] == 0)):			
-			G = nx.Graph()
+			G = nx.Graph(name=prefix)
 		elif ((graph_attrs['Directed'] == 1) and (graph_attrs['MultiGraph'] == 0)):			
-			G = nx.DiGraph()
+			G = nx.DiGraph(name=prefix)
 		elif ((graph_attrs['Directed'] == 0) and (graph_attrs['MultiGraph'] == 1)):			
-			G = nx.MultiGraph()
+			G = nx.MultiGraph(name=prefix)
 		elif ((graph_attrs['Directed'] == 1) and (graph_attrs['MultiGraph'] == 1)):			
-			G = nx.MultiDiGraph()
+			G = nx.MultiDiGraph(name=prefix)
 			
 		# Assign graph attributes to graph
-		for key, value in graph_attrs.iteritems():
+		for key, value in graph_attrs.iteritems():			
 			G.graph[key] = value
 		
-		self.pgnet_edges(G)
+		self.pgnet_edges(G)					
 		self.pgnet_nodes(G)
-
+	
 		return G
 
-	
 	#create a network x graph instance by reading the csv input files
 	def pgnet_via_csv(self, network_name, node_csv_file_name, edge_csv_file_name, edge_geometry_csv_file_name, directed=False, multigraph=False):
 		'''Read a network from a csv formatted file (as if output from the schema, but could be manually created
@@ -1532,7 +1586,7 @@ class read:
 		missing_node_fieldname = False	
 		node_first_line_contents = []
 		#loop rows in node table
-		for node_row in node_csv_reader:				
+		for node_row in node_csv_reader:
 			##perform a check to see that the node specific fieldnames exist in the node csv file
 			if node_first_line == True:
 				node_first_line_contents = node_row				
@@ -1548,6 +1602,13 @@ class read:
 					break;
 				else:		
 					node_attrs = node_first_line_contents
+					
+					if node_attrs.has_key('view_id'):
+						del node_attrs['view_id']
+					
+					if node_attrs.has_key('nodeid'):
+						del node_attrs['nodeid']
+					
 					#grab the node geometry
 					node_geom_wkt_raw = str(node_row['geom'])
 					node_geom_srid = node_geom_wkt_raw[:node_geom_wkt_raw.find(';')]
@@ -1580,6 +1641,12 @@ class read:
 			else:								
 				#grab the attributes for that node
 				node_attrs = node_row
+				
+				if node_attrs.has_key('view_id'):
+					del node_attrs['view_id']
+				
+				if node_attrs.has_key('nodeid'):
+					del node_attrs['nodeid']
 				
 				#grab the node geometry
 				node_geom_wkt_raw = str(node_row['geom'])
@@ -1622,7 +1689,7 @@ class read:
 		#need some way of being able to attach the correct edge geometry wkt, wkb and json version of the geometry to the attributes of the correct edge
 		#edge Edge_GeomID should match GeomID of edge_geometry
 		#loop rows in edge geometry table
-		for edge_geometry_row in edge_geometry_csv_reader:
+		for edge_geometry_row in edge_geometry_csv_reader:			
 			if edge_geometry_first_line == True:
 				edge_geometry_first_line_contents = edge_geometry_row
 				edge_geometry_first_line = False				
@@ -1751,7 +1818,7 @@ class read:
 		#if edges have been added using the coordinates as the identifier
 		if len(coords) > 0 or len(net.edges()) > 0:		
 			#loop rows in the edge table
-			for edge_row in edge_csv_reader:
+			for edge_row in edge_csv_reader:				
 				if edge_first_line == True:
 					edge_first_line_contents = edge_row
 					edge_first_line = False				
@@ -1768,7 +1835,14 @@ class read:
 						#grab the edge_geomid
 						edge_geom_id = edge_row['Edge_GeomID']					
 						#grab the attributes for that edge
-						edge_attrs = edge_row					
+						edge_attrs = edge_row
+
+						if edge_attrs.has_key('edgeid'):
+							del edge_attrs['edgeid']
+						
+						if edge_attrs.has_key('geomid'):
+							del edge_attrs['geomid']
+						
 						matched_edge_tuples = coords[edge_geom_id]
 						current_matched_edge_attributes = net[matched_edge_tuples[0]][matched_edge_tuples[1]]
 						new_edge_attributes = dict(current_matched_edge_attributes, **edge_attrs)				
@@ -1778,7 +1852,14 @@ class read:
 					#grab the edge_geomid
 					edge_geom_id = edge_row['Edge_GeomID']					
 					#grab the attributes for that edge
-					edge_attrs = edge_row					
+					edge_attrs = edge_row
+
+					if edge_attrs.has_key('edgeid'):
+						del edge_attrs['edgeid']
+					
+					if edge_attrs.has_key('geomid'):
+						del edge_attrs['geomid']	
+					
 					matched_edge_tuples = coords[edge_geom_id]
 					current_matched_edge_attributes = net[matched_edge_tuples[0]][matched_edge_tuples[1]]
 					new_edge_attributes = dict(current_matched_edge_attributes, **edge_attrs)				
@@ -1786,7 +1867,7 @@ class read:
 		#no edges have been added because the edge geometries supplied are all blank edges
 		else:
 			
-			for edge_row in edge_csv_reader:
+			for edge_row in edge_csv_reader:				
 				if edge_first_line == True:
 					edge_first_line_contents = edge_row
 					edge_first_line = False
@@ -1802,12 +1883,26 @@ class read:
 					else:
 						edge_geom_id = edge_row['Edge_GeomID']
 						edge_attrs = edge_row
+						
+						if edge_attrs.has_key('edgeid'):
+							del edge_attrs['edgeid']
+						
+						if edge_attrs.has_key('geomid'):
+							del edge_attrs['geomid']
+						
 						node_f_id = edge_attrs['Node_F_ID']
 						node_t_id = edge_attrs['Node_T_ID']						
 						net.add_edge(node_f_id, node_t_id, edge_attrs)
 				else:
 					edge_geom_id = edge_row['Edge_GeomID']
 					edge_attrs = edge_row
+					
+					if edge_attrs.has_key('edgeid'):
+						del edge_attrs['edgeid']
+					
+					if edge_attrs.has_key('geomid'):
+						del edge_attrs['geomid']
+					
 					node_f_id = edge_attrs['Node_F_ID']
 					node_t_id = edge_attrs['Node_T_ID']						
 					net.add_edge(node_f_id, node_t_id, edge_attrs)
@@ -1856,36 +1951,36 @@ class write:
 		key - could be str or tuple
 		data - attribute dictionary
 		
-		'''	
+		'''			
 		
 		# Borrowed from nx_shp.py.		
-		if data.has_key('Wkb'):								
-			geom = ogr.CreateGeometryFromWkb(data['Wkb'])
-		elif data.has_key('Wkt'):						
-			geom = ogr.CreateGeometryFromWkt(data['Wkt'])
+		if data.has_key('Wkt'):			
+			geom = ogr.CreateGeometryFromWkt(data['Wkt'])			
+		elif data.has_key('Wkb'):											
+			geom = ogr.CreateGeometryFromWkb(str(data['Wkb']))						
 		#elif type(key[0]) == 'tuple': # edge keys are packed tuples		
 		#CHANGED FOR FIXING PAJEK IMPORT (29/11/2012)
-		elif ((type(key[0]) == 'tuple') or (type(key[0]) == tuple)): # edge keys are packed tuples						
+		elif ((type(key[0]) == 'tuple') or (type(key[0]) == tuple)): # edge keys are packed tuples				
 			geom = ogr.Geometry(ogr.wkbLineString)
 			#geom = ogr.Geometry(ogr.wkbMultiLineString)
 			_from, _to = key[0], key[1]
 			geom.SetPoint_2D(0, *_from)
-			geom.SetPoint_2D(1, *_to)				
+			geom.SetPoint_2D(1, *_to)		
 		#CHANGED FOR FIXING GEXF IMPORT (04/12/2012)
-		elif ((type(key) == 'str') or (type(key) == str)):			
+		elif ((type(key) == 'str') or (type(key) == str)):				
 			coordinate_tuple = eval(key)			
 			geom = ogr.Geometry(ogr.wkbPoint)
 			geom.SetPoint_2D(0, *coordinate_tuple)
 		#CHANGED FOR FIXING GEPHI IMPORT (05/12/2012)
-		elif ((type(key[0]) == 'str') or (type(key[0]) == str)):
+		elif ((type(key[0]) == 'str') or (type(key[0]) == str)):			
 			geom = ogr.Geometry(ogr.wkbLineString)
 			_from, _to = eval(key[0]), eval(key[1])
 			geom.SetPoint_2D(0, *_from)
-			geom.SetPoint_2D(1, *_to)
-			
-		else:						 			
+			geom.SetPoint_2D(1, *_to)		
+		else:						 					
 			geom = ogr.Geometry(ogr.wkbPoint)
 			geom.SetPoint_2D(0, *key)
+		
 		return geom
 	
 	def create_feature(self, lyr, attributes = None, geometry = None):
@@ -1901,7 +1996,7 @@ class write:
 		
 		feature = ogr.Feature(lyr.GetLayerDefn())
 		if attributes is not None:
-			for field, data in attributes.iteritems(): 
+			for field, data in attributes.iteritems(): 				
 				feature.SetField(field, data)
 		if geometry is not None:
 			feature.SetGeometry(geometry)
@@ -1919,13 +2014,17 @@ class write:
 		fields - dict - contains generic node, edge or edge_geometry fields
 		
 		'''
-
+		
 		attrs = {}		
 		OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
 		for key, data in g_obj.iteritems():
-			# Reject data not for attribute table
-			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
-				and key != 'ShpName'):
+			
+			##ORIG
+			#if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName'):
+			# Reject data not for attribute table 
+			##NEW
+			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'NodeID' and key != 'nodeid' and key != 'EdgeID' and key != 'edgeid' and key != 'viewid' and key != 'view_id' and key != 'ViewID' and key != 'View_ID' and key != 'GeomID' and key != 'geomid'):
+				
 				# Add new attributes for each feature
 				if key not in fields:
 					if type(data) in OGRTypes:
@@ -1933,17 +2032,17 @@ class write:
 					else:
 						fields[key] = ogr.OFTString
 					
-					newfield = ogr.FieldDefn(key, fields[key])					
-					lyr.CreateField(newfield)
-					 
+					newfield = ogr.FieldDefn(key, fields[key])	
+					
+					lyr.CreateField(newfield)					
 					attrs[key] = data
 				# Create dict of single feature's attributes
-				else:
+				else:					
 					attrs[key] = data
 		
 		return attrs
 				
-	def update_graph_table(self, graph):
+	def update_graph_table(self):
 		'''Update the Graph table and return newly assigned Graph ID.
 		
 		graph - networkx graph
@@ -1959,7 +2058,40 @@ class write:
 			GraphID = row.GraphID
 
 		return GraphID
+	
+	def pgnet_edge_empty_geometry(self, edge_attribute_equality_key, edge_attributes, edge_geom):
+		'''Write a Edge to a Edge table, where no Edge geometry exists
+			
+		Return the newly assigned EdgeID
+
+		edge_attribute_quality_key - string - key to an element in edge_attributes to use to check equality against database (must exist in edge_attributes)
+		edge_attributes - dict - dictionary of edge attributes to add to a edge feature
+		'''
 		
+		#Get table definitions
+		featedge = ogr.Feature(self.lyredges.GetLayerDefn())
+		featedge_geom = ogr.Feature(self.lyredge_geom.GetLayerDefn())
+		featedge_geom.SetGeometry(edge_geom)
+		
+		self.lyredge_geom.CreateFeature(featedge_geom)
+		sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;' % self.tbledge_geom)
+		
+		for row in self.conn.ExecuteSQL(sql):			
+			GeomID = row.GeomID
+		
+		# Append the GeomID to the edges attributes	
+		edge_attributes['Edge_GeomID'] = GeomID
+		
+		#Attributes to edges table
+		##for field, data in edge_attributes.iteritems():
+		for field, data in edge_attributes.items():			
+			if type(data) == unicode:
+				data = data.encode('utf-8')
+			
+			featedge.SetField(field, data)
+
+		self.lyredges.CreateFeature(featedge)
+	
 	def pgnet_edge(self, edge_attributes, edge_geom):
 		'''Write an edge to Edge and Edge_Geometry tables.
 		
@@ -1976,15 +2108,13 @@ class write:
 		featedge_geom = ogr.Feature(self.lyredge_geom.GetLayerDefn())
 		
 		# Test for geometry existance	   
-		GeomID = nisql(self.conn).edge_geometry_equality_check(self.prefix, 
-						edge_wkt, self.srs)
+		GeomID = nisql(self.conn).edge_geometry_equality_check(self.prefix, edge_wkt, self.srs)
 
 		if GeomID == None: # Need to create new geometry:			
 			featedge_geom.SetGeometry(edge_geom)			
 			self.lyredge_geom.CreateFeature(featedge_geom)
 			#Get created edge_geom primary key (GeomID)
-			sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;'
-					% self.tbledge_geom)
+			sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;' % self.tbledge_geom)
 			
 			for row in self.conn.ExecuteSQL(sql):			
 				GeomID = row.GeomID			
@@ -1994,14 +2124,48 @@ class write:
 		
 		#Attributes to edges table
 		##for field, data in edge_attributes.iteritems():
-		for field, data in edge_attributes.items():				
+		for field, data in edge_attributes.items():			
 			if type(data) == unicode:
 				data = data.encode('utf-8')
 				
 			featedge.SetField(field, data)
 
 		self.lyredges.CreateFeature(featedge)
+	
+	def pgnet_node_empty_geometry(self, node_attribute_equality_key, node_attributes, node_geom):
+		'''Write a node to a Node table, where no Node geometry exists
+			
+		Return the newly assigned NodeID
+
+		node_attribute_quality_key - string - key to an element in node_attributes to use to check equality against database (must exist in node_attributes)
+		node_attributes - dict - dictionary of node attributes to add to a node feature
+		'''
 		
+		NodeID = None
+		if node_attributes.has_key(node_attribute_equality_key):
+			NodeID = nisql(self.conn).node_attribute_equality_check(self.prefix, node_attribute_equality_key, node_attributes[node_attribute_equality_key])			
+			if NodeID == None: #Need to create the new feature+geometry				
+				featnode = ogr.Feature(self.lyrnodes_def)			
+				featnode.SetGeometry(node_geom)				
+				for field, data in node_attributes.iteritems():					
+					if type(data) == unicode:
+						data = data.encode('utf-8')
+									
+					featnode.SetField(field, data)
+				
+				self.lyrnodes.CreateFeature(featnode)
+				
+				sql = ('SELECT "NodeID" FROM "%s" ORDER BY "NodeID" DESC LIMIT 1;' % self.tblnodes)
+				
+				for row in self.conn.ExecuteSQL(sql):
+					NodeID = row.NodeID
+			
+			return NodeID
+			
+		else:			
+			raise Error('The specified attribute (%s) does not exist in the current set of Node attributes (%s)'% (node_attribute_equality_key, node_attributes))
+		
+	
 	def pgnet_node(self, node_attributes, node_geom):
 		'''Write a node to a Node table.
 		
@@ -2012,31 +2176,28 @@ class write:
 		
 		'''		
 		
-		
-		featnode = ogr.Feature(self.lyrnodes_def)		
 		NodeID = nisql(self.conn).node_geometry_equality_check(self.prefix,node_geom,self.srs)	
-		
+				
 		if NodeID == None: # Need to create new geometry:
+			featnode = ogr.Feature(self.lyrnodes_def)
 			featnode.SetGeometry(node_geom)
 		
-			for field, data in node_attributes.iteritems():
-				#added to handle when reading back in from graphml or similar
+			for field, data in node_attributes.iteritems():				
+				#added to handle when reading back in from graphml or similar				
 				if type(data) == unicode:
 					data = data.encode('utf-8')
 				
 				featnode.SetField(field, data)
 			
 			self.lyrnodes.CreateFeature(featnode)
-			sql = ('SELECT "NodeID" FROM "%s" ORDER BY "NodeID" DESC LIMIT 1;'
-					% self.tblnodes)
+			sql = ('SELECT "NodeID" FROM "%s" ORDER BY "NodeID" DESC LIMIT 1;' % self.tblnodes)
 			
 			for row in self.conn.ExecuteSQL(sql):
 				NodeID = row.NodeID
 		
 		return NodeID
-
-	def pgnet(self, network, tablename_prefix, srs=27700, overwrite=False,
-		directed = False, multigraph = False):
+	
+	def pgnet(self, network, tablename_prefix, srs=27700, overwrite=False, directed = False, multigraph = False, node_equality_key='geom', edge_equality_key='geom'):
 			
 		'''Write NetworkX instance to PostGIS network schema tables.
 		
@@ -2047,7 +2208,7 @@ class write:
 		
 		network - networkx network
 		tablename_prefix - string - name to give to graph / network when stored in the database
-		srs - integer - epsg code of input graph / network
+		srs - integer - epsg code of input graph / network (if srs = -1, then aspatial network being written)
 		overwrite - boolean - true to overwrite graph / network of same name in database, false otherwise
 		directed - boolean - true to write a directed graph / network, false otherwise
 		multigraph - boolean - true to write a multigraph, false otherwise
@@ -2068,11 +2229,10 @@ class write:
 		self.tbledge_geom = tablename_prefix+'_Edge_Geometry'
 		self.srs = srs
 		
-		result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
-		
+		result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)		
 		#check if network tables were created
 		if result == 0 or result == None:
-			if overwrite is True:
+			if overwrite is True:				
 				nisql(self.conn).delete_network(self.prefix)
 				result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
 			else:
@@ -2080,11 +2240,11 @@ class write:
 		
 		G = network # Use G as network, networkx convention.
 		#grab graph / network id from database
-		graph_id = self.update_graph_table(network)
+		graph_id = self.update_graph_table()
 		
 		if graph_id == None:
 			raise Error('Could not load network from Graphs table.')
-				
+		
 		self.lyredges = self.getlayer(self.tbledges)
 		self.lyrnodes = self.getlayer(self.tblnodes)		
 		self.lyredge_geom = self.getlayer(self.tbledge_geom)  
@@ -2098,41 +2258,85 @@ class write:
 			if not multigraph:
 				data = G.get_edge_data(*e)				
 			else:
-				data = G.get_edge_data(e[0], e[1], e[2]['uuid'])
-			
-			#define the edge geometry
-			edge_geom = self.netgeometry(e, data)	   
-			
-			# Insert the start node			
-			node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[0]], node_fields)
+				data = G.get_edge_data(e[0], e[1], e[2]['uuid'])						
 						
+			# Insert the start node			
+			node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[0]], node_fields)						
 			node_attrs['GraphID'] = graph_id 
-			#grab the node geometry
-			node_geom = self.netgeometry(e[0], G.node[e[0]])
-			#write the geometry to the database, and return the id
-			node_id = self.pgnet_node(node_attrs, node_geom)						
 			
+			#delete view_id and nodeid if exist as attributes of node
+			if node_attrs.has_key('view_id'):				
+				del node_attrs['view_id']
+			if node_attrs.has_key('nodeid'):
+				del node_attrs['nodeid']
+			
+			if srs != -1:
+				#grab the node geometry
+				node_geom = self.netgeometry(e[0], G.node[e[0]])				
+				#write the geometry to the database, and return the id
+				node_id = self.pgnet_node(node_attrs, node_geom)
+				
+			else:
+				#node_geom = self.netgeometry(e[0], {'Wkt':'srid=-1;POINT EMPTY'})
+				node_geom = self.netgeometry(e[0], {'Wkt':'POINT EMPTY'})
+				#grab the node geometry
+				#node_geom = self.netgeometry(e[0], {'Wkt':'GEOMETRYCOLLECTION EMPTY'})								
+				#write the geometry to the database, and return the id
+				node_id = self.pgnet_node_empty_geometry(node_equality_key, node_attrs, node_geom)				
 			G[e[0]][e[1]]['Node_F_ID'] = node_id
 			
 			# Insert the end node			
 			node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[1]], node_fields)			
 			node_attrs['GraphID'] = graph_id
-						
-			#grab the node geometry
-			node_geom = self.netgeometry(e[1], G.node[e[1]])			
-			#write the geometry to the database, and return the id
-			node_id = self.pgnet_node(node_attrs, node_geom)
 			
+			#delete view_id and nodeid if exist as attributes of node
+			if node_attrs.has_key('view_id'):				
+				del node_attrs['view_id']			
+			if node_attrs.has_key('nodeid'):
+				del node_attrs['nodeid']
+				
+			if srs != -1:			
+				#grab the node geometry
+				node_geom = self.netgeometry(e[1], G.node[e[1]])
+
+				#write the geometry to the database, and return the id
+				node_id = self.pgnet_node(node_attrs, node_geom)
+				
+			else:
+				#node_geom = self.netgeometry(e[1], {'Wkt':'srid=-1;POINT EMPTY'})
+				node_geom = self.netgeometry(e[1], {'Wkt':'POINT EMPTY'})
+				#grab the node geometry
+				#node_geom = self.netgeometry(e[1], {'Wkt':'GEOMETRYCOLLECTION EMPTY'})				
+				#write the geometry to the database, and return the id
+				node_id = self.pgnet_node_empty_geometry(node_equality_key, node_attrs, node_geom)
+
 			G[e[0]][e[1]]['Node_T_ID'] = node_id
 						
 			# Set graph id.
 			G[e[0]][e[1]]['GraphID'] = graph_id
-
+			
 			#set the edge attributes
 			edge_attrs = self.create_attribute_map(self.lyredges, e[2], edge_fields)
 			
-			#add the edge and attributes to the database
-			self.pgnet_edge(edge_attrs, edge_geom)
+			if edge_attrs.has_key('edgeid'):
+				del edge_attrs['edgeid']	
+			if edge_attrs.has_key('geomid'):
+				del edge_attrs['geomid']
+			
+			if srs != -1:			
+				#define the edge geometry
+				edge_geom = self.netgeometry(e, data)	  
+
+				#add the edge and attributes to the database
+				self.pgnet_edge(edge_attrs, edge_geom)
+				
+			else:
+				#edge_geom = self.netgeometry(e, {'Wkt':'srid=-1;LINESTRING EMPTY'})
+				edge_geom = self.netgeometry(e, {'Wkt':'LINESTRING EMPTY'})
+				#define the edge geometry
+				#edge_geom = self.netgeometry(e, {'Wkt':'GEOMETRYCOLLECTION EMPTY'})				
+				#add the edge and attributes to the database
+				self.pgnet_edge_empty_geometry(edge_equality_key, edge_attrs, edge_geom)
 			
 		#execute create node view
 		nisql(self.conn).create_node_view(self.prefix)			
@@ -2151,9 +2355,12 @@ class write:
 		'''
 		attrs = {}		
 		OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
-		for key, data in g_obj.iteritems():			
-			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
-				and key != 'ShpName'):
+		for key, data in g_obj.iteritems():						
+			##ORIG
+			#if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName'):
+			# Reject data not for attribute table 
+			##NEW
+			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'nodeid' and key != 'edgeid' and key != 'viewid' and key != 'view_id' and key != 'geomid'):
 				if key not in fields:
 					if type(data) in OGRTypes:
 						fields[key] = OGRTypes[type(data)]
@@ -2171,7 +2378,10 @@ class write:
 	def pgnet_via_csv(self, network, tablename_prefix, srs=27700, overwrite=False, directed = False, multigraph = False, output_csv_folder='D://Spyder//NetworkInterdependency//network_scripts//pgnet_via_csv//'):
 		
 		'''
-		function to write networkx network instance (network) to the database schema, via COPY from CSV
+		function to write networkx network instance (network) to the database schema, via COPY from CSV 
+		
+		NOTE: Nodes and Edges must have none EMPTY geometries i.e. this can only be used with a spatial network
+		
 		- node table written out as csv (to output_csv_folder + tablename_prefix + '_Nodes' e.g. OSMeridian2_Rail_CSV_w_nt_Nodes.csv)
 		- edge table written out as csv (to output_csv_folder + tablename_prefix + '_Edges' e.g. OSMeridian2_Rail_CSV_w_nt_Edges.csv)
 		- edge_geometry table written out as csv (to output_csv_folder + tablename_prefix + '_Edge_Geometry' e.g. OSMeridian2_Rail_CSV_w_nt_Edge_Geometry.csv)
@@ -2292,16 +2502,14 @@ class write:
 		edge_geom_csv_writer.writerow(edge_geometry_table_fieldnames)
 			
 		#this OK to leave in the CSV writing version of the function because we need the correct GraphID inside each CSV file
-		graph_id = self.update_graph_table(network)
+		graph_id = self.update_graph_table()
 		
 		if graph_id == None:
 			raise Error('Could not load network from Graphs table.')
 				
 		#defines the 'base' fields for each table type (as is seen in the schema)
 		node_fields = {'GraphID':ogr.OFTInteger}  
-		edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 
-				  'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
-		
+		edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
 		
 		#to detect first edge
 		first_edge = False
@@ -2338,9 +2546,6 @@ class write:
 			else:
 				data = G.get_edge_data(e[0], e[1], e[2]['uuid'])						
 			
-			#get edge geometry
-			geom = self.netgeometry(e, data)
-
 			#get from node geometry as wkt
 			node_from_geom = self.netgeometry(e[0], G.node[e[0]])			 
 			node_from_geom_wkt = ogr.Geometry.ExportToWkt(node_from_geom)			   
@@ -2348,9 +2553,6 @@ class write:
 			#get to node geometry as wkt
 			node_to_geom = self.netgeometry(e[1], G.node[e[1]])			  
 			node_to_geom_wkt = ogr.Geometry.ExportToWkt(node_to_geom)
-						
-			#get point count for linestring
-			n = geom.GetPointCount()
 			
 			#from node geometry for csv file			
 			node_from_geom_wkt_final = 'srid=%s;%s' % (srs, node_from_geom_wkt)			
@@ -2402,8 +2604,8 @@ class write:
 				if len(G.node[e[0]]) > 0:			
 					#assign attributes related from the node from 
 					for key, node_from_data in G.node[e[0]].iteritems():					 
-						if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
-							and key != 'ShpName'):					 
+						#if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName'):					 
+						if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'nodeid' and key != 'viewid'):					 
 							node_from_attrs.append(node_from_data)
 				#if there are no attributes, just fill up the array with empty values
 				else:
@@ -2437,8 +2639,8 @@ class write:
 				if len(G.node[e[1]]) > 0:
 					#assign attributes related to the node to
 					for key, node_to_data in G.node[e[1]].iteritems():				
-						if (key != 'Json' and key != 'Wkt' and key != 'Wkb' 
-							and key != 'ShpName'):									
+						#if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName'):									
+						if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'nodeid' and key != 'viewid'):	
 							node_to_attrs.append(node_to_data)
 				#if there are no attributes, just fill up the array with empty values
 				else:
@@ -2542,13 +2744,22 @@ class write:
 		#execute create edge view sql
 		nisql(self.conn).create_edge_view(self.prefix)
 	
-	def pgnet_via_csv_empty_geometry(self, network, tablename_prefix, flnodes, fledges, fledge_geometry, srs=-1, overwrite=False, directed=False, multigraph=False, output_csv_folder='D://Spyder//NetworkInterdependency//network_scripts//pgnet_via_csv//'):
+	#def pgnet_via_csv_empty_geometry(self, network, tablename_prefix, srs=-1, overwrite=False, directed = False, multigraph = False, output_csv_folder='D://Spyder//NetworkInterdependency//network_scripts//pgnet_via_csv//'):
+		
+		
+	
+	def pgnet_read_empty_geometry_from_csv_file_write_to_db(self, network, tablename_prefix, flnodes, fledges, fledge_geometry, srs=-1, overwrite=False, directed=False, multigraph=False, output_csv_folder='D://Spyder//NetworkInterdependency//network_scripts//pgnet_via_csv//'):
 	
 		'''
 		
-		TODO - empty geometry is OK until it is written to the database whereby the geometry and SRID constraints on the tables as they are created cause the loading to fail. Need to develop a parameter to pass to the Python and database versions of the create_network_tables, create_network_table_edge_geometry (db only) and create_network_table_nodes (db only) to not add constraints for SRID or geometrytype
+		it actually effectively reads the node, edge and edge_geometry files, adds the correct values for
+			- GraphID in Node table file
+			- GraphID in Edge table file
+		then it writes it out to the database using COPY
 		
-		function to upload a network containing blank geometries e.g. a spatial network
+		this is combining a read (of files) and a write (to database), but should probably remain here as it results in a network being written to 
+		
+		function to upload a network containing blank geometries e.g. aspatial network, to the database schema
 		
 		network - networkx network instance
 		tablename_prefix - string - network name
@@ -2590,12 +2801,12 @@ class write:
 		if result == 0 or result == None:
 			if overwrite is True:
 				nisql(self.conn).delete_network(self.prefix)
-				result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
+				
+				result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)				
 			else:
 				raise Error('Network already exists.')
 		
-		#need to create a copy of each of the input csv files to append the GraphID value to
-		
+		#graph_id = nisql(self.conn).get_graph_id_by_prefix(self.prefix)
 		graph_id = nisql(self.conn).get_graph_id_by_prefix(self.prefix)
 		
 		new_node_header = []
@@ -2618,18 +2829,11 @@ class write:
 			tblnodes = self.tblnodes
 			tbledge_geom = self.tbledge_geom
 			tbledges = self.tbledge
-		'''
-		node_sql = 'COPY %s (' % tblnodes
-		edge_sql = 'COPY %s (' % tbledges
-		edge_geometry_sql = 'COPY %s (' % tbledge_geom
-		'''
+		
 		node_sql = 'COPY %s ' % tblnodes
 		edge_sql = 'COPY %s ' % tbledges
 		edge_geometry_sql = 'COPY %s ' % tbledge_geom
-		
-		#set the network
-		G = network
-		
+				
 		#define default field types for Node and Edge fields
 		node_fields = {'NodeID':ogr.OFTInteger}  
 		edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
@@ -2640,9 +2844,6 @@ class write:
 		edge_geometry_mandatory_fields = ['GeomID', 'geom']
 		
 		OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
-		
-		#need to choose between either including the column names in the SQL and dealing with the incorrect casing
-		#OR not including the column names but forcing the order of columns on the user?
 		
 		if not os.path.isfile(flnodes):
 			raise Error('The node csv file does not exist at: %s' % (flnodes))
@@ -2677,11 +2878,9 @@ class write:
 			#grab the first row of data from the original node file
 			node_first_row_data = node_data[1]
 			
-			#split the path to the node file and the extension for the node file
-			node_root_ext = os.path.splitext(flnodes)
+			node_file_name_ext = os.path.splitext(os.path.basename(flnodes))
 			
-			#create a new name for the node file
-			new_node_name = '%s_alt%s' % (node_root_ext[0], node_root_ext[1])
+			new_node_name = '%s%s_alt%s' % (output_csv_folder, node_file_name_ext[0], node_file_name_ext[1])
 			
 			#open the new node file for writing
 			new_node_f = open(new_node_name, 'wb')
@@ -2771,12 +2970,10 @@ class write:
 			
 			#grab the first row of data from the original edge file
 			edge_first_row_data = edge_data[1]
+						
+			edge_file_name_ext = os.path.splitext(os.path.basename(fledges))
 			
-			#split the path to the edge file and the extension for the edge file
-			edge_root_ext = os.path.splitext(fledges)
-			
-			#create a new name for the edge file
-			new_edge_name = '%s_alt%s' % (edge_root_ext[0], edge_root_ext[1])
+			new_edge_name = '%s%s_alt%s' % (output_csv_folder, edge_file_name_ext[0], edge_file_name_ext[1])
 			
 			#open the new edge file for writing
 			new_edge_f = open(new_edge_name, 'wb')
@@ -2892,27 +3089,25 @@ class write:
 		edge_geometry_f.close()
 		edge_f.close()
 		
-		#load the nodes		
-		print 'node_sql'
-		print node_sql
-		#self.conn.ExecuteSQL(node_sql)
+		#load the nodes				
+		self.conn.ExecuteSQL(node_sql)
 		
 		#remove the new node file
-		#if os.path.isfile(new_node_name):
-			#os.remove(new_node_name)
+		if os.path.isfile(new_node_name):
+			os.remove(new_node_name)
 		
-		#load the edge geometry		
-		print 'edge_geometry_sql'
-		print edge_geometry_sql
-		#self.conn.ExecuteSQL(edge_geometry_sql)
+		#load the edge geometry				
+		self.conn.ExecuteSQL(edge_geometry_sql)
 				
-		#load the edges		
-		print 'edge_sql'
-		print edge_sql
-		#self.conn.ExecuteSQL(edge_sql)
+		#load the edges				
+		self.conn.ExecuteSQL(edge_sql)
 		
 		#remove the new node file
-		#if os.path.isfile(new_edge_name):
-			#os.remove(new_edge_name)
+		if os.path.isfile(new_edge_name):
+			os.remove(new_edge_name)
 		
+		#execute create node view sql
+		nisql(self.conn).create_node_view(self.prefix)			
 		
+		#execute create edge view sql
+		nisql(self.conn).create_edge_view(self.prefix)

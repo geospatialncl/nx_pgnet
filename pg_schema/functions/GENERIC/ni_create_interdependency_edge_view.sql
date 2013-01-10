@@ -68,8 +68,17 @@ BEGIN
     --retrieve the geometry type for the interdependency edge geometry table
     EXECUTE 'SELECT GeometryType(geom) FROM '||quote_ident(interdependency_edge_table_name) INTO interdependency_edge_geometry_type;
     
-	--add the interdependency view to the geometry columns table
-	EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_interdependency_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||coordinate_dimension||','||SRID||','||quote_literal(interdependency_edge_geometry_type)||')';
+	IF SRID > 0 THEN
+	
+		--add the interdependency view to the geometry columns table
+		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_interdependency_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||coordinate_dimension||','||SRID||','||quote_literal(interdependency_edge_geometry_type)||')';
+		
+	ELSE
+	
+		--add the interdependency view to the geometry columns table
+		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_interdependency_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', 0,'||SRID||','||quote_literal(interdependency_edge_geometry_type)||')';
+	
+	END IF;
 	
     --return the new view name to the user
     RETURN new_interdependency_view_name;    

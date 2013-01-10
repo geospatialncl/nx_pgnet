@@ -52,10 +52,23 @@ BEGIN
     --retrieve the geometry type for the node view
     EXECUTE 'SELECT GeometryType(geom) FROM '||quote_ident(node_table_name) INTO node_geometry_type;
     
-	--add the node view to the geometry columns table
-	EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(node_geometry_type)||')';
-	--return the new view name to the user
-    RETURN new_node_view_name;
+	IF SRID > 0 THEN
+		
+		--add the node view to the geometry columns table
+		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', '||dims||','||SRID||','||quote_literal(node_geometry_type)||')';
+		--return the new view name to the user
+		RETURN new_node_view_name;
+		
+	ELSE
+		
+		--add the node view to the geometry columns table
+		EXECUTE 'SELECT * FROM ni_add_to_geometry_columns('||quote_literal(new_node_view_name)||', '''', '||quote_literal(schema_name)||', '||quote_literal(geometry_column_name)||', 0,'||SRID||','||quote_literal(node_geometry_type)||')';
+		--return the new view name to the user
+		RETURN new_node_view_name;
+		
+	END IF;
+	
+	
     
 END;
 $BODY$
