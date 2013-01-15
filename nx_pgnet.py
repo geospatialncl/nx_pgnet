@@ -267,15 +267,15 @@ Export to GraphML (spatial and aspatial):
 
 Export to GML (spatial and aspatial):
 
-	>>> nx_pgnet.export_to_gml(conn).export_to_gml(a_network, 'C://Temp//', 'a_network')
+	>>> nx_pgnet.export_graph(conn).export_to_gml(a_network, 'C://Temp//', 'a_network')
 
 Export to Gephi node-edge-list (spatial):
 
-	>>> nx_pgnet.export_to_gephi_node_edge_lists('C://Temp//', 'a_node_view_name', 'an_edge_view_name', spatial=True, 'geom', 'geom', False)
+	>>> nx_pgnet.export_graph(conn).export_to_gephi_node_edge_lists('C://Temp//', 'a_node_view_name', 'an_edge_view_name', spatial=True, 'geom', 'geom', False)
 
 Export to Gephi node-edge-list (aspatial):
 
-	>>> nx_pgnet.export_to_gephi_node_edge_lists('C://Temp//', 'a_node_view_name', 'an_edge_view_name', spatial=False)
+	>>> nx_pgnet.export_graph(conn).export_to_gephi_node_edge_lists('C://Temp//', 'a_node_view_name', 'an_edge_view_name', spatial=False)
 	
 B{Dependencies}
 
