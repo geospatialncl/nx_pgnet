@@ -16,10 +16,15 @@ geography defined, although this is not always the case.
 
 nx_pgnet operations
 
+nisql: call database functions from Python
+
 read: PostGIS (network schema) --> NetworkX
 
 write: PostGIS (network schema) <-- NetworkX	
 
+import_graph: YAML, GraphML, Pajek .net, GEXF, GML, CSV --> NetworkX (PostGIS network schema compatible)
+
+export_graph: NetworkX (PostGIS network schema compatible) --> YAML, GraphML, Pajek .net, GEXF, GML, CSV
 
 B{Description}
 
@@ -42,18 +47,26 @@ tables:
 	- Graphs:
 		Holds a reference to all networks in the database, referencing
 		Edge, Edge_Geometry and Node tables.
-
+	
+	- Nodes:
+		Holds a respresentation of a network node by storing the geometry of the ndoe
+		and node attributes. Contains foreign keys to the graph table.
+	
 	- Edges:
 		Holds a representation of a network edge by storing source and
 		destination nodes and edge attributes. Contains foreign keys 
-		to graph and edge geometry
+		to graph, edge_geometry and node tables.
 
 	- Edge_Geometry:
-		Holds geometry (PostGIS binary LINESTRING/MULTILINESTRING 
+		Holds geometry (PostGIS binary LINESTRING/MULTILINESTRING (empty for aspatial networks)
 		representation).
 		Edge geometry is stored separately to edges for storage/retrieval 
 		performance where more than one edge share the same geometry.
-		
+	
+	- Global_Interdependency:
+		Holds a reference to all tables representing dependencies / interdependencies between network 
+		stored within the schema
+	
 	- Interdependency:
 		Holds interdependencies between networks.
 		
@@ -62,7 +75,7 @@ tables:
 
 B{Module structure	}
 
-The module is split into three key classes:
+The module is split into a number of key classes:
 
 	- read:
 		Contains methods to read data from PostGIS network schema to a NetworkX 
@@ -75,7 +88,13 @@ The module is split into three key classes:
 	- nisql:
 		Contains methods which act as a wrapper to the special PostGIS network 
 		schema functions. 
+	
+	- import_graph:
+		Contains methods allowing a NetworkX graph (PostGIS network schema compatible) to be created from varying network-based formats e.g. YAML, GraphML, Pajek .net, GEXF, GML, CSV
 		
+	- export_graph: 
+		Contains methods allowing a NetworkX graph to be exported to a variety of network-based formats e.g. YAML, GraphML, Pajek .net, GEXF, GML, CSV
+	
 	- errors:
 		Class containing error catching, reporting and logging methods. 
 		
@@ -84,16 +103,28 @@ Detailed documentation for each class can be found below contained in class
 document strings. The highest level functions for reading and writing data are:
 
 Read:	
-	>>> nx_pgnet.read().pgnet()
+	>>> nx_pgnet.read(conn).pgnet()
 	>>> # Reads a network from PostGIS network schema into a NetworkX graph instance.
 
+Read (via csv):
+	>>> nx_pgnet.read(conn).pgnet_via_csv()
+	>>> # Reads a network from node, edge and edge_geometry csv files and creates a NetworkX graph instance (PostGIS Schema compatible)
+	
 Write:
-	>>> nx_pgnet.write().pgnet()
+	>>> nx_pgnet.write(conn).pgnet()
 	>>> # Writes a NetworkX graph instance to PostGIS network schema tables.
 
 Write (via csv):
-	>>> nx_pgnet.write().pgnet_via_csv()
+	>>> nx_pgnet.write(conn).pgnet_via_csv()
 	>>> # Writes a NetworkX graph instance to PostGIS network schema tables, using the COPY CSV function available in PostgreSQL
+
+Read aspatial network from csv then write to schema (via csv):
+	>>> nx_pgnet.write(conn).pgnet_read_empty_geometry_from_csv_file_write_to_db()
+	>>> # Reads an aspatial network (POINT EMPTY, LINESTRING EMPTY for geometry) from a csv file, and writes the network to PostGIS network schema, via CSV and COPY
+	
+Write aspatial NetworkX network to schema (via csv):
+	>>> nx_pgnet.write().pgnet_via_csv_empty_geometry()
+	>>> # Writes an aspatial NetworkX network instance (POINT EMPTY, LINESTRING EMPTY for geometry) to the PostGIS network schema 
 	
 B{Database connections}
 
@@ -131,16 +162,121 @@ Reading a network from PostGIS schema to a NetworkX graph instance:
 	>>> # Note 'my_network' is the name of the network stored in the 'Graphs' table
 	>>> network = nx_pgnet.read(conn).pgnet('my_network')	
 
+Reading a network from CSV files and creating PostGIS network schema compatible NetworkX graph instance:
+	>>> import nx_pgnet
+	>>> import osgeo.ogr as ogr
+	
+	>>> # Create a connection
+	>>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
+	>>>					password='password'")
+
+	>>> # Read a network from csv files
+	>>> a_network = nx_pgnet.read(conn).pgnet_via_csv('A_Network', 'C://Temp//A_Network_Nodes.csv', 'C://Temp//A_Network_Nodes.csv', 'C://Temp//A_Network_Edge_Geometry.csv', False, False)
+	
 Writing a NetworkX graph instance to a PostGIS schema:
 	
 Write the network to the same database but under a different name.
-'EPSG' is the EPSE code for the output network geometry.
-Note if 'overwrite=True' then an existing network in the database of the 
+'EPSG' is the EPSG code for the output network geometry. 
+NOTE: If 'overwrite=True' then an existing network in the database of the 
 same name will be overwritten.
+NOTE: If a value of -1 is supplied as an epsg code, the database will expect to be storing an
+aspatial network with POINT EMPTY geometry for nodes (WKT representation) and LINESTRING EMPTY geometry for edges (WKT representation)
 	
 	>>> epsg = 27700
 	>>> nx_pgnet.write(conn).pgnet(network, 'new_network', epsg, overwrite=False)
 
+Reading an aspatial network from csv files and writing to PostGIS schema, via CSV and COPY (Read + Write in one step):
+
+	>>> epsg = -1
+	>>> nx_pgnet.write(conn).pgnet_read_empty_geometry_from_csv_file_write_to_db(a_network, 'A_Network', 'C://Temp//A_Network_Nodes.csv', 'C://Temp//A_Network_Nodes.csv', 'C://Temp//A_Network_Edge_Geometry.csv', srs=epsg, False, False, False, 'C://Temp//')
+
+Writing an aspatial network to PostGIS schema, via CSV and COPY:
+
+	>>> epsg = -1
+	>>> nx_pgnet.write(conn).pgnet_via_csv(a_network, 'A_Network', -1, False, False, False, 'C://Temp//')
+
+Importing/Exporting:
+References:
+
+GEXF: GEXF: http://gexf.net/format/
+Pajek: http://vlado.fmf.uni-lj.si/pub/networks/pajek/, http://pajek.imfm.si/doku.php, http://vlado.fmf.uni-lj.si/pub/networks/pajek/doc/pajekman.pdf
+YAML: http://www.yaml.org/
+GraphML: http://graphml.graphdrawing.org/index.html	
+GML: http://www.fim.uni-passau.de/en/fim/faculty/chairs/theoretische-informatik/projects.html	
+Gephi: https://gephi.org
+	
+Importing a graph:
+
+Import from GEXF (spatial and aspatial):
+	
+	>>> nx_pgnet.import_graph().import_from_gexf('C://Temp//a_network.gexf', 'A_Network', str, False)
+
+Import from Pajek (.net) (spatial):
+	
+	>>> nx_pgnet.import_graph().import_from_pajek('C://Temp//a_spatial_network.net', 'A_Spatial_Network', spatial=True, encoding='UTF-8')
+	
+Import from Pajek (.net) (aspatial):
+
+	>>> nx_pgnet.import_graph().import_from_pajek('C://Temp//an_aspatial_network.net', 'An_Aspatial_Network', spatial=False, encoding='UTF-8')
+	
+Import from YAML (spatial and aspatial):	
+	
+	>>> nx_pgnet.import_graph().import_from_yaml('C://Temp//a_network.yaml', 'A_Network')
+	
+Import from GraphML (spatial):
+
+	>>> nx_pgnet.import_graph().import_from_graphml('C://Temp//a_spatial_network.graphml', 'A_Spatial_Network', spatial=True, nodetype=str)
+
+Import from GraphML (aspatial):
+	
+	>>> nx_pgnet.import_graph().import_from_graphml('C://Temp//an_aspatial_network.graphml', 'An_Aspatial_Network', spatial=False, nodetype=str)
+
+Import from GML (spatial and aspatial):
+
+	>>> nx_pgnet.import_graph().import_from_gml('C://Temp//a_spatial_network.gml', 'A_Network', encoding='UTF-8')
+
+Import from Gephi node-edge-list (spatial):
+
+	>>> nx_pgnet.import_graph().import_from_gephi_node_edge_lists('C://Temp//nodes.csv', 'C://Temp//edges.csv', 'A_Spatial_Network', spatial=True, 'geometry_text', 'geometry_text', 'geom', 'geom')
+
+Import from Gephi node-edge-list (aspatial):
+
+	>>> nx_pgnet.import_graph().import_from_gephi_node_edge_lists('C://Temp//nodes.csv', 'C://Temp//edges.csv.', 'An_Aspatial_Network', spatial=False, 'geometry_text', 'geometry_text', 'geom', 'geom')
+
+Exporting a graph:
+
+Export to GEXF (spatial and aspatial):
+
+	>>> nx_pgnet.export_graph(conn).export_to_gexf(a_network, 'C://Temp//', 'a_network', encoding='utf-8', prettyprint=True)
+
+Export to Pajek (.net) (spatial):
+
+	>>> nx_pgnet.export_graph(conn).export_to_pajek(a_network, 'C://Temp//', 'a_spatial_network', spatial=True)
+	
+Export to Pajek (.net) (aspatial):
+
+	>>> nx_pgnet.export_graph(conn).export_to_pajek(a_network, 'C://Temp//', 'an_aspatial_network', spatial=False)
+
+Export to YAML (spatial and aspatial):
+
+	>>> nx_pgnet.export_graph(conn).export_to_yaml(a_network, 'C://Temp//', 'a_network', encoding='utf-8')
+
+Export to GraphML (spatial and aspatial):
+
+	>>> nx_pgnet.export_graph(conn).export_to_graphml(a_network, 'C://Temp//', 'a_network', encoding='utf-8', prettyprint=True)
+
+Export to GML (spatial and aspatial):
+
+	>>> nx_pgnet.export_to_gml(conn).export_to_gml(a_network, 'C://Temp//', 'a_network')
+
+Export to Gephi node-edge-list (spatial):
+
+	>>> nx_pgnet.export_to_gephi_node_edge_lists('C://Temp//', 'a_node_view_name', 'an_edge_view_name', spatial=True, 'geom', 'geom', False)
+
+Export to Gephi node-edge-list (aspatial):
+
+	>>> nx_pgnet.export_to_gephi_node_edge_lists('C://Temp//', 'a_node_view_name', 'an_edge_view_name', spatial=False)
+	
 B{Dependencies}
 
 Python 2.6 or later
@@ -198,7 +334,7 @@ import osgeo.ogr as ogr
 import osgeo.gdal as gdal
 import csv
 import re
-import copy
+#import copy
 
 # Ask ogr to use Python exceptions rather than stderr messages.
 ogr.UseExceptions()
@@ -545,11 +681,15 @@ class import_graph:
 		else:
 			raise Error('The specified path %s does not exist' % (path))
 			
-	def import_from_pajek(self, path, graphname, encoding='UTF-8'):
+	def import_from_pajek(self, path, graphname, spatial=True, encoding='utf-8'):
 		'''Import graph from pajek format (.net)
 		
 		path - string - path to Pajek file on disk
 		graphname - string - name of graph to assign once created
+		spatial - boolean - denotes whether the network stored in the path is a 'spatial' or 'aspatial' network (true=spatial)
+		
+		A spatial network must have the node coordinates defined as the unique keys or each node e.g. (100,100)
+		
 		encoding - string - encoding option to 
 		
 		'''
@@ -561,54 +701,58 @@ class import_graph:
 			
 			#create an empty graph (based on the type generated from the graphml input file)
 			if isinstance(graph_from_raw_pajek, nx.classes.graph.Graph):
-				graph = nx.Graph()
+				graph = nx.Graph(name=graphname)
 			elif isinstance(graph_from_raw_pajek, nx.classes.digraph.DiGraph):
-				graph = nx.DiGraph()
+				graph = nx.DiGraph(name=graphname)
 			elif isinstance(graph_from_raw_pajek, nx.classes.multigraph.MultiGraph):
-				graph = nx.MultiGraph()
+				graph = nx.MultiGraph(name=graphname)
 			elif isinstance(graph_from_raw_graphml, nx.classes.multidigraph.MultiDiGraph):
-				graph = nx.MultiDiGraph()
+				graph = nx.MultiDiGraph(name=graphname)
 			else:
 				raise Error('There was an error whilst trying to recognise the type of graph to be created. The Pajek file supplied is read into NetworkX, and so must contain data to create a: undirected graph (nx.Graph), directed graph (nx.DiGraph), undirected multigraph (nx.MultiGraph), directed multigraph (nx.MultiGraph). The type found was %s' % (str(type(graph_from_raw_pajek))))
 			
-			#read nodes from raw pajek network, and copy to output network
-			for node in graph_from_raw_pajek.nodes(data=True):				
-				coordinates = node[0]	
-				#convert to tuple
-				coordinates = eval(coordinates)
-				if len(node) > 0:
-					node_attributes = node[1]
-				else:
-					node_attributes = {}
-				#add a node, with attribute dictionary
-				graph.add_node(coordinates, node_attributes)
+			if spatial:
 			
-			#read edges from raw pajek network, and copy to output network
-			for edge in graph_from_raw_pajek.edges(data=True):
-				st_coordinates = edge[0]
-				ed_coordinates = edge[1]
-				#convert to tuple(s)
-				st_coordinates = eval(st_coordinates)
-				ed_coordinates = eval(ed_coordinates)
+				#read nodes from raw pajek network, and copy to output network
+				for node in graph_from_raw_pajek.nodes(data=True):				
+					coordinates = node[0]	
+					#convert to tuple
+					coordinates = eval(coordinates)
+					if len(node) > 0:
+						node_attributes = node[1]
+					else:
+						node_attributes = {}
+					#add a node, with attribute dictionary
+					graph.add_node(coordinates, node_attributes)
 				
-				#grab the attributes for that edge
-				if len(edge) > 1:
-					edge_attributes = edge[2]					
-					#need to do something with the wkt
-					if edge_attributes.has_key('Wkt'):
-						wkt = edge_attributes['Wkt']						
-					#need to do something with json
-					if edge_attributes.has_key('Json'):
-						json = edge_attributes['Json']						
-				else:
-					edge_attributes = {}
+				#read edges from raw pajek network, and copy to output network
+				for edge in graph_from_raw_pajek.edges(data=True):
+					st_coordinates = edge[0]
+					ed_coordinates = edge[1]
+					#convert to tuple(s)
+					st_coordinates = eval(st_coordinates)
+					ed_coordinates = eval(ed_coordinates)
+					
+					#grab the attributes for that edge
+					if len(edge) > 1:
+						edge_attributes = edge[2]					
+						#need to do something with the wkt
+						if edge_attributes.has_key('Wkt'):
+							wkt = edge_attributes['Wkt']						
+						#need to do something with json
+						if edge_attributes.has_key('Json'):
+							json = edge_attributes['Json']						
+					else:
+						edge_attributes = {}
+					
+					#add an edge, and the attribute dictionary
+					graph.add_edge(st_coordinates, ed_coordinates, edge_attributes)
 				
-				#add an edge, and the attribute dictionary
-				graph.add_edge(st_coordinates, ed_coordinates, edge_attributes)
-			
-			#set the graph name
-			graph.graph['name'] = graphname
-			return graph
+				#set the graph name
+				graph.graph['name'] = graphname
+				return graph
+			else:
+				return graph_from_raw_pajek
 		else:
 			raise Error('The specified path %s does not exist' % (path))
 	
@@ -616,104 +760,117 @@ class import_graph:
 		'''Import graph from yaml format
 		
 		path - string - path to yaml file on disk
-		graphname - string - name to assign to graph
-		
+		graphname - string - name to assign to graph		
 		'''
 		#check if path to yaml file exists
-		if os.path.isfile(path):
+		if os.path.isfile(path):			
 			#build network from raw yaml file
 			graph = nx.read_yaml(path)
 			#assign network name
 			graph.graph['name'] = graphname
 			return graph
+
 		else:
 			raise Error('The specified path %s does not exist' % (path))
 	
-	def import_from_graphml(self, path, graphname, nodetype=str):
+	def import_from_graphml(self, path, graphname, spatial=True, nodetype=str):
 		'''Import graph from graphml format
 		
 		path - string - path to graphml file on disk
 		graphname - string - name to assign to graph
+		spatial - boolean - denotes whether the network stored in the path is a 'spatial' or 'aspatial' network (true=spatial)
+		
+		A spatial network must have the node coordinates defined as the unique keys or each node e.g. (100,100) 
 		nodetype - type - default Python type to convert all string elements to.
 		
 		'''
 		
 		#check if the path to the graphml file exists
 		if os.path.isfile(path):
-					
+			
 			#create a graph by reading the raw graphml input file
 			graph_from_raw_graphml = nx.read_graphml(path)
-						
-			#create an empty graph (based on the type generated from the graphml input file)
-			if isinstance(graph_from_raw_graphml, nx.classes.graph.Graph):
-				graph = nx.Graph()
-			elif isinstance(graph_from_raw_graphml, nx.classes.digraph.DiGraph):
-				graph = nx.DiGraph()
-			elif isinstance(graph_from_raw_graphml, nx.classes.multigraph.MultiGraph):
-				graph = nx.MultiGraph()
-			elif isinstance(graph_from_raw_graphml, nx.classes.multidigraph.MultiDiGraph):
-				graph = nx.MultiDiGraph()
+			
+			if spatial:
+							
+				#create an empty graph (based on the type generated from the graphml input file)
+				if isinstance(graph_from_raw_graphml, nx.classes.graph.Graph):
+					graph = nx.Graph(name=graphname)
+				elif isinstance(graph_from_raw_graphml, nx.classes.digraph.DiGraph):
+					graph = nx.DiGraph(name=graphname)
+				elif isinstance(graph_from_raw_graphml, nx.classes.multigraph.MultiGraph):
+					graph = nx.MultiGraph(name=graphname)
+				elif isinstance(graph_from_raw_graphml, nx.classes.multidigraph.MultiDiGraph):
+					graph = nx.MultiDiGraph(name=graphname)
+				else:
+					raise Error('There was an error whilst trying to recognise the type of graph to be created. The GraphML file supplied is read into NetworkX, and so must contain data to create a: undirected graph (nx.Graph), directed graph (nx.DiGraph), undirected multigraph (nx.MultiGraph), directed multigraph (nx.MultiGraph). The type found was %s' % (str(type(graph_from_raw_graphml))))
+				
+				#can we make the changes to the node ids here i.e. convert from string to tuple?
+				for node in graph_from_raw_graphml.nodes(data=True):				
+					coordinates = node[0]	
+					#convert to tuple
+					coordinates = eval(coordinates)
+					if len(node) > 0:
+						node_attributes = node[1]
+					else:
+						node_attributes = {}
+					#add a node, and attributes
+					graph.add_node(coordinates, node_attributes)
+				
+				for edge in graph_from_raw_graphml.edges(data=True):
+					st_coordinates = edge[0]
+					ed_coordinates = edge[1]
+					#convert to tuple(s)
+					st_coordinates = eval(st_coordinates)
+					ed_coordinates = eval(ed_coordinates)
+					
+					#grab the attributes for that edge
+					if len(edge) > 1:
+						edge_attributes = edge[2]
+					else:
+						edge_attributes = {}
+					
+					#add an edge, and attributes
+					graph.add_edge(st_coordinates, ed_coordinates, edge_attributes)
+				
+				graph.graph['name'] = graphname
+				return graph
 			else:
-				raise Error('There was an error whilst trying to recognise the type of graph to be created. The GraphML file supplied is read into NetworkX, and so must contain data to create a: undirected graph (nx.Graph), directed graph (nx.DiGraph), undirected multigraph (nx.MultiGraph), directed multigraph (nx.MultiGraph). The type found was %s' % (str(type(graph_from_raw_graphml))))
-			
-			#can we make the changes to the node ids here i.e. convert from string to tuple?
-			for node in graph_from_raw_graphml.nodes(data=True):				
-				coordinates = node[0]	
-				#convert to tuple
-				coordinates = eval(coordinates)
-				if len(node) > 0:
-					node_attributes = node[1]
-				else:
-					node_attributes = {}
-				#add a node, and attributes
-				graph.add_node(coordinates, node_attributes)
-			
-			for edge in graph_from_raw_graphml.edges(data=True):
-				st_coordinates = edge[0]
-				ed_coordinates = edge[1]
-				#convert to tuple(s)
-				st_coordinates = eval(st_coordinates)
-				ed_coordinates = eval(ed_coordinates)
-				
-				#grab the attributes for that edge
-				if len(edge) > 1:
-					edge_attributes = edge[2]
-				else:
-					edge_attributes = {}
-				
-				#add an edge, and attributes
-				graph.add_edge(st_coordinates, ed_coordinates, edge_attributes)
-			
-			graph.graph['name'] = graphname
-			return graph
+				return graph_from_raw_graphml
 		else:
 			raise Error('The specified path %s does not exist' % (path))
 			
-	def import_from_gml(self, path, graphname, relabel=False, encoding='UTF-8'):
+	def import_from_gml(self, path, graphname, relabel=False, encoding='utf-8'):
 		'''Import graph from gml format
 		
 			path - string - path to input GML file
 			graphname - string - name to assign to graph
+			spatial - boolean - denotes whether the network stored in the path is a 'spatial' or 'aspatial' network (true=spatial)
+		
+			A spatial network must have the node coordinates defined as the unique keys or each node e.g. (100,100)
 			relabel - boolean - If True use the GML node label attribute for node names otherwise use the node id.
 			
 		'''
 		#check if the path to the input GML file exists
-		if os.path.isfile(path):
+		if os.path.isfile(path):			
 			#create a graph from the raw input GML file
 			graph = nx.read_gml(path, relabel=relabel, encoding=encoding)
 			#assign graph given graph name
 			graph.graph['name'] = graphname
-			return graph
+			return graph			
 		else:
 			raise Error('The specified path %s does not exist' % (path))
 	
-	def import_from_gephi_node_edge_lists(self, node_file_path, edge_file_path, graphname, node_file_geometry_text_key='geometry_text', edge_file_geometry_text_key='geometry_text', node_file_raw_geometry_key='geom', edge_file_raw_geometry_key='geom', directed=False):
+	def import_from_gephi_node_edge_lists(self, node_file_path, edge_file_path, graphname, spatial=True, node_file_geometry_text_key='geometry_text', edge_file_geometry_text_key='geometry_text', node_file_raw_geometry_key='geom', edge_file_raw_geometry_key='geom', directed=False):
 		'''
 		function to read a set of gephi-compatible csv files (nodes and edges separately) and create a network that can be stored wthin the database schema
 	
 		node_file_path - string - path to node gephi-compatible csv file		
 		edge_file_path - string - path to edge gephi-compatible csv file
 		graphname - string - name to be given to resultant graph / network created from gephi csv files
+		spatial - boolean - denotes whether the network stored in the path is a 'spatial' or 'aspatial' network (true=spatial)
+		
+		A spatial network must have the node coordinates defined as the unique keys or each node e.g. (100,100) 
 		node_file_geometry_text_key - string - column name / attribute name of node WKT geometry in input node csv file
 		edge_file_geometry_text_key - string - column name / attribute name of node WKT geometry in input edge csv file (edge geometry must be a LINESTRING)
 		node_file_raw_geometry_key - string - column name / attribute name of node raw geometry in input node csv file
@@ -725,240 +882,319 @@ class import_graph:
 			
 			#currently no support for multigraph + gephi
 			if directed == True:
-				graph = nx.DiGraph()
+				graph = nx.DiGraph(name=graphname)
 			else:
-				graph = nx.Graph()
+				graph = nx.Graph(name=graphname)
 			
-			#node csv file open
-			node_csv_file = open(node_file_path, 'r')			
-			node_csv_reader = csv.reader(node_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-			
-			#geometry_text attribute should be a wkt version of the geometry representing either the node or the edge.
-			
-			node_csv_first_line = True
-			node_header = []
-			
-			#set default index for each column in csv file
-			NodeID_index = -1
-			view_id_index = -1
-			GraphID_index = -1			
-			node_geometry_text_index = -1			
-			wgs84_node_x_index = -1
-			wgs84_node_y_index = -1			
-			google_node_x_index = -1
-			google_node_y_index = -1
-			node_raw_geometry_index = -1
-			#will store indices to remove from node attribute values
-			node_attr_value_indices_to_remove = []
-			
-			for node_line in node_csv_reader:				
-				if node_csv_first_line == True:
-					#get the header from the node file
-					node_header = list(node_line)
-					
-					if node_file_geometry_text_key in node_header:
-						node_geometry_text_index = node_header.index('geometry_text')
-					
-					if 'NodeID' in node_header:
-						NodeID_index = node_header.index('NodeID')						
-						node_attr_value_indices_to_remove.append(NodeID_index)
-					if 'view_id' in node_header:
-						view_id_index = node_header.index('view_id')						
-						node_attr_value_indices_to_remove.append(view_id_index)
-					if 'GraphID' in node_header:
-						GraphID_index = node_header.index('GraphID')						
-						node_attr_value_indices_to_remove.append(GraphID_index)
-					if 'wgs84_node_x' in node_header:
-						wgs84_node_x_index = node_header.index('wgs84_node_x')						
-						node_attr_value_indices_to_remove.append(wgs84_node_x_index)
-					if 'wgs84_node_y' in node_header:
-						wgs84_node_y_index = node_header.index('wgs84_node_y')						
-						node_attr_value_indices_to_remove.append(wgs84_node_y_index)
-					if 'google_node_x' in node_header:
-						google_node_x_index = node_header.index('google_node_x')						
-						node_attr_value_indices_to_remove.append(google_node_x_index)
-					if 'google_node_y' in node_header:
-						google_node_y_index = node_header.index('google_node_y')						
-						node_attr_value_indices_to_remove.append(google_node_y_index)
-					if node_file_raw_geometry_key in node_header:
-						node_raw_geometry_index = node_header.index(node_file_raw_geometry_key)						
-						node_attr_value_indices_to_remove.append(node_raw_geometry_index)
-					
-					#sort, then reverse indices to ensure last index is removed first
-					node_attr_value_indices_to_remove.sort()
-					node_attr_value_indices_to_remove.reverse()
-					for index in node_attr_value_indices_to_remove:						
-						node_header.pop(index)
-					
-					node_csv_first_line = False
-				else:
-					#check node file for geometry [node_file_geometry_key]
-					if node_geometry_text_index > -1:
+			if spatial:			
+				
+				#node csv file open
+				node_csv_file = open(node_file_path, 'r')			
+				node_csv_reader = csv.reader(node_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+				
+				#geometry_text attribute should be a wkt version of the geometry representing either the node or the edge.
+				
+				node_csv_first_line = True
+				node_header = []
+				
+				#set default index for each column in csv file
+				NodeID_index = -1
+				view_id_index = -1
+				GraphID_index = -1			
+				node_geometry_text_index = -1			
+				wgs84_node_x_index = -1
+				wgs84_node_y_index = -1			
+				google_node_x_index = -1
+				google_node_y_index = -1
+				node_raw_geometry_index = -1
+				#will store indices to remove from node attribute values
+				node_attr_value_indices_to_remove = []
+				
+				for node_line in node_csv_reader:				
+					if node_csv_first_line == True:
+						#get the header from the node file
+						node_header = list(node_line)
 						
-						#create a node geometry
-						node_geom = ogr.CreateGeometryFromWkt(node_line[node_geometry_text_index])
+						if node_file_geometry_text_key in node_header:
+							node_geometry_text_index = node_header.index('geometry_text')
 						
-						#node tuple containing node coordinates
-						node_tuple = '(%s, %s)' % (node_geom.GetX(), node_geom.GetY())
+						if 'NodeID' in node_header:
+							NodeID_index = node_header.index('NodeID')						
+							node_attr_value_indices_to_remove.append(NodeID_index)
+						if 'view_id' in node_header:
+							view_id_index = node_header.index('view_id')						
+							node_attr_value_indices_to_remove.append(view_id_index)
+						if 'GraphID' in node_header:
+							GraphID_index = node_header.index('GraphID')						
+							node_attr_value_indices_to_remove.append(GraphID_index)
+						if 'wgs84_node_x' in node_header:
+							wgs84_node_x_index = node_header.index('wgs84_node_x')						
+							node_attr_value_indices_to_remove.append(wgs84_node_x_index)
+						if 'wgs84_node_y' in node_header:
+							wgs84_node_y_index = node_header.index('wgs84_node_y')						
+							node_attr_value_indices_to_remove.append(wgs84_node_y_index)
+						if 'google_node_x' in node_header:
+							google_node_x_index = node_header.index('google_node_x')						
+							node_attr_value_indices_to_remove.append(google_node_x_index)
+						if 'google_node_y' in node_header:
+							google_node_y_index = node_header.index('google_node_y')						
+							node_attr_value_indices_to_remove.append(google_node_y_index)
+						if node_file_raw_geometry_key in node_header:
+							node_raw_geometry_index = node_header.index(node_file_raw_geometry_key)						
+							node_attr_value_indices_to_remove.append(node_raw_geometry_index)
 						
-						#this dictionary should ignore any attributes called:
-						#NodeID
-						#view_id
-						#GraphID
-						node_attr_values = list(node_line)
+						#sort, then reverse indices to ensure last index is removed first
+						node_attr_value_indices_to_remove.sort()
+						node_attr_value_indices_to_remove.reverse()
+						for index in node_attr_value_indices_to_remove:						
+							node_header.pop(index)
 						
-						for index in node_attr_value_indices_to_remove:
-							node_attr_values.pop(index)
-						
-						#create a node attribute dictionary
-						node_attrs = dict(zip(node_header, node_attr_values))
-						
-						#export this geometry to wkt, json, wkb
-						#attach these as attributes to node
-						graph.add_node(node_tuple, node_attrs)
-					
+						node_csv_first_line = False
 					else:
-						raise Error('There was no WKT geometry representation found in the node file %s, with WKT field name %s' % (node_file_path, node_file_geometry_text_key))
-					
-			#close the csv file
-			node_csv_file.close()
-			
-			#edge csv file open
-			edge_csv_file = open(edge_file_path, 'r')
-			edge_csv_reader = csv.reader(edge_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-			
-			#set default index for each column in csv file
-			GraphID_index = -1
-			Edge_GeomID_index = -1
-			EdgeID_index = -1
-			Node_F_ID_index = -1
-			Node_T_ID_index = -1
-			view_id_index = -1
-			edge_geometry_text_index = -1
-			edge_geometry_raw_geometry_index = -1
-			
-			google_startpoint_x_index = -1
-			google_startpoint_y_index =	-1		
-			google_endpoint_x_index = -1
-			google_endpoint_y_index = -1 
-			
-			wgs84_startpoint_x_index = -1
-			wgs84_startpoint_y_index = -1 
-			wgs84_endpoint_x_index = -1 
-			wgs84_endpoint_y_index = -1
-			
-			edge_csv_first_line = True
-			edge_header = []
-			
-			#will store indices to remove from node attribute values
-			edge_attr_value_indices_to_remove = []
-			
-			for edge_line in edge_csv_reader:
-				if edge_csv_first_line == True:
-					#get the header from the edge file
-					edge_header = list(edge_line)
-					
-					#check for WKT
-					if edge_file_geometry_text_key in edge_header:
-						edge_geometry_text_index = edge_header.index(edge_file_geometry_text_key)
-					
-					if 'GraphID' in edge_header:
-						GraphID_index = edge_header.index('GraphID')						
-						edge_attr_value_indices_to_remove.append(GraphID_index)
-					if 'Edge_GeomID' in edge_header:
-						Edge_GeomID_index = edge_header.index('Edge_GeomID')						
-						edge_attr_value_indices_to_remove.append(Edge_GeomID_index)
-					if 'EdgeID' in edge_header:
-						EdgeID_index = edge_header.index('EdgeID')						
-						edge_attr_value_indices_to_remove.append(EdgeID_index)
-					if 'Node_F_ID' in edge_header:
-						Node_F_ID_index = edge_header.index('Node_F_ID')					
-						edge_attr_value_indices_to_remove.append(Node_F_ID_index)
-					if 'Node_T_ID' in edge_header:
-						Node_T_ID_index = edge_header.index('Node_T_ID')						
-						edge_attr_value_indices_to_remove.append(Node_T_ID_index)
-					if 'view_id' in edge_header:
-						view_id_index = edge_header.index('view_id')						
-						edge_attr_value_indices_to_remove.append(view_id_index)
-					if 'google_startpoint_x' in edge_header:
-						google_startpoint_x_index = edge_header.index('google_startpoint_x')						
-						edge_attr_value_indices_to_remove.append(google_startpoint_x_index)
-					if 'google_startpoint_y' in edge_header:
-						google_startpoint_y_index = edge_header.index('google_startpoint_y')						
-						edge_attr_value_indices_to_remove.append(google_startpoint_y_index)
-					if 'google_endpoint_x' in edge_header:
-						google_endpoint_x_index = edge_header.index('google_endpoint_x')						
-						edge_attr_value_indices_to_remove.append(google_endpoint_x_index)
-					if 'google_endpoint_y' in edge_header:
-						google_endpoint_y_index = edge_header.index('google_endpoint_y')						
-						edge_attr_value_indices_to_remove.append(google_endpoint_y_index)
-					if 'wgs84_startpoint_x' in edge_header:
-						wgs84_startpoint_x_index = edge_header.index('wgs84_startpoint_x')						
-						edge_attr_value_indices_to_remove.append(wgs84_startpoint_x_index)
-					if 'wgs84_startpoint_y' in edge_header:
-						wgs84_startpoint_y_index = edge_header.index('wgs84_startpoint_y')						
-						edge_attr_value_indices_to_remove.append(wgs84_startpoint_y_index)
-					if 'wgs84_endpoint_x' in edge_header:
-						wgs84_endpoint_x_index = edge_header.index('wgs84_endpoint_x')						
-						edge_attr_value_indices_to_remove.append(wgs84_endpoint_x_index)
-					if 'wgs84_endpoint_y' in edge_header:
-						wgs84_endpoint_y_index = edge_header.index('wgs84_endpoint_y')						
-						edge_attr_value_indices_to_remove.append(wgs84_endpoint_y_index)
-					if edge_file_raw_geometry_key in edge_header:
-						edge_geometry_raw_geometry_index = edge_header.index(edge_file_raw_geometry_key)						
-						edge_attr_value_indices_to_remove.append(edge_geometry_raw_geometry_index)
-					
-					#sort, then reverse indices to ensure last index is removed first
-					edge_attr_value_indices_to_remove.sort()
-					edge_attr_value_indices_to_remove.reverse()
-					
-					#remove all column headings (attributes) that are not to be transferred to db
-					for index in edge_attr_value_indices_to_remove:						
-						edge_header.pop(index)					
-					
-					edge_csv_first_line = False
-					
-				else:
-					
-					#check edge file for geometry ['geometry_text']
-					if edge_geometry_text_index > -1:
-					
-						#create edge geometry
-						edge_geom = ogr.CreateGeometryFromWkt(edge_line[edge_geometry_text_index])
+						#check node file for geometry [node_file_geometry_key]
+						if node_geometry_text_index > -1:
+							
+							#create a node geometry
+							node_geom = ogr.CreateGeometryFromWkt(node_line[node_geometry_text_index])
+							
+							#node tuple containing node coordinates
+							node_tuple = '(%s, %s)' % (node_geom.GetX(), node_geom.GetY())
+							
+							#this dictionary should ignore any attributes called:
+							#NodeID
+							#view_id
+							#GraphID
+							node_attr_values = list(node_line)
+							
+							for index in node_attr_value_indices_to_remove:
+								node_attr_values.pop(index)
+							
+							#create a node attribute dictionary
+							node_attrs = dict(zip(node_header, node_attr_values))
+							
+							#export this geometry to wkt, json, wkb
+							#attach these as attributes to node
+							graph.add_node(node_tuple, node_attrs)
 						
-						#point count of edge
-						point_count = edge_geom.GetPointCount()  
+						else:
+							raise Error('There was no WKT geometry representation found in the node file %s, with WKT field name %s' % (node_file_path, node_file_geometry_text_key))
 						
-						#grab start point of edge
-						start_point_edge_geom = edge_geom.GetPoint_2D(0)
+				#close the csv file
+				node_csv_file.close()
+				
+				#edge csv file open
+				edge_csv_file = open(edge_file_path, 'r')
+				edge_csv_reader = csv.reader(edge_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+				
+				#set default index for each column in csv file
+				GraphID_index = -1
+				Edge_GeomID_index = -1
+				EdgeID_index = -1
+				Node_F_ID_index = -1
+				Node_T_ID_index = -1
+				view_id_index = -1
+				edge_geometry_text_index = -1
+				edge_geometry_raw_geometry_index = -1
+				
+				google_startpoint_x_index = -1
+				google_startpoint_y_index =	-1		
+				google_endpoint_x_index = -1
+				google_endpoint_y_index = -1 
+				
+				wgs84_startpoint_x_index = -1
+				wgs84_startpoint_y_index = -1 
+				wgs84_endpoint_x_index = -1 
+				wgs84_endpoint_y_index = -1
+				
+				edge_csv_first_line = True
+				edge_header = []
+				
+				#will store indices to remove from node attribute values
+				edge_attr_value_indices_to_remove = []
+				
+				for edge_line in edge_csv_reader:
+					if edge_csv_first_line == True:
+						#get the header from the edge file
+						edge_header = list(edge_line)
 						
-						#grab end point of edge
-						end_point_edge_geom = edge_geom.GetPoint_2D(point_count-1)
+						#check for WKT
+						if edge_file_geometry_text_key in edge_header:
+							edge_geometry_text_index = edge_header.index(edge_file_geometry_text_key)
 						
-						#create tuples of start and end point coordinates
-						start_point_edge_tuple = '(%s, %s)' % (start_point_edge_geom[0], start_point_edge_geom[1])
-						end_point_edge_tuple = '(%s, %s)' % (end_point_edge_geom[0], end_point_edge_geom[1])
+						if 'GraphID' in edge_header:
+							GraphID_index = edge_header.index('GraphID')						
+							edge_attr_value_indices_to_remove.append(GraphID_index)
+						if 'Edge_GeomID' in edge_header:
+							Edge_GeomID_index = edge_header.index('Edge_GeomID')						
+							edge_attr_value_indices_to_remove.append(Edge_GeomID_index)
+						if 'EdgeID' in edge_header:
+							EdgeID_index = edge_header.index('EdgeID')						
+							edge_attr_value_indices_to_remove.append(EdgeID_index)
+						if 'Node_F_ID' in edge_header:
+							Node_F_ID_index = edge_header.index('Node_F_ID')					
+							edge_attr_value_indices_to_remove.append(Node_F_ID_index)
+						if 'Node_T_ID' in edge_header:
+							Node_T_ID_index = edge_header.index('Node_T_ID')						
+							edge_attr_value_indices_to_remove.append(Node_T_ID_index)
+						if 'view_id' in edge_header:
+							view_id_index = edge_header.index('view_id')						
+							edge_attr_value_indices_to_remove.append(view_id_index)
+						if 'google_startpoint_x' in edge_header:
+							google_startpoint_x_index = edge_header.index('google_startpoint_x')						
+							edge_attr_value_indices_to_remove.append(google_startpoint_x_index)
+						if 'google_startpoint_y' in edge_header:
+							google_startpoint_y_index = edge_header.index('google_startpoint_y')						
+							edge_attr_value_indices_to_remove.append(google_startpoint_y_index)
+						if 'google_endpoint_x' in edge_header:
+							google_endpoint_x_index = edge_header.index('google_endpoint_x')						
+							edge_attr_value_indices_to_remove.append(google_endpoint_x_index)
+						if 'google_endpoint_y' in edge_header:
+							google_endpoint_y_index = edge_header.index('google_endpoint_y')						
+							edge_attr_value_indices_to_remove.append(google_endpoint_y_index)
+						if 'wgs84_startpoint_x' in edge_header:
+							wgs84_startpoint_x_index = edge_header.index('wgs84_startpoint_x')						
+							edge_attr_value_indices_to_remove.append(wgs84_startpoint_x_index)
+						if 'wgs84_startpoint_y' in edge_header:
+							wgs84_startpoint_y_index = edge_header.index('wgs84_startpoint_y')						
+							edge_attr_value_indices_to_remove.append(wgs84_startpoint_y_index)
+						if 'wgs84_endpoint_x' in edge_header:
+							wgs84_endpoint_x_index = edge_header.index('wgs84_endpoint_x')						
+							edge_attr_value_indices_to_remove.append(wgs84_endpoint_x_index)
+						if 'wgs84_endpoint_y' in edge_header:
+							wgs84_endpoint_y_index = edge_header.index('wgs84_endpoint_y')						
+							edge_attr_value_indices_to_remove.append(wgs84_endpoint_y_index)
+						if edge_file_raw_geometry_key in edge_header:
+							edge_geometry_raw_geometry_index = edge_header.index(edge_file_raw_geometry_key)						
+							edge_attr_value_indices_to_remove.append(edge_geometry_raw_geometry_index)
 						
-						#grab the csv line as a list
-						edge_attr_values = list(edge_line)
+						#sort, then reverse indices to ensure last index is removed first
+						edge_attr_value_indices_to_remove.sort()
+						edge_attr_value_indices_to_remove.reverse()
 						
-						#remove all values from current line that are not to be transferred to db
-						for index in edge_attr_value_indices_to_remove:
-							edge_attr_values.pop(index)
+						#remove all column headings (attributes) that are not to be transferred to db
+						for index in edge_attr_value_indices_to_remove:						
+							edge_header.pop(index)					
 						
-						#create a node attribute dictionary
-						edge_attrs = dict(zip(edge_header, edge_attr_values))
+						edge_csv_first_line = False
 						
-						graph.add_edge(start_point_edge_tuple, end_point_edge_tuple, edge_attrs)
 					else:
-						raise Error('There was no WKT geometry representation found in the edge file %s, with WKT field name %s' % (edge_file_path, edge_file_geometry_text_key))
-			
-			#close edge file
-			edge_csv_file.close()
 						
-			graph.graph['name'] = graphname
-			return graph	
-		
+						#check edge file for geometry ['geometry_text']
+						if edge_geometry_text_index > -1:
+						
+							#create edge geometry
+							edge_geom = ogr.CreateGeometryFromWkt(edge_line[edge_geometry_text_index])
+							
+							#point count of edge
+							point_count = edge_geom.GetPointCount()  
+							
+							#grab start point of edge
+							start_point_edge_geom = edge_geom.GetPoint_2D(0)
+							
+							#grab end point of edge
+							end_point_edge_geom = edge_geom.GetPoint_2D(point_count-1)
+							
+							#create tuples of start and end point coordinates
+							start_point_edge_tuple = '(%s, %s)' % (start_point_edge_geom[0], start_point_edge_geom[1])
+							end_point_edge_tuple = '(%s, %s)' % (end_point_edge_geom[0], end_point_edge_geom[1])
+							
+							#grab the csv line as a list
+							edge_attr_values = list(edge_line)
+							
+							#remove all values from current line that are not to be transferred to db
+							for index in edge_attr_value_indices_to_remove:
+								edge_attr_values.pop(index)
+							
+							#create a node attribute dictionary
+							edge_attrs = dict(zip(edge_header, edge_attr_values))
+							
+							graph.add_edge(start_point_edge_tuple, end_point_edge_tuple, edge_attrs)
+						else:
+							raise Error('There was no WKT geometry representation found in the edge file %s, with WKT field name %s' % (edge_file_path, edge_file_geometry_text_key))
+				
+				#close edge file
+				edge_csv_file.close()										
+				return graph	
+			else:
+			
+				#edge csv file open
+				edge_csv_file = open(edge_file_path, 'r')
+				edge_csv_reader = csv.DictReader(edge_csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+				
+				use_F_ID = True
+				use_T_ID = True
+				
+				edge_csv_first_line = True
+				for edge_data in edge_csv_reader:
+					if edge_csv_first_line == True:
+						
+						if not edge_data.has_key('Node_F_ID') and not edge_data.has_key('Source'):
+							raise Error('The specified edge file (%s) does not contain either a value for Node_F_ID or Source. Either or both of these values must be defined when importing from a Gephi edge list.' % (edge_file_path))
+						if not edge_data.has_key('Node_T_ID') and not edge_data.has_key('Target'):
+							raise Error('The specified edge file (%s) does not contain either a value for Node_T_ID or Target. Either or both of these values must be defined when importing from a Gephi edge list.' % (edge_file_path))
+						if not edge_data.has_key('Edge_GeomID'):
+							raise Error('The specified edge file (%s) does not contain a value for Edge_GeomID' % (edge_file_path))						
+						if not edge_data.has_key('EdgeID'):
+							raise Error('The specified edge file (%s) does not contain a value for EdgeID' % (edge_file_path))
+						
+						#determine start of edge
+						if edge_data.has_key('Node_F_ID'):
+							from_ = edge_data['Node_F_ID']
+							use_F_ID = True
+						elif edge_data.has_key('Source'):
+							from_ = edge_data['Source']
+							use_F_ID = False
+							
+						#determine end of edge
+						if edge_data.has_key('Node_T_ID'):
+							to_ = edge_data['Node_T_ID']
+							use_T_ID = True
+						elif edge_data.has_key('Target'):
+							to_ = edge_data['Target']
+							use_T_ID = False
+						
+						#remove unnecessary attributes
+						edge_attrs = edge_data
+						if edge_attrs.has_key('Node_F_ID'):
+							del edge_attrs['Node_F_ID']
+						if edge_attrs.has_key('Node_T_ID'):
+							del edge_attrs['Node_T_ID']
+						if edge_attrs.has_key('Source'):
+							del edge_attrs['Source']
+						if edge_attrs.has_key('Target'):
+							del edge_attrs['Target']
+							
+						graph.add_edge(from_, to_, edge_attrs)
+						
+						edge_csv_first_line = False	
+					else:
+						edge_attrs = edge_data
+						
+						if use_F_ID == True:
+							from_ = edge_attrs['Node_F_ID']
+						else:
+							from_ = edge_attrs['Source']
+						if use_T_ID == True:
+							to_ = edge_attrs['Node_T_ID']
+						else:
+							to_ = edge_attrs['Target']
+						
+						#remove unnecessary attributes
+						edge_attrs = edge_data
+						if edge_attrs.has_key('Node_F_ID'):
+							del edge_attrs['Node_F_ID']
+						if edge_attrs.has_key('Node_T_ID'):
+							del edge_attrs['Node_T_ID']
+						if edge_attrs.has_key('Source'):
+							del edge_attrs['Source']
+						if edge_attrs.has_key('Target'):
+							del edge_attrs['Target']
+						
+						graph.add_edge(from_, to_, edge_attrs)
+				
+				edge_csv_file.close()							
+				return graph	
+				
 		else:
 			raise Error('The specified path to the node file (%s) or the path to the edge file (%s) does not exist. Please check that these files exist at the locations specified' % (node_file_path, edge_file_path))
 	
@@ -999,8 +1235,14 @@ class export_graph:
 			#set the full output path to save the gexf file to
 			full_path = '%s/%s.gexf' % (path, output_filename)
 			
+			if graph.name:
+				name = graph.name
+			else:
+				name = 'A graph'
+			
 			#create a networkx copy of the graph to export
-			graph_copy = nx.copy(graph)
+			graph_copy = graph.copy()
+			graph_copy.name=name
 			
 			#currently converting None type to "None"
 			for edge in graph_copy.edges(data=True):
@@ -1019,7 +1261,13 @@ class export_graph:
 			
 			#convert node values from None to "None" so they can be handled by NetworkX gexf writer (NoneType unsupported)
 			for node in graph_copy.nodes(data=True):
+			
 				node_attrs = node[1]					
+				
+				#remove the wkb attrs from the edge attributes
+				if node_attrs.has_key('Wkb'):
+					del node_attrs['Wkb']
+				
 				for node_key in node_attrs.keys():
 					node_value = node_attrs[node_key]											
 					if node_value == None:
@@ -1033,7 +1281,7 @@ class export_graph:
 			raise Error('The specified path %s does not exist' % (path))
 	
 	'''worked - although there is an issue with exporting the edge geometry'''
-	def export_to_pajek(self, graph, path, output_filename, node_attribute_label=None, edge_attribute_weight=1.0, encoding='utf-8'):
+	def export_to_pajek(self, graph, path, output_filename, spatial=True, node_attribute_label=None, edge_attribute_weight=1.0, encoding='utf-8'):
 		'''
 		Export the given graph to the given path as Pajek format
 		all attribute values are dropped ... this is not great - how can we keep attributes...
@@ -1041,6 +1289,9 @@ class export_graph:
 		graph - graph to export
 		path - path to export to
 		output_filename - output pajek file name
+		spatial - boolean - denotes whether the network stored in the path is a 'spatial' or 'aspatial' network (true=spatial)
+		
+		A spatial network must have the node coordinates defined as the unique keys or each node e.g. (100,100) 
 		node_attribute_label - name of attribute of node data to use as label for nodes in pajek (instead of just using coordinates) (can be a list)
 		edge_attribute_weight - name of attribute of edge data to use as weight between start and end nodes of edge (can be a value to apply to all edges, or can be a single attribute name)
 		
@@ -1052,53 +1303,89 @@ class export_graph:
 			#set the full output path to save the Pajek file to
 			full_path = '%s/%s.net' % (path, output_filename)						
 			
-			#checking input graph type (regular graph)
-			if isinstance(graph, nx.classes.graph.Graph):				
-				graph_copy = nx.Graph()
-			#checking input graph type (directed graph)
-			elif isinstance(graph, nx.classes.digraph.DiGraph):				
-				graph_copy = nx.DiGraph()
-			#checking input graph type (multi graph)
-			elif isinstance(graph, nx.classes.multigraph.MultiGraph):				
-				graph_copy = nx.MultiGraph()
-			#checking input graph type (multi directed graph)	
-			elif isinstance(graph, nx.classes.multidigraph.MultiDiGraph):				
-				graph_copy = nx.MultiDiGraph()
+			if graph.name:
+				name = graph.name
 			else:
-				raise Error('There was an error whilst trying to recognise the type of graph to be created. The graph to be exported must be one of the following types: undirected graph (nx.Graph), directed graph (nx.DiGraph), undirected multigraph (nx.MultiGraph), directed multigraph (nx.MultiGraph). The type found was %s' % (str(type(graph))))
+				name = 'A graph'
 			
-			
-			#copy the nodes to the graph to be output as Pajek i.e. remove all node attributes
-			#keep x and y to ensure the network 
-			for node in graph.nodes(data=True):								
-				if node_attribute_label is not None or node_attribute_label != '':
-					key = '%s' % str(node_attribute_label)
-					raw_value = str(node[1][node_attribute_label]).rstrip().lstrip()	
-					#add the node to the graph, with associated attribute
-					graph_copy.add_node(node[0], {'x': float(node[0][0]), 'y':float(node[0][1]), key:raw_value})					
+			if spatial:
+				
+				#checking input graph type (regular graph)
+				if isinstance(graph, nx.classes.graph.Graph):				
+					graph_copy = nx.Graph(name=name)
+				#checking input graph type (directed graph)
+				elif isinstance(graph, nx.classes.digraph.DiGraph):				
+					graph_copy = nx.DiGraph(name=name)
+				#checking input graph type (multi graph)
+				elif isinstance(graph, nx.classes.multigraph.MultiGraph):				
+					graph_copy = nx.MultiGraph(name=name)
+				#checking input graph type (multi directed graph)	
+				elif isinstance(graph, nx.classes.multidigraph.MultiDiGraph):				
+					graph_copy = nx.MultiDiGraph(name=name)
 				else:
-					#add the node to the graph
-					graph_copy.add_node(node[0], {'x': float(node[0][0]), 'y':float(node[0][1])})					
-							
-			#copy the edges to the graph to be output as Pajek i.e. remove all edge attributes
-			for edge in graph.edges(data=True):				
-				#user has specified an attribute name to use as values for edge weights							
-				if type(edge_attribute_weight) == str:
-					#add the edge to the graph
-					graph_copy.add_edge(edge[0], edge[1], {'weight': edge[2][edge_attribute_weight]})
-				#user has supplied a constant value
-				else:					
-					#add the edge to the graph
-					graph_copy.add_edge(edge[0], edge[1], {'weight': edge_attribute_weight})
-			
-			#write the copy to the output path i.e. the graph now without the wkb element
-			nx.write_pajek(graph_copy, full_path, encoding=encoding)				
-			return full_path
+					raise Error('There was an error whilst trying to recognise the type of graph to be created. The graph to be exported must be one of the following types: undirected graph (nx.Graph), directed graph (nx.DiGraph), undirected multigraph (nx.MultiGraph), directed multigraph (nx.MultiGraph). The type found was %s' % (str(type(graph))))
+				
+				#copy the nodes to the graph to be output as Pajek i.e. remove all node attributes
+				#keep x and y to ensure the network 
+				for node in graph.nodes(data=True):								
+					if node_attribute_label is not None or node_attribute_label != '':
+						key = '%s' % str(node_attribute_label)
+						raw_value = str(node[1][node_attribute_label]).rstrip().lstrip()	
+						#add the node to the graph, with associated attribute
+						graph_copy.add_node(node[0], {'x': float(node[0][0]), 'y':float(node[0][1]), key:raw_value})					
+					else:
+						#add the node to the graph
+						graph_copy.add_node(node[0], {'x': float(node[0][0]), 'y':float(node[0][1])})					
+								
+				#copy the edges to the graph to be output as Pajek i.e. remove all edge attributes
+				for edge in graph.edges(data=True):				
+					#user has specified an attribute name to use as values for edge weights							
+					if type(edge_attribute_weight) == str:
+						#add the edge to the graph
+						graph_copy.add_edge(edge[0], edge[1], {'weight': edge[2][edge_attribute_weight]})
+					#user has supplied a constant value
+					else:					
+						#add the edge to the graph
+						graph_copy.add_edge(edge[0], edge[1], {'weight': edge_attribute_weight})
+								
+				#write the copy to the output path 
+				nx.write_pajek(graph_copy, full_path, encoding=encoding)				
+				return full_path
+			else:
+				#create copy of original graph
+				graph_copy = graph.copy()
+				
+				#remove the empty node geometry attributes (Wkb, Wkt, Json)
+				for node in graph_copy.nodes(data=True):
+					if len(node) > 1:
+						node_attrs = node[1]
+						if node_attrs.has_key('Wkb'):
+							del node_attrs['Wkb']
+						'''if node_attrs.has_key('Wkt'):
+							del node_attrs['Wkt']
+						if node_attrs.has_key('Json'):
+							del node_attrs['Json']'''
+				
+				#remove the empty edge geometry attributes (Wkb, Wkt, Json)
+				for edge in graph_copy.edges(data=True):
+					if len(edge) > 2:
+						edge_attrs = edge[2]
+						if edge_attrs.has_key('Wkb'):
+							del edge_attrs['Wkb']
+						'''if edge_attrs.has_key('Wkt'):
+							del edge_attrs['Wkt']
+						if edge_attrs.has_key('Json'):
+							del edge_attrs['Json']'''
+				
+				#write the copy to the output path
+				nx.write_pajek(graph_copy, full_path, encoding=encoding)	
+				return full_path
+				
 		else:
 			raise Error('The specified path %s does not exist' % (path))
 	
 	'''worked'''
-	def export_to_yaml(self, graph, path, output_filename, encoding='UTF-8'):
+	def export_to_yaml(self, graph, path, output_filename, encoding='utf-8'):
 		'''
 		Export the given graph to the given path as Yaml format
 		
@@ -1115,7 +1402,7 @@ class export_graph:
 			full_path = '%s/%s.yaml' % (path, output_filename)
 		
 			#create a networkx copy of the graph to export
-			graph_copy = nx.copy(graph)
+			graph_copy = graph.copy()
 
 			#remove wkb attribute from edge			
 			for edge in graph_copy.edges(data=True):					
@@ -1133,7 +1420,7 @@ class export_graph:
 			raise Error('The specified path %s does not exist' % (path))
 	
 	'''working - has to change None types to "None" string to prevent graphml.py of networkx write function from failing on "None" types'''
-	def export_to_graphml(self, graph, path, output_filename, encoding='UTF-8', prettyprint=True):
+	def export_to_graphml(self, graph, path, output_filename, encoding='utf-8', prettyprint=True):
 		'''
 		Export the given graph to the given path as GraphML format
 		
@@ -1152,15 +1439,22 @@ class export_graph:
 			full_path = '%s/%s.graphml' % (path, output_filename)
 			
 			#create a networkx copy of the graph to export
-			graph_copy = nx.copy(graph)
+			graph_copy = graph.copy()
 			
 			#remove the Wkb element from the edge attributes			
 			for edge in graph_copy.edges(data=True):					
-				if len(edge) > 1:					
+				if len(edge) > 2:					
 					edge_attrs = edge[2]												
 					if edge_attrs.has_key('Wkb'):
 						del edge[2]['Wkb']
-						
+			
+			#remove the Wkb element from the node attributes
+			for node in graph_copy.nodes(data=True):
+				if len(node) > 0:
+					node_attrs = node[1]
+					if node_attrs.has_key('Wkb'):
+						del node[1]['Wkb']
+			
 			#currently converting None type to "None"
 			for edge in graph_copy.edges(data=True):
 				edge_attrs = edge[2]						
@@ -1207,7 +1501,7 @@ class export_graph:
 			full_path = '%s/%s.gml' % (path, output_filename)
 			
 			#create a networkx copy of the graph to export
-			graph_copy = nx.copy(graph)
+			graph_copy = graph.copy()
 			
 			#currently deleting the Wkb element from the edge attributes
 			for edge in graph_copy.edges(data=True):					
@@ -1249,14 +1543,16 @@ class export_graph:
 			return full_path
 		else:
 			raise Error('The specified path %s does not exist' % (path))
-	
-	
-	def export_to_gephi_node_edge_lists(self, path, node_viewname, edge_viewname, node_geometry_column_name='geom', edge_geometry_column_name='geom', directed=False):
+		
+	def export_to_gephi_node_edge_lists(self, path, node_viewname, edge_viewname, spatial=True, node_geometry_column_name='geom', edge_geometry_column_name='geom', directed=False):
 		'''
 		
 		--path - string - output folder location
 		--node_viewname - string - name of node view in database e.g. <network_name>_View_Nodes
 		--edge_viewname - string - name of edge view in database e.g. <network_name>_View_Edges_Edge_Geometry
+		--spatial - boolean - denotes whether the network stored in the path is a 'spatial' or 'aspatial' network (true=spatial)
+		
+		A spatial network must have the node coordinates defined as the unique keys or each node e.g. (100,100) 
 		--node_geometry_column_name - string - name of geometry column of node view e.g. geom
 		--edge_geometry_column_name - string - name of geometry column of edge view e.g. geom
 		--directed - boolean - denotes if outpout
@@ -1290,26 +1586,40 @@ class export_graph:
 		#define the output file name and path for the Gephi-compatible csv dump of the node view
 		node_file_name = '%s%s.csv' % (path, node_viewname)
 		
-		#define the sql to execute for generating a Gephi-compatible csv dump of the node view
-		node_sql = ("COPY (SELECT node_table.*, ST_AsText(node_table.%s) as geometry_text, ST_SRID(node_table.%s) as srid, ST_X(ST_AsText(ST_Transform(node_table.%s, 900913))) as google_node_x, ST_Y(ST_AsText(ST_Transform(node_table.%s, 900913))) as google_node_y, ST_X(ST_AsText(ST_Transform(node_table.%s, 4326))) as wgs84_node_x, ST_Y(ST_AsText(ST_Transform(node_table.%s, 4326))) as wgs84_node_y FROM \"%s\" AS node_table) TO '%s' DELIMITER AS ',' CSV HEADER;" % (node_geometry_column_name, node_geometry_column_name, node_geometry_column_name, node_geometry_column_name, node_geometry_column_name, node_geometry_column_name, node_viewname, node_file_name))
-		
 		#define the output file name and path for the Gephi-compatible csv dump of the edge view
 		edge_file_name = '%s%s.csv' % (path, edge_viewname)
 		
-		#define the sql to execute for generating a Gephi-compatible csv dump of the edge view
-		edge_sql = ("COPY (SELECT edge_table.*, ST_AsText(edge_table.%s) as geometry_text, ST_SRID(edge_table.%s) as srid, \"Node_F_ID\" as \"Source\", \"Node_T_ID\" as \"Target\", '%s' as \"Type\", ST_X(ST_Transform(ST_StartPoint(edge_table.%s), 900913)) as google_startpoint_x, ST_Y(ST_Transform(ST_StartPoint(edge_table.%s), 900913)) as google_startpoint_y, ST_X(ST_Transform(ST_EndPoint(edge_table.%s), 900913)) as google_endpoint_x, ST_Y(ST_Transform(ST_EndPoint(edge_table.%s), 900913)) as google_endpoint_y, ST_X(ST_Transform(ST_StartPoint(edge_table.%s), 4326)) as wgs84_startpoint_x, ST_Y(ST_Transform(ST_StartPoint(edge_table.%s), 4326)) as wgs84_startpoint_y, ST_X(ST_Transform(ST_EndPoint(edge_table.%s), 4326)) as wgs84_endpoint_x, ST_Y(ST_Transform(ST_EndPoint(edge_table.%s), 4326)) as wgs84_endpoint_y FROM \"%s\" AS edge_table) TO '%s' DELIMITER AS ',' CSV HEADER" % (edge_geometry_column_name, edge_geometry_column_name, gephi_directed_value, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_viewname, edge_file_name))
+		if spatial:			
+			#define the sql to execute for generating a Gephi-compatible csv dump of the node view
+			node_sql = ("COPY (SELECT node_table.*, ST_AsText(node_table.%s) as geometry_text, ST_SRID(node_table.%s) as srid, ST_X(ST_AsText(ST_Transform(node_table.%s, 900913))) as google_node_x, ST_Y(ST_AsText(ST_Transform(node_table.%s, 900913))) as google_node_y, ST_X(ST_AsText(ST_Transform(node_table.%s, 4326))) as wgs84_node_x, ST_Y(ST_AsText(ST_Transform(node_table.%s, 4326))) as wgs84_node_y FROM \"%s\" AS node_table) TO '%s' DELIMITER AS ',' CSV HEADER;" % (node_geometry_column_name, node_geometry_column_name, node_geometry_column_name, node_geometry_column_name, node_geometry_column_name, node_geometry_column_name, node_viewname, node_file_name))
+						
+			#define the sql to execute for generating a Gephi-compatible csv dump of the edge view
+			edge_sql = ("COPY (SELECT edge_table.*, ST_AsText(edge_table.%s) as geometry_text, ST_SRID(edge_table.%s) as srid, \"Node_F_ID\" as \"Source\", \"Node_T_ID\" as \"Target\", '%s' as \"Type\", ST_X(ST_Transform(ST_StartPoint(edge_table.%s), 900913)) as google_startpoint_x, ST_Y(ST_Transform(ST_StartPoint(edge_table.%s), 900913)) as google_startpoint_y, ST_X(ST_Transform(ST_EndPoint(edge_table.%s), 900913)) as google_endpoint_x, ST_Y(ST_Transform(ST_EndPoint(edge_table.%s), 900913)) as google_endpoint_y, ST_X(ST_Transform(ST_StartPoint(edge_table.%s), 4326)) as wgs84_startpoint_x, ST_Y(ST_Transform(ST_StartPoint(edge_table.%s), 4326)) as wgs84_startpoint_y, ST_X(ST_Transform(ST_EndPoint(edge_table.%s), 4326)) as wgs84_endpoint_x, ST_Y(ST_Transform(ST_EndPoint(edge_table.%s), 4326)) as wgs84_endpoint_y FROM \"%s\" AS edge_table) TO '%s' DELIMITER AS ',' CSV HEADER" % (edge_geometry_column_name, edge_geometry_column_name, gephi_directed_value, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_geometry_column_name, edge_viewname, edge_file_name))
+			
+			#execute the node view to csv query
+			node_result = self.conn.ExecuteSQL(node_sql)  
+			
+			#execute the edge view to csv query
+			edge_result = self.conn.ExecuteSQL(edge_sql)
+			
+		else:			
+			#define the sql to execute for generating a Gephi-compatible csv dump of the node view
+			node_sql = ("COPY (SELECT node_table.* FROM \"%s\" AS node_table) TO '%s' DELIMITER AS ',' CSV HEADER;" % (node_viewname, node_file_name))
+			
+			#define the sql to execute for generating a Gephi-compatible csv dump of the edge view
+			edge_sql = ("COPY (SELECT edge_table.*, \"Node_F_ID\" as \"Source\", \"Node_T_ID\" as \"Target\", '%s' as \"Type\" FROM \"%s\" AS edge_table) TO '%s' DELIMITER AS ',' CSV HEADER;" % (gephi_directed_value, edge_viewname, edge_file_name))
 		
-		#execute the node view to csv query
-		node_result = self.conn.ExecuteSQL(node_sql)  
-		
-		#execute the edge view to csv query
-		edge_result = self.conn.ExecuteSQL(edge_sql)
+			#execute the node view to csv query
+			node_result = self.conn.ExecuteSQL(node_sql)  
+			
+			#execute the edge view to csv query
+			edge_result = self.conn.ExecuteSQL(edge_sql)
 		
 		#check if output files exist
 		if os.path.isfile(node_file_name) and os.path.isfile(edge_file_name):
 			return [node_file_name, edge_file_name]
 		else:
-			raise Error('Error exporting data from node view (%s, geom_column: %s) to file at (%s) and edge view (%s, geom_column: %s) to file at (%s)', (node_viewname, node_geometry_column_name, node_file_name, edge_viewname, edge_geometry_column_name, edge_file_name))
+			raise Error('Error exporting data from node view (%s, geom_column: %s) to file at (%s) and edge view (%s, geom_column: %s) to file at (%s)' % (node_viewname, node_geometry_column_name, node_file_name, edge_viewname, edge_geometry_column_name, edge_file_name))
 		
 class read:
 	'''Class to read and build networks from PostGIS schema network tables.'''
