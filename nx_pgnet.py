@@ -24,7 +24,7 @@ write: PostGIS (network schema) <-- NetworkX
 
 import_graph: YAML, GraphML, Pajek .net, GEXF, GML, CSV --> NetworkX (PostGIS network schema compatible)
 
-export_graph: NetworkX (PostGIS network schema compatible) --> YAML, GraphML, Pajek .net, GEXF, GML, CSV
+export_graph: NetworkX (PostGIS network schema compatible) --> YAML, GraphML, Pajek .net, GEXF, GML, CSV, JSON
 
 B{Description}
 
@@ -93,7 +93,7 @@ The module is split into a number of key classes:
 		Contains methods allowing a NetworkX graph (PostGIS network schema compatible) to be created from varying network-based formats e.g. YAML, GraphML, Pajek .net, GEXF, GML, CSV
 		
 	- export_graph: 
-		Contains methods allowing a NetworkX graph to be exported to a variety of network-based formats e.g. YAML, GraphML, Pajek .net, GEXF, GML, CSV
+		Contains methods allowing a NetworkX graph to be exported to a variety of network-based formats e.g. YAML, GraphML, Pajek .net, GEXF, GML, CSV, JSON
 	
 	- errors:
 		Class containing error catching, reporting and logging methods. 
@@ -243,6 +243,14 @@ Import from Gephi node-edge-list (aspatial):
 
 	>>> nx_pgnet.import_graph().import_from_gephi_node_edge_lists('C://Temp//nodes.csv', 'C://Temp//edges.csv.', 'An_Aspatial_Network', spatial=False, 'geometry_text', 'geometry_text', 'geom', 'geom')
 
+Importing from JSON (spatial):
+
+	>>> nx_pgnet.import_graph().import_from_json('C://Temp//a_spatial_network.json', 'A_Spatial_Network', True)
+	
+Importing from JSON (aspatial):
+
+	>>> nx_pgnet.import_graph().import_from_json('C://Temp//a_network.json', 'A_Network', False)
+	
 Exporting a graph:
 
 Export to GEXF (spatial and aspatial):
@@ -276,7 +284,11 @@ Export to Gephi node-edge-list (spatial):
 Export to Gephi node-edge-list (aspatial):
 
 	>>> nx_pgnet.export_graph(conn).export_to_gephi_node_edge_lists('C://Temp//', 'a_node_view_name', 'an_edge_view_name', spatial=False)
+
+Export to JSON (spatial and aspatial):
 	
+	>>> nx_pgnet.export_graph(conn).export_to_json(a_network, 'C://Temp//', 'a_network')
+
 B{Dependencies}
 
 Python 2.6 or later
@@ -334,7 +346,7 @@ import osgeo.ogr as ogr
 import osgeo.gdal as gdal
 import csv
 import re
-#import copy
+import json
 
 # Ask ogr to use Python exceptions rather than stderr messages.
 ogr.UseExceptions()
@@ -657,8 +669,135 @@ class import_graph:
 		- GRAPHML
 		- GML
 		- GEPHI - compatible CSV node / edge lists
-	
+		- JSON
     '''
+	
+	def import_from_json(self, path, graphname, spatial=True):
+		'''
+		Import graph stored in JSON format
+		
+		path - string - path to JSON file on disk
+		graphname - string - name of graph to assign once created
+		spatial - boolean - true if spatial, false otherwise
+		
+		'''
+		
+		#check input path exists
+		if os.path.isfile(path):
+			import json
+			
+			#open input json file
+			with open(path) as data_file:    
+				#read json data
+				json_data = json.load(data_file)
+				
+				#get graph attributes
+				#directed
+				if json_data.has_key('directed'):
+					directed = bool(json_data['directed'])
+				else:
+					directed = False
+				
+				#multigraph
+				if json_data.has_key('multigraph'):
+					multigraph = bool(json_data['multigraph'])
+				else:
+					multigraph = False
+				
+				'''#graph name
+				if json_data.has_key('name'):
+					name = json_data['name']
+				else:
+					name = 'A graph'''
+				
+				#determine type of graph to build
+				if ((directed == False) and (multigraph == False)):
+					graph = nx.Graph(name=graphname)
+				elif ((directed == True) and (multigraph == False)):
+					graph = nx.DiGraph(name=graphname)
+				elif ((directed == False) and (multigraph == True)):
+					graph = nx.MultiGraph(name=graphname)
+				elif ((directed == True) and (multigraph == True)):
+					graph = nx.MultiDiGraph(name=graphname)
+				
+				#check for nodes key
+				if json_data.has_key('nodes'):						
+					
+					#loop all nodes
+					for node in json_data['nodes']:						
+						if spatial == True:
+							if node.has_key('Wkt'):
+								node_wkt = node['Wkt']
+							
+								#create a node geometry
+								node_geom = ogr.CreateGeometryFromWkt(node_wkt)
+								
+								#node tuple containing node coordinates
+								node_tuple = '(%s, %s)' % (node_geom.GetX(), node_geom.GetY())
+								
+								#add node
+								graph.add_node(node_tuple, node)
+							else:								
+								raise Error ('The input json data (%s) does not contain a WKT parameter denoting the geometry of nodes in the network' % (path))
+						else:
+							if node.has_key('NodeID'):
+								node_id = node['NodeID']
+								
+								#add node
+								graph.add_node(node_id, node)
+							else:
+								raise Error('The input json data (%s) does not contain a NodeID value' % (path))
+							
+					nodes = graph.nodes(data=True)
+				else:
+					raise Error('The input json data (%s) does not contain a nodes parameter.' % (path))
+				
+				#check for links key
+				if json_data.has_key('links'):
+					
+					#loop all edges
+					for edge in json_data['links']:						
+						if spatial == True:
+							if edge.has_key('Wkt'):
+								edge_wkt = edge['Wkt']
+								
+								#create an edge geometry
+								edge_geom = ogr.CreateGeometryFromWkt(edge_wkt)
+								
+								#point count
+								point_count = edge_geom.GetPointCount()
+								
+								#startpoint geom
+								edge_startpoint_geom = edge_geom.GetPoint_2D(0)
+								
+								#endpoint geom
+								edge_endpoint_geom = edge_geom.GetPoint_2D(point_count-1)
+								
+								#create tuples
+								start_point_edge_tuple = '(%s, %s)' % (edge_startpoint_geom[0], edge_startpoint_geom[1])
+								end_point_edge_tuple = '(%s, %s)' % (edge_endpoint_geom[0], edge_endpoint_geom[1])
+								
+								#add an edge to the graph
+								graph.add_edge(start_point_edge_tuple, end_point_edge_tuple, edge)
+							else:								
+								raise Error ('The input json data (%s) does not contain a WKT parameter denoting the geometry of edges in the network' % (path))
+						else:
+							if (edge.has_key('Node_F_ID') and edge.has_key('Node_T_ID')):
+								
+								#from and to
+								node_f_id = edge['Node_F_ID']
+								node_t_id = edge['Node_T_ID']
+								
+								#add edge to the graph
+								graph.add_edge(node_f_id, node_t_id, edge)
+								
+							else:
+								raise Error('The input json data (%s) does not contain a NodeID value' % (path))
+				else:
+					raise Error('The input json data (%s) does not contain a links parameter.' % (path))
+							
+			return graph
+			
 	
 	def import_from_gexf(self, path, graphname, node_type=str, relabel=False):
 		''' Import graph from Graph Exchange XML Format (GEXF) 
@@ -1210,7 +1349,7 @@ class export_graph:
 		- GRAPHML
 		- GML
 		- GEPHI - compatible CSV node / edge lists
-	
+		- JSON
 	'''
 	def __init__(self, db_conn):
 		'''Setup connection to be inherited by methods.'''
@@ -1218,6 +1357,69 @@ class export_graph:
 		if self.conn == None:
 			raise Error('No connection to database.')
 	
+	def export_to_json(self, graph, path, output_filename):
+	
+		'''
+		Export the given graph to the given path, in JSON format
+		
+		graph - networkx graph to export
+		path - path to export to
+		output_filename - output JSON file name
+		
+		'''
+	
+		#import json_graph
+		from networkx.readwrite import json_graph
+		
+		#check the output path exists
+		if os.path.isdir(path):
+		
+			#set the full output path to save the gexf file to
+			full_path = '%s/%s.json' % (path, output_filename)
+			
+			#copy the graph
+			graph_copy = graph.copy()
+			
+			for edge in graph_copy.edges(data=True):
+				edge_attrs = edge[2]
+				
+				#remove the wkb attr from the edge attributes
+				if edge_attrs.has_key('Wkb'):
+					del edge[2]['Wkb']
+				
+				#remove the json attr from the edge attributes
+				if edge_attrs.has_key('Json'):
+					del edge[2]['Json']
+				
+			for node in graph_copy.nodes(data=True):			
+				node_attrs = node[1]					
+				
+				#remove the wkb attrs from the node attributes
+				if node_attrs.has_key('Wkb'):
+					del node_attrs['Wkb']	
+					
+				#remove the json attr from the node attributes
+				if node_attrs.has_key('Json'):
+					del node_attrs['Json']
+				
+			#get node link data (ready for json serializing)
+			data = json_graph.node_link_data(graph_copy)
+			
+			#serialize the graph data
+			json_data = json.dumps(data)
+			
+			#open the output file
+			json_file = open(full_path, 'w')
+			#write the json data to a file
+			json_file.write(json_data)
+			#close the output file
+			json_file.close()
+			
+			#return the path to the json file
+			return full_path
+		else:
+			raise Error('The specified path %s does not exist' % (path))
+		
 	def export_to_gexf(self, graph, path, output_filename, encoding='utf-8', prettyprint=True):
 		'''
 		Export the given graph to the given path, in Graph Exchange XML Format (GEXF)
@@ -1807,7 +2009,7 @@ class read:
 		for key, value in graph_attrs.iteritems():			
 			G.graph[key] = value
 		
-		self.pgnet_edges(G)					
+		self.pgnet_edges(G)							
 		self.pgnet_nodes(G)
 	
 		return G
