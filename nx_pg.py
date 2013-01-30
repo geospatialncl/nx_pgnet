@@ -196,7 +196,9 @@ def check_encoding(value, encoding):
         try:
             output = value.encode(encoding)
         except UnicodeEncodeError:
-            raise Error('Error whilst trying to encode %s to utf-8' % (field_value))
+            raise Error('Error whilst trying to encode %s to utf-8' % (value))
+        except UnicodeDecodeError:
+            raise Error('Error whilst trying to decode %s to utf-8' % (value))
         else:
             output = value
     else:
@@ -215,8 +217,10 @@ def getfieldinfo(lyr, feature, flds):
     f = feature    
     values = []
     for x in flds:
-        field_value = f.GetField(f.GetFieldIndex(x))        
-        if type(field_value) == str:  
+        field_value = f.GetField(f.GetFieldIndex(x)) 
+
+        #if type(field_value) == str:  
+        if isinstance(field_value, unicode):  
             output = check_encoding(field_value, 'utf-8')                        
             values.append(output)            
         else:
@@ -332,18 +336,17 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, g
         
         #We've got Multiline geometry so split into line segments
         #assume that the multilinestring is fully connected i.e. no gaps
-        if geom is not None:
-              
+        if geom is not None:            
             if ((ogr.Geometry.GetGeometryName(geom) == 'MULTILINESTRING')):
                 for line in geom:                                  
                     
                     # count the points in line
                     n = line.GetPointCount()                
-                    
+                   
                     #round the coordinates of the first and last points of the line string geometry, based on the geometry precision value
                     node_coord_f = round_coordinate(line, 0, geometry_precision)
                     node_coord_t = round_coordinate(line, (n-1), geometry_precision)
-                    
+                   
                     #reset the start and the end points of the line string to correspond with the newly rounded coordinates
                     line.SetPoint_2D(0, node_coord_f[0], node_coord_f[1])
                     line.SetPoint_2D((n-1), node_coord_t[0], node_coord_t[1])
@@ -404,13 +407,15 @@ def read_pg(conn, edgetable, nodetable=None, directed=False, multigraph=False, g
             else:
                 raise ValueError, "PostGIS geometry type not"\
                                     " supported."#               
-        #print 'has_edge: %s', has_edge
+        
         f = edge_lyr.GetNextFeature()        
         # Raise warning if nx_is_connected(G) is false.
     
+    
+    
     # Attribution of nodes from points table (must exist in network)
     if nodetable is not None:
-        for point in nodes:
+        for point in nodes:            
             if point in net.nodes():
                 net.node[point] = nodes[point] 
                 

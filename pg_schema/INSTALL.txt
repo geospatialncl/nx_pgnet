@@ -1,6 +1,8 @@
 INSTALL VIA "one-click" .bat
 
--- Standard install via (requires that a pgpass.conf password file has been saved with the correct credentials at the following location):
+-- Standard install (requires that a pgpass.conf password file has been saved with the correct credentials at the following location):
+
+	- ensure you run the cmd window as postgres user
 
 	- C:\Users\<username>\AppData\Roaming\postgresql\pgpass.conf
 	

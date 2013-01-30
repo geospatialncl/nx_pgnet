@@ -488,7 +488,7 @@ class nisql:
 			
 		elif ((directed == True) and (multigraph == True)):		
 			sql = ("SELECT * FROM ni_add_graph_record('%s', TRUE, TRUE);" % (prefix))
-				
+		
 		result = self.conn.ExecuteSQL(sql)		
 		return result
 
@@ -1845,7 +1845,7 @@ class read:
 		feature - OGR feature to query
 		flds - dict - dictionary of fields
 		
-		'''
+		'''		
 		f = feature
 		return [f.GetField(f.GetFieldIndex(x)) for x in flds]
 
@@ -2561,13 +2561,11 @@ class write:
 		
 		'''
 		#add a graph record based on the prefix (graph / network name)
-		result = nisql(self.conn).add_graph_record(self.prefix)
-
+		result = nisql(self.conn).add_graph_record(self.prefix)		
 		sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC LIMIT 1;')
 		GraphID = None
 		for row in self.conn.ExecuteSQL(sql):
-			GraphID = row.GraphID
-
+			GraphID = row.GraphID		
 		return GraphID
 	
 	def pgnet_edge_empty_geometry(self, edge_attribute_equality_key, edge_attributes, edge_geom):
