@@ -26,6 +26,8 @@ import_graph: YAML, GraphML, Pajek .net, GEXF, GML, CSV --> NetworkX (PostGIS ne
 
 export_graph: NetworkX (PostGIS network schema compatible) --> YAML, GraphML, Pajek .net, GEXF, GML, CSV, JSON
 
+publish_graph: NetworkX (PostGIS network schema compatible) --> Geoserver via REST API
+
 B{Description}
 
 NetworkX is a python library for graph analysis. Using edge and node 
@@ -94,6 +96,9 @@ The module is split into a number of key classes:
 		
 	- export_graph: 
 		Contains methods allowing a NetworkX graph to be exported to a variety of network-based formats e.g. YAML, GraphML, Pajek .net, GEXF, GML, CSV, JSON
+	
+	- publish_graph:
+		Contains methods allowing a NetworkX graph stored within the PostGIS network compatible schema to be published to Geoserver for possible dissemination purposes
 	
 	- errors:
 		Class containing error catching, reporting and logging methods. 
@@ -347,6 +352,9 @@ import osgeo.gdal as gdal
 import csv
 import re
 import json
+
+#new
+from geoserver.catalog import Catalog
 
 # Ask ogr to use Python exceptions rather than stderr messages.
 ogr.UseExceptions()
@@ -1358,7 +1366,109 @@ class import_graph:
 		else:
 			raise Error('The specified path to the node file (%s) or the path to the edge file (%s) does not exist. Please check that these files exist at the locations specified' % (node_file_path, edge_file_path))
 	
+
+class publish_graph:
+	'''Class to publish a network held within the database schema to Geoserver via the REST API
 	
+	- would need to publish both the Node View, and Edge/Edge Geometry View
+	
+	'''
+	def __init__(self, db_conn, geoserver_rest_url, geoserver_rest_username, geoserver_rest_password):
+		'''Setup connection to be inherited by methods.'''
+		self.conn = db_conn
+		self.geoserver_rest_url = geoserver_rest_url
+		self.geoserver_rest_username = geoserver_rest_username
+		self.geoserver_rest_password = geoserver_rest_password
+		
+		#creates a catalog to the geoserver REST url supplied, using supplied credentials
+		self.geoserver_catalog = Catalog(geoserver_rest_url, geoserver_rest_username, geoserver_rest_password)
+		
+		if ((self.geoserver_rest_url == None) or (self.geoserver_rest_username == None) or (self.geoserver_rest_password == None)):
+			geoserver_connection_error_msg = 'Please ensure a valid value for the REST URL end point of the geoserver instance, the geoserver username and geoserver password have been supplied. (Geoserver REST URL (%s), Geoserver Username (%s), Geoserver Password (%s)' % (self.geoserver_rest_url, self.geoserver_rest_username, self.geoserver_rest_password)
+			
+			raise Error(geoserver_connection_error_msg)
+		
+		if self.conn == None:
+			raise Error('No connection to database.')
+	
+	def get_db_parameter_from_connection(self, param='host'):
+		'''
+		Method to return the given parameter name from the current ogr connection
+		'''
+		if ((param != 'host') and (param != 'dbname') and (param != 'user') and (param != 'password') and (param != 'port')):
+			raise Error('Cannot retrieve the given parameter from the current OGR connection. Please ensure the parameter is one of host, dbname, user, password or port')
+		else:
+			connection_string = self.conn.name
+			
+			#find the connection parameter from the connection string
+			connection_param_start_pos = connection_string.find("%s='", (param))
+
+			#means given parameter does not exist
+			#return a default otherwise
+			if connection_param_start_pos == -1:
+				if param == 'port':
+					return 5432
+				elif param == 'user':
+					return 'postgres'
+				elif param == 'host':
+					return 'localhost'
+				else:
+					parameter_error_msg = 'Given parameter cannot be found in current OGR connection, and defaults for it cannot be returned. Given parameter value (%s)', param
+					raise Error(parameter_error_msg)
+			else:			
+				connection_param_substring = connection_string[connection_param_start_pos:]		
+				connection_param_first_single_quote_pos = connection_param_substring.find("'")
+				connection_param_first_substring = connection_param_substring[connection_param_first_single_quote_pos+1:]
+				connection_param_second_single_quote_pos = connection_param_first_substring.find("'")
+				connection_param = connection_param_first_substring[:connection_param_second_single_quote_pos]
+				
+				return connection_param	
+			
+	def create_network_schema_datastore(self, datastore_name, workspace_name=None):
+		'''
+		Method to create a datastore in Geoserver based on the parameters used within the db_conn to create this publish_graph instance
+						
+		datastore_name - string - name of datastore to be used in Geoserver
+		workspace_name - string - optional name of workspace under which to create network schema datastore (if workspace is None, a default workspace is used
+		
+		Returns:
+			geoserver datastore object
+		
+		'''
+		
+		connection_host = self.get_db_parameter_from_connection('host')
+		connection_dbname = self.get_db_parameter_from_connection('dbname')
+		connection_user = self.get_db_parameter_from_connection('user')
+		connection_password = self.get_db_parameter_from_connection('password')
+		connection_port = self.get_db_parameter_from_connection('port')
+		
+		datastore = self.geoserver_catalog.create_datastore(datastore_name, workspace_name)
+		
+		datastore.connection_parameters.update(host=connection_host, port=connection_port, database=connection_dbname, user=connection_user, password=connection_password,dbtype="postgis")
+		datastore.enabled = True
+		self.geoserver_catalog.save(datastore)
+
+		return datastore
+	
+	def publish_to_geoserver(self, graph_name_in_db, feature_store_name):
+		'''
+		Method to publish a network (node and edge/edge_geometry views) to geoserver
+		
+		- use the self.conn database connection to connect to PostGIS
+		
+		graph_name - string - name of graph stored in PostGIS network compatible schema
+		feature_store_name - string - name given to feature store within Geoserver
+		'''
+		
+		node_view_suffix = '_View_Nodes'
+		edge_edge_geometry_view_suffix = '_View_Edges_Edge_Geometry'
+		
+		node_view_name = '%s%s' % (graph_name, node_view_suffix)
+		edge_edge_geometry_view_name = '%s%s' % (graph_name, edge_edge_geometry_view_suffix)
+		
+		#want to create a feature store for the node view, and another for the edge view
+		
+		
 class export_graph:
 	'''Class to export networkx instances to chosen format supported by networkx
 	
@@ -1387,6 +1497,8 @@ class export_graph:
 		path - path to export to
 		output_filename - output JSON file name
 		
+		SEEMS TO ONLY BE WORKING CORRECTLY ONCE THE DATA HAS BEEN WRITTEN IN TO THE DATABASE, THEN READ OUT AGAIN
+		
 		'''
 	
 		#import json_graph
@@ -1395,7 +1507,7 @@ class export_graph:
 		#check the output path exists
 		if os.path.isdir(path):
 		
-			#set the full output path to save the gexf file to
+			#set the full output path to save the JSON file to
 			full_path = '%s/%s.json' % (path, output_filename)
 			
 			#copy the graph
@@ -2014,8 +2126,8 @@ class read:
 		elif ((graph_attrs['Directed'] == 0) and (graph_attrs['MultiGraph'] == 1)):			
 			G = nx.MultiGraph(name=prefix)
 		elif ((graph_attrs['Directed'] == 1) and (graph_attrs['MultiGraph'] == 1)):			
-			G = nx.MultiDiGraph(name=prefix)
-			
+			G = nx.MultiDiGraph(name=prefix)				
+		
 		# Assign graph attributes to graph
 		for key, value in graph_attrs.iteritems():			
 			G.graph[key] = value
@@ -2025,8 +2137,12 @@ class read:
 	
 		return G
 
+	#do we need to supply a set of data types alongside each file e.g.
+	#node_csv_file_data_types
+		
 	#create a network x graph instance by reading the csv input files
-	def pgnet_via_csv(self, network_name, node_csv_file_name, edge_csv_file_name, edge_geometry_csv_file_name, directed=False, multigraph=False):
+	#def pgnet_via_csv(self, network_name, node_csv_file_name, edge_csv_file_name, edge_geometry_csv_file_name, directed=False, multigraph=False):
+	def pgnet_via_csv(self, network_name, node_csv_file_name, edge_csv_file_name, edge_geometry_csv_file_name, node_data_types={"GraphID":int, "NodeID":int, "geom":str, "geom_text":str}, edge_data_types={"Node_F_ID":int, "Node_T_ID":int, "GraphID":int, "Edge_GeomID":int, "EdgeID":int}, edge_geometry_data_types={"geom_text":str, "geom":str, "GeomID":int}, directed=False, multigraph=False):
 		'''Read a network from a csv formatted file (as if output from the schema, but could be manually created
 		
 			- ensures the node file has columns: 
@@ -2043,12 +2159,16 @@ class read:
 		
 		network_name - string - name of network to create
 		node_csv_file_name - string - csv file path to node file
+		node_data_types - dict - dictionary of node table field names mapped to Python data types e.g. {'attribute_1':int, 'attribute_2':int, 'attribute_3':str, 'attribute_4':float}
 		edge_csv_file_name - string - csv file path to edge file
+		edge_data_types - dict - dictionary of edge table field names mapped to Python data types e.g. {'attribute_1':int, 'attribute_2':int, 'attribute_3':str, 'attribute_4':float}
 		edge_geometry_csv_file_name - string - csv file path to edge_geometry file
+		edge_geometry_data_types - dict - dictionary of edge geometry table field names mapped to Python data types e.g. {'attribute_1':int, 'attribute_2':int, 'attribute_3':str, 'attribute_4':float}
 		directed - boolean - denotes whether network to be created is a directed, or undirected network (True=directed, False=undirected)
 		multigraph - boolean - denotes whether network to be created is a multigraph, or regular graph (True=multigraph, False=regular graph)
 		
 		'''		
+		
 		#check that the input node csv file exists before proceeding
 		if not os.path.isfile(node_csv_file_name):
 			raise Error('The input node file does not exist at: %s' % (node_csv_file_name))
@@ -2074,6 +2194,9 @@ class read:
 		elif ((directed == True) and (multigraph == True)):			
 			net = nx.MultiDiGraph(name=network_name)
 		
+		#disallowed values
+		disallowed_values = ['',"",'None',"None"]
+		
 		#set large field size limit to allow for massive linestring elements in edge geometry file		
 		csv.field_size_limit(sys.maxint)		
 		
@@ -2095,11 +2218,23 @@ class read:
 		
 		for line in edge_geometry_csv_file:						
 			if first_edge_geometry_line == True:								
-				first_edge_geometry_line = False								
-			else:
-				pos_first_comma = line.find(",")				
-				GeomID = line[:pos_first_comma]
-				geom_text = line[pos_first_comma:]				
+				first_edge_geometry_line = False							
+				pos_first_comma = line.find(",")
+				first_col = line[:pos_first_comma]
+				second_col = line[(pos_first_comma+1):]				
+			else:				
+				if first_col == 'geom' or first_col == 'geom_text':
+					pos_first_comma = line.rfind(",")
+					geom_text = line[:pos_first_comma]
+					GeomID = line[(pos_first_comma+1):]
+				elif first_col == 'GeomID':
+					pos_first_comma = line.find(",")
+					geom_text = line[(pos_first_comma+1):]
+					GeomID = line[:pos_first_comma]
+				else:
+					raise Error('The first column within the Edge Geometry csv file must be either geom or geom_text, containing a WKT representation of the edge LINESTRING or the first column must be GeomID')
+					
+				GeomID = int(GeomID)				
 				edge_geometry_csv_reader.append({'GeomID':GeomID,'geom_text':geom_text})
 		
 		#generic Node table attributes
@@ -2128,7 +2263,8 @@ class read:
 		for node_row in node_csv_reader:			
 			##perform a check to see that the node specific fieldnames exist in the node csv file
 			if node_first_line == True:
-				node_first_line_contents = node_row				
+				node_first_line_contents = node_row
+				
 				node_first_line = False								
 				for generic_node_fieldname in generic_node_fieldnames:
 					if generic_node_fieldname not in node_row:						
@@ -2148,10 +2284,17 @@ class read:
 					if node_attrs.has_key('nodeid'):
 						del node_attrs['nodeid']
 					
-					#grab the node geometry
-					node_geom_wkt_raw = str(node_row['geom_text'])
+					#grab the node geometry					
+					if node_row.has_key('geom_text'):
+						node_geom_wkt_raw = str(node_row['geom_text'])
+					elif node_row.has_key('geom'):
+						node_geom_wkt_raw = str(node_row['geom'])
+					else:
+						raise Error('When reading a network back from csv files, the geometry of the nodes must be contained as WKT string representation e.g. srid=27700;POINT(0 0), in a column named either "geom_text" or "geom"')
+					
 					node_geom_srid = node_geom_wkt_raw[:node_geom_wkt_raw.find(';')]
-					node_geom_wkt = node_geom_wkt_raw[node_geom_wkt_raw.find(';')+1:]					
+					node_geom_wkt = node_geom_wkt_raw[node_geom_wkt_raw.find(';')+1:len(node_geom_wkt_raw)]		
+					
 					#create an OGR Point geometry from
 					node_geom = ogr.CreateGeometryFromWkt(node_geom_wkt)
 					
@@ -2178,12 +2321,25 @@ class read:
 					if 'geom' in node_attrs:
 						del node_attrs['geom']
 					
+					#assign correct data types to node attributes 
+					for column in node_attrs:						
+						if node_data_types.has_key(column):		
+							if node_attrs[column] not in disallowed_values:
+								if node_data_types[column] == str:
+									node_attrs[column] = str(node_attrs[column])
+								
+								if node_data_types[column] == int:
+									node_attrs[column] = int(node_attrs[column])
+								
+								if node_data_types[column] == float:
+									node_attrs[column] = float(node_attrs[column])
+					
 					#add the node to the network, with attributes					
 					net.add_node(node_coord_tuple, node_attrs)					
 			##process the rest of the file
 			else:								
 				#grab the attributes for that node
-				node_attrs = node_row
+				node_attrs = node_row				
 				node_coord_tuple = None
 				
 				if node_attrs.has_key('view_id'):
@@ -2193,9 +2349,16 @@ class read:
 					del node_attrs['nodeid']
 				
 				#grab the node geometry
-				node_geom_wkt_raw = str(node_row['geom_text'])
+				if node_row.has_key('geom_text'):
+					node_geom_wkt_raw = str(node_row['geom_text'])
+				elif node_row.has_key('geom'):
+					node_geom_wkt_raw = str(node_row['geom'])
+				else:
+					raise Error('When reading a network back from csv files, the geometry of the nodes must be contained as WKT string representation e.g. srid=27700;POINT(0 0), in a column named either "geom_text" or "geom"')
+					
 				node_geom_srid = node_geom_wkt_raw[:node_geom_wkt_raw.find(';')]
-				node_geom_wkt = node_geom_wkt_raw[node_geom_wkt_raw.find(';')+1:]
+				node_geom_wkt = node_geom_wkt_raw[node_geom_wkt_raw.find(';')+1:len(node_geom_wkt_raw)]	
+												
 				#create an OGR Point geometry from
 				node_geom = ogr.CreateGeometryFromWkt(node_geom_wkt)
 				
@@ -2223,6 +2386,20 @@ class read:
 				if 'geom' in node_attrs: 
 					del node_attrs['geom']
 				
+				#assign correct data types to node attributes 
+				for column in node_attrs:						
+					if node_data_types.has_key(column):
+						
+						if node_attrs[column] not in disallowed_values:
+							if node_data_types[column] == str:							
+								node_attrs[column] = str(node_attrs[column])
+							
+							if node_data_types[column] == int:							
+								node_attrs[column] = int(node_attrs[column])
+							
+							if node_data_types[column] == float:
+								node_attrs[column] = float(node_attrs[column])
+				
 				#add the node to the network, with attributes
 				net.add_node(node_coord_tuple, node_attrs)
 		
@@ -2234,7 +2411,7 @@ class read:
 			temp_edgeid_uuid_lookup = {}
 		
 			for temp_edge_row in temp_edge_csv_reader:
-				temp_edgeid_uuid_lookup[temp_edge_row['EdgeID']] = temp_edge_row['uuid']
+				temp_edgeid_uuid_lookup[int(temp_edge_row['EdgeID'])] = temp_edge_row['uuid']
 			#start again
 			temp_edge_csv_file.close()
 			del temp_edge_csv_reader
@@ -2268,15 +2445,21 @@ class read:
 					break;
 				else:
 					#grab the geomid
-					edge_geometry_geom_id = edge_geometry_row['GeomID']
+					edge_geometry_geom_id = int(edge_geometry_row['GeomID'])
 					
 					#grab the edge_geometry attributes
 					edge_geometry_attrs = edge_geometry_row
 					
-					#grab the node geometry
-					edge_geometry_wkt_raw = edge_geometry_row['geom_text']
-					edge_geometry_srid = edge_geometry_wkt_raw[:edge_geometry_wkt_raw.find(';')]
-					edge_geometry_wkt = edge_geometry_wkt_raw[edge_geometry_wkt_raw.find(';')+1:]
+					#grab the edge geometry					
+					if edge_geometry_attrs.has_key('geom_text'):
+						edge_geometry_wkt_raw = edge_geometry_attrs['geom_text']
+					elif edge_geometry_attrs.has_key('geom'):
+						edge_geometry_wkt_raw = edge_geometry_attrs['geom']
+					else:
+						raise Error('When reading a network back from csv files, the geometry of the edges must be contained as WKT string representation e.g. srid=27700;LINESTRING(0 0), in a column named either "geom_text" or "geom"')
+										
+					edge_geometry_srid = edge_geometry_wkt_raw[1:edge_geometry_wkt_raw.find(';')]
+					edge_geometry_wkt = edge_geometry_wkt_raw[edge_geometry_wkt_raw.find(';')+1:len(edge_geometry_wkt_raw)-2]
 					
 					#if not empty geom
 					if edge_geometry_wkt.find('EMPTY') == -1:
@@ -2304,29 +2487,37 @@ class read:
 						
 						#NEW
 						if 'geom' in edge_geometry_attrs:
-							del edge_geometry_attrs['geom']
-						
+							del edge_geometry_attrs['geom']												
+
 						if multigraph:													
 							uuid = temp_edgeid_uuid_lookup[edge_geometry_attrs['GeomID']]							
 							net.add_edge(node_from_geom_coord_tuple, node_to_geom_coord_tuple, uuid, edge_geometry_attrs)
 						else:						
 							#add the edge with the attributes from edge_geometry csv file
 							net.add_edge(node_from_geom_coord_tuple, node_to_geom_coord_tuple, edge_geometry_attrs)
-										
+						
 						coords[edge_geometry_geom_id] = [node_from_geom_coord_tuple, node_to_geom_coord_tuple]
+					else:
+						raise Error('An empty geometry within the edge geometry csv input file has been found. Please ensure that no empty geometries are supplied to this function.')
 			#process the rest of the file
 			else:
 			   
 				#grab the geomid
-				edge_geometry_geom_id = edge_geometry_row['GeomID']
+				edge_geometry_geom_id = int(edge_geometry_row['GeomID'])
 				
 				#grab the edge_geometry attributes
 				edge_geometry_attrs = edge_geometry_row
 				
-				#grab the node geometry
-				edge_geometry_wkt_raw = edge_geometry_row['geom_text']				
-				edge_geometry_srid = edge_geometry_wkt_raw[:edge_geometry_wkt_raw.find(';')]
-				edge_geometry_wkt = edge_geometry_wkt_raw[edge_geometry_wkt_raw.find(';')+1:]
+				#grab the edge geometry
+				if edge_geometry_attrs.has_key('geom_text'):
+					edge_geometry_wkt_raw = edge_geometry_attrs['geom_text']
+				elif edge_geometry_attrs.has_key('geom'):
+					edge_geometry_wkt_raw = edge_geometry_attrs['geom']
+				else:
+					raise Error('When reading a network back from csv files, the geometry of the edges must be contained as WKT string representation e.g. srid=27700;LINESTRING(0 0), in a column named either "geom_text" or "geom"')
+				
+				edge_geometry_srid = edge_geometry_wkt_raw[1:edge_geometry_wkt_raw.find(';')]
+				edge_geometry_wkt = edge_geometry_wkt_raw[edge_geometry_wkt_raw.find(';')+1:len(edge_geometry_wkt_raw)-2]
 				
 				#if not empty geom
 				if edge_geometry_wkt.find('EMPTY') == -1:
@@ -2362,9 +2553,11 @@ class read:
 					else:
 						#add the edge with the attributes from edge_geometry csv file
 						net.add_edge(node_from_geom_coord_tuple, node_to_geom_coord_tuple, edge_geometry_attrs)
-									
+					
 					coords[edge_geometry_geom_id] = [node_from_geom_coord_tuple, node_to_geom_coord_tuple]
-		
+				else:
+					raise Error('An empty geometry within the edge geometry csv input file has been found. Please ensure that no empty geometries are supplied to this function.')
+				
 		#close the edge geometry csv file
 		edge_geometry_csv_file.close()		
 		del edge_geometry_csv_file
@@ -2373,7 +2566,7 @@ class read:
 		edge_first_line = True
 		missing_edge_fieldname = False   
 		edge_first_line_contents = []
-		
+				
 		#if edges have been added using the coordinates as the identifier
 		if ((len(coords) > 0) or (len(net.edges()) > 0)):			
 			#loop rows in the edge table
@@ -2392,7 +2585,7 @@ class read:
 						break;
 					else:
 						#grab the edge_geomid
-						edge_geom_id = edge_row['Edge_GeomID']					
+						edge_geom_id = int(edge_row['Edge_GeomID'])
 						#grab the attributes for that edge
 						edge_attrs = edge_row
 
@@ -2412,16 +2605,37 @@ class read:
 						
 						new_edge_attributes = dict(current_matched_edge_attributes, **edge_attrs)
 						
+						#assign correct data types to edge attributes 
+						for column in new_edge_attributes:						
+							if edge_data_types.has_key(column):								
+								if new_edge_attributes[column] not in disallowed_values:
+						
+									if edge_data_types[column] == str:
+										new_edge_attributes[column] = str(new_edge_attributes[column])
+									
+									if edge_data_types[column] == int:
+										new_edge_attributes[column] = int(new_edge_attributes[column])
+									
+									if edge_data_types[column] == float:
+										new_edge_attributes[column] = float(new_edge_attributes[column])						
+						
 						if multigraph:							
 							uuid = temp_edgeid_uuid_lookup[edge_geom_id]
-							net[matched_edge_tuples[0]][matched_edge_tuples[1]][uuid] = new_edge_attributes
+							
+							###NEW
+							net.remove_edge(matched_edge_tuples[0], matched_edge_tuples[1], uuid)
+							net.add_edge(matched_edge_tuples[0], matched_edge_tuples[1], uuid, new_edge_attributes)
+							
 						else:
-							net[matched_edge_tuples[0]][matched_edge_tuples[1]] = new_edge_attributes
-						
+							
+							###NEW
+							net.remove_edge(matched_edge_tuples[0], matched_edge_tuples[1])
+							net.add_edge(matched_edge_tuples[0], matched_edge_tuples[1], new_edge_attributes)
+												
 				#process the rest of the file
 				else:									
 					#grab the edge_geomid
-					edge_geom_id = edge_row['Edge_GeomID']					
+					edge_geom_id = int(edge_row['Edge_GeomID'])
 					#grab the attributes for that edge
 					edge_attrs = edge_row
 
@@ -2432,7 +2646,7 @@ class read:
 						del edge_attrs['geomid']	
 					
 					matched_edge_tuples = coords[edge_geom_id]
-
+					
 					if not multigraph:					
 						current_matched_edge_attributes = net[matched_edge_tuples[0]][matched_edge_tuples[1]]						
 					else:
@@ -2441,11 +2655,31 @@ class read:
 					
 					new_edge_attributes = dict(current_matched_edge_attributes, **edge_attrs)		
 					
+					#assign correct data types to edge attributes 
+					for column in new_edge_attributes:						
+						if edge_data_types.has_key(column):							
+							if new_edge_attributes[column] not in disallowed_values:								
+								if edge_data_types[column] == str:
+									new_edge_attributes[column] = str(new_edge_attributes[column])
+								
+								if edge_data_types[column] == int:
+									new_edge_attributes[column] = int(new_edge_attributes[column])
+								
+								if edge_data_types[column] == float:
+									new_edge_attributes[column] = float(new_edge_attributes[column])
+					
 					if multigraph:								
-						uuid = temp_edgeid_uuid_lookup[edge_geom_id]						
-						net[matched_edge_tuples[0]][matched_edge_tuples[1]][uuid] = new_edge_attributes
-					else:
-						net[matched_edge_tuples[0]][matched_edge_tuples[1]] = new_edge_attributes 
+						uuid = temp_edgeid_uuid_lookup[edge_geom_id]
+						
+						###NEW
+						net.remove_edge(matched_edge_tuples[0], matched_edge_tuples[1], uuid)
+						net.add_edge(matched_edge_tuples[0], matched_edge_tuples[1], uuid, new_edge_attributes)
+						
+					else:						
+						
+						###NEW
+						net.remove_edge(matched_edge_tuples[0], matched_edge_tuples[1])
+						net.add_edge(matched_edge_tuples[0], matched_edge_tuples[1], new_edge_attributes)
 					
 		#no edges have been added because the edge geometries supplied are all blank edges
 		else:
@@ -2475,6 +2709,19 @@ class read:
 						node_f_id = edge_attrs['Node_F_ID']
 						node_t_id = edge_attrs['Node_T_ID']		
 						
+						#assign correct data types for edge attributes
+						for column in edge_attrs:						
+							if edge_data_types.has_key(column):
+								if edge_attrs[column] not in disallowed_values:								
+									if edge_data_types[column] == str:
+										edge_attrs[column] = str(edge_attrs[column])
+									
+									if edge_data_types[column] == int:
+										edge_attrs[column] = int(edge_attrs[column])
+									
+									if edge_data_types[column] == float:
+										edge_attrs[column] = float(edge_attrs[column])
+						
 						if multigraph:							
 							uuid = edge_attrs['uuid']
 							net.add_edge(node_f_id, node_t_id, uuid, edge_attrs)
@@ -2492,6 +2739,19 @@ class read:
 					
 					node_f_id = edge_attrs['Node_F_ID']
 					node_t_id = edge_attrs['Node_T_ID']	
+					
+					#assign correct data types for edge attributes
+					for column in edge_attrs:						
+						if edge_data_types.has_key(column):
+							if edge_attrs[column] not in disallowed_values:
+								if edge_data_types[column] == str:
+									edge_attrs[column] = str(edge_attrs[column])
+								
+								if edge_data_types[column] == int:
+									edge_attrs[column] = int(edge_attrs[column])
+								
+								if edge_data_types[column] == float:
+									edge_attrs[column] = float(edge_attrs[column])
 					
 					if multigraph:						
 						uuid = edge_attrs['uuid']
@@ -2608,13 +2868,9 @@ class write:
 		
 		attrs = {}		
 		OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
-		for key, data in g_obj.iteritems():			
-			##ORIG			
+		for key, data in g_obj.iteritems():						
 			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'NodeID' and key != 'nodeid' and key != 'EdgeID' and key != 'edgeid' and key != 'viewid' and key != 'view_id' and key != 'ViewID' and key != 'View_ID' and key != 'GeomID' and key != 'geomid' and key != 'geom' and key != 'geom_text'):
 			
-			##NEW
-			#if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'NodeID' and key != 'nodeid' and key != 'EdgeID' and key != 'edgeid' and key != 'viewid' and key != 'view_id' and key != 'ViewID' and key != 'View_ID' and key != 'GeomID' and key != 'geomid' and key != 'geom' and key != 'GraphID' and key != 'Node_F_ID' and key != 'Node_T_ID' and key != 'Edge_GeomID'):
-				
 				# Add new attributes for each feature
 				if key not in fields:
 					if type(data) in OGRTypes:
@@ -2953,11 +3209,7 @@ class write:
 		'''
 		attrs = {}		
 		OGRTypes = {int:ogr.OFTInteger, str:ogr.OFTString, float:ogr.OFTReal}
-		for key, data in g_obj.iteritems():						
-			##ORIG
-			#if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName'):
-			# Reject data not for attribute table 
-			##NEW			
+		for key, data in g_obj.iteritems():										
 			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'nodeid' and key != 'edgeid' and key != 'viewid' and key != 'view_id' and key != 'geomid' and key != 'GeomID' and key != 'EdgeID' and key != 'NodeID' and key != 'geom_text'):
 				if key not in fields:
 					if type(data) in OGRTypes:
@@ -3053,13 +3305,7 @@ class write:
 		#define the node fields
 		for key, data in node_data:			
 			if len(data) > 0:
-				for datakey, data_ in data.iteritems():	
-					
-					#ORIG
-					#node_table_fieldnames.append(datakey)
-					#node_table_specific_fieldnames.append(datakey)
-					
-					#NEW
+				for datakey, data_ in data.iteritems():						
 					if ((datakey != 'NodeID') and (datakey != 'geom') and (datakey != 'GraphID') and (datakey != 'Wkt') and (datakey != 'Wkb') and (datakey != 'Json') and (datakey != 'geom_text')):
 						#NEW
 						node_table_fieldnames.append(datakey)
@@ -3075,11 +3321,7 @@ class write:
 		edge_table_fieldnames.append('EdgeID')
 		
 		#define the edge table fields
-		for key in edge_data[2].keys():
-			#ORIG
-			#if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName'): 				
-			#NEW
-			
+		for key in edge_data[2].keys():			
 			if (key != 'Json' and key != 'Wkt' and key != 'Wkb' and key != 'ShpName' and key != 'Node_F_ID' and key != 'Node_T_ID' and key != 'GraphID' and key != 'Edge_GeomID' and key != 'GeomID' and key != 'EdgeID' and key != 'geom' and key != 'geom_text'):
 				edge_table_fieldnames.append(key)
 				edge_table_specific_fieldnames.append(key)
@@ -3146,7 +3388,7 @@ class write:
 			#do we need to do this slightly differently for a directed multigraph?
 			
 			#get the data for the current edge in the network
-			#ORIGINAL			
+				
 			if not multigraph:
 				data = G.get_edge_data(*e)
 			else:
@@ -3254,12 +3496,7 @@ class write:
 						if (G.node[e[1]].has_key(node_table_specific_key)):
 							if ((node_table_specific_key != 'Json') and (node_table_specific_key != 'Wkt') and (node_table_specific_key != 'Wkb') and (node_table_specific_key != 'ShpName') and (node_table_specific_key != 'nodeid') and (node_table_specific_key != 'viewid') and (node_table_specific_key != 'GraphID') and (node_table_specific_key != 'NodeID') and (node_table_specific_key != 'geom_text')):
 								node_to_attrs.append(G.node[e[1]][node_table_specific_key])
-						
-					#ORIG
-					#assign attributes related to the node to
-					#for key, node_to_data in G.node[e[1]].iteritems():								
-						#if ((key != 'Json') and (key != 'Wkt') and (key != 'Wkb') and (key != 'ShpName') and (key != 'nodeid') and (key != 'viewid') and (key != 'GraphID') and (key != 'NodeID')):								
-							#node_to_attrs.append(node_to_data)
+					
 				#if there are no attributes, just fill up the array with empty values
 				else:
 					for item in node_table_specific_fieldnames:						
