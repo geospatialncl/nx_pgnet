@@ -354,7 +354,7 @@ import re
 import json
 
 #new
-from geoserver.catalog import Catalog
+#from geoserver.catalog import Catalog
 
 # Ask ogr to use Python exceptions rather than stderr messages.
 ogr.UseExceptions()
@@ -820,7 +820,7 @@ class import_graph:
 		path - string - path to GEXF file on disk
 		graphname - string - name of graph to assign once created
 		node_type - python type - denotes the Python-type that any string-based attributes will be converted to e.g. (int, float, long, str)
-		relabel - boolean - if true relabel the nodes to use the GEXF node “label” attribute instead of the node “id” attribute as the NetworkX node label.
+		relabel - boolean - if true relabel the nodes to use the GEXF node Â“labelÂ” attribute instead of the node Â“idÂ” attribute as the NetworkX node label.
 		
 		'''
 		
@@ -2068,7 +2068,7 @@ class read:
 			# Read node attrs.
 			flddata = self.getfieldinfo(lyr, feat, flds)
 			attributes = dict(zip(flds, flddata))
-			
+
 			#delete view_id from previous view
 			if attributes.has_key('view_id'):
 				del attributes['view_id']
@@ -2081,6 +2081,7 @@ class read:
 			attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
 			attributes["Json"] = ogr.Geometry.ExportToJson(geom)
 			
+
 			graph.add_node((attributes['NodeID']), attributes)
 			feat = lyr.GetNextFeature()
 		
@@ -2893,7 +2894,7 @@ class write:
 		
 		'''
 		#add a graph record based on the prefix (graph / network name)
-		result = nisql(self.conn).add_graph_record(self.prefix)		
+		result = nisql(self.conn).add_graph_record(self.prefix)	
 		sql = ('SELECT "GraphID" FROM "Graphs" ORDER BY "GraphID" DESC LIMIT 1;')
 		GraphID = None
 		for row in self.conn.ExecuteSQL(sql):
@@ -2940,6 +2941,9 @@ class write:
 		edge_geom - OGR geometry - geometry of node to write to database
 		
 		'''
+		print ''
+		print 'In pgnet edges'
+		print edge_attributes
 		
 		#get the edge wkt		
 		edge_wkt = edge_geom.ExportToWkt()
@@ -2963,16 +2967,33 @@ class write:
 		# Append the GeomID to the edges attributes	
 		edge_attributes['Edge_GeomID'] = GeomID
 		
+		'''
+		this is the original way but I think something is going wrong when doing this
 		#Attributes to edges table
 		##for field, data in edge_attributes.iteritems():
-		for field, data in edge_attributes.items():			
+		for field, data in edge_attributes.items():	
 			if type(data) == unicode:
 				data = data.encode('utf-8')
 				
 			featedge.SetField(field, data)
-
 		self.lyredges.CreateFeature(featedge)
-	
+		'''
+		
+		#second method
+		field_list = ''
+		data_list = ''
+		for field, data in edge_attributes.items():
+			
+			field_list += '"%s",' %field
+			if type(data) == int or type(data) == float:
+				data_list += '%s,' %data
+			else:
+				data_list += "'%s'," %data
+		
+		sql = 'INSERT INTO "%s" (%s) VALUES (%s)' %(self.tbledges,field_list[:-1],data_list[:-1])
+		
+		self.conn.ExecuteSQL(sql)
+			
 	def pgnet_node_empty_geometry(self, node_attribute_equality_key, node_attributes, node_geom):
 		'''Write a node to a Node table, where no Node geometry exists
 			
@@ -3033,7 +3054,8 @@ class write:
 			sql = ('SELECT "NodeID" FROM "%s" ORDER BY "NodeID" DESC LIMIT 1;' % self.tblnodes)
 			
 			for row in self.conn.ExecuteSQL(sql):
-				NodeID = row.NodeID		
+				NodeID = row.NodeID	
+		print 'Added node %s to note table' %NodeID
 		return NodeID
 	
 	def pgnet(self, network, tablename_prefix, srs=27700, overwrite=False, directed = False, multigraph = False, node_equality_key='geom', edge_equality_key='geom'):
@@ -3082,7 +3104,7 @@ class write:
 		#grab graph / network id from database
 		graph_id = self.update_graph_table()		
 		if graph_id == None:
-			raise Error('Could not load network from Graphs table.')
+	     		raise Error('Could not load network from Graphs table.')
 		
 		self.lyredges = self.getlayer(self.tbledges)
 		self.lyrnodes = self.getlayer(self.tblnodes)		
@@ -3120,7 +3142,9 @@ class write:
 				
 				#write the geometry to the database, and return the id
 				node_f_id = self.pgnet_node_empty_geometry(node_equality_key, node_attrs, node_geom)						
-				
+			
+			print 'node_f_id is:', node_f_id
+			
 			#set edge from id	
 			G[e[0]][e[1]]['Node_F_ID'] = node_f_id
 			
@@ -3152,7 +3176,8 @@ class write:
 				
 				#write the geometry to the database, and return the id
 				node_t_id = self.pgnet_node_empty_geometry(node_equality_key, node_attrs, node_geom)
-			
+			print 'node_f_id is:', node_f_id
+
 			#set edge to id
 			G[e[0]][e[1]]['Node_T_ID'] = node_t_id
 			
@@ -3172,17 +3197,22 @@ class write:
 			if edge_attrs.has_key('geomid'):
 				del edge_attrs['geomid']
 			
+			print 'node_f_id is:', node_f_id
+
 			#NEW
 			if edge_attrs.has_key('Node_F_ID'):
 				edge_attrs['Node_F_ID'] = node_f_id
 			if edge_attrs.has_key('Node_T_ID'):
 				edge_attrs['Node_T_ID'] = node_t_id
-			
+			print node_t_id
+			print node_f_id
+              
 			if srs != -1:		
 				
 				#define the edge geometry
 				edge_geom = self.netgeometry(e, data)	  
-
+				print edge_geom
+				print edge_attrs
 				#add the edge and attributes to the database
 				self.pgnet_edge(edge_attrs, edge_geom)
 				
