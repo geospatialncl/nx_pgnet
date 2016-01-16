@@ -1989,12 +1989,21 @@ class read:
 		graph - networkx graph/network
 		
 		'''
-
+		import psycopg2
+		from psycopg2.extras import DictCursor
+		host = 'localhost'
+		database = 'infrastructure'
+		user = 'postgres'
+		password = 'aaSD2011'
+		port = '5433'
+		dbconn = ("host= '%s' dbname = '%s' user = '%s' password = '%s' port = '%s'" %(host,database,user,password,port))
+		db_conn = psycopg2.connect(dbconn)
+		
 		#how do we go about setting the spatial filter to NULL for non-spatial tables
 		
 		# Join Edges and Edge_Geom
 		edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
-		
+		print(edge_tbl_view)
 		# Get lyr by name
 		lyr = self.conn.GetLayerByName(edge_tbl_view)
 		#reset to read from start of edge view
@@ -2006,11 +2015,13 @@ class read:
 		# Get fields
 		flds = [x.GetName() for x in lyr.schema]
 		# Loop features
+		i = 0
+		j = 0
 		while feat is not None:
 			# Read edge attrs.
-			
 			flddata = self.getfieldinfo(lyr, feat, flds)
 			attributes = dict(zip(flds, flddata))
+			
 			#delete view_id from previous view
 			if attributes.has_key('view_id'):
 				del attributes['view_id']
@@ -2033,16 +2044,38 @@ class read:
 					attributes["Wkb"] = ogr.Geometry.ExportToWkb(geom)
 					attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
 					attributes["Json"] = ogr.Geometry.ExportToJson(geom)
-				
+					
+					geomid = attributes['Edge_GeomID']
+					cur = db_conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+					cur.execute('SELECT * FROM "iuk_ngnet_eg_View_Edges_Edge_Geometry" WHERE "GeomID" = %s' %geomid)
+					atts = {}
+					for row in cur.fetchall():
+						for key in row.keys():
+							#print key,':',row[key]
+							atts[key]=row[key]
+							
+					#res = self.conn.ExecuteSQL('SELECT * FROM #"iuk_ngnet_eg_View_Edges_Edge_Geometry" WHERE "GeomID" = %s' %i)
+					#print('reults from view table')
+					#for row in res:
+					#	for key in row.keys():
+					#		print key,':',row[key]
+					#	exit()
+						
 					if (isinstance(graph, nx.classes.multigraph.MultiGraph) or isinstance(graph, nx.classes.multidigraph.MultiDiGraph)):
 						#unique key expected or multigraphs (always labelled uuid)
 						uuid = attributes['uuid']
 						graph.add_edge(attributes['Node_F_ID'], attributes['Node_T_ID'], uuid, attributes)
 					else:
 						graph.add_edge(attributes['Node_F_ID'], attributes['Node_T_ID'], attributes)
-					
+						graph.add_edge(atts['Node_F_ID'],atts['Node_T_ID'],atts)
+						#print 'Added edge:',atts['Node_F_ID'],':',atts['Node_T_ID']
+						j += 1
+			i+=1
+			#if i == 10:
+			#	exit()
 			feat = lyr.GetNextFeature() 
-
+		print 'i:',i
+		print 'j:',j
 	def pgnet_nodes(self, graph):
 		'''Reads nodes from node table and add to graph.
 		
@@ -2133,7 +2166,8 @@ class read:
 		for key, value in graph_attrs.iteritems():			
 			G.graph[key] = value
 		
-		self.pgnet_edges(G)							
+		self.pgnet_edges(G)
+		print 'Number of edges here1:',G.number_of_edges()
 		self.pgnet_nodes(G)
 	
 		return G
@@ -2941,9 +2975,6 @@ class write:
 		edge_geom - OGR geometry - geometry of node to write to database
 		
 		'''
-		print ''
-		print 'In pgnet edges'
-		print edge_attributes
 		
 		#get the edge wkt		
 		edge_wkt = edge_geom.ExportToWkt()
@@ -2954,16 +2985,29 @@ class write:
 		
 		# Test for geometry existance	   
 		GeomID = nisql(self.conn).edge_geometry_equality_check(self.prefix, edge_wkt, self.srs)
-
-		if GeomID == None: # Need to create new geometry:			
-			featedge_geom.SetGeometry(edge_geom)			
-			self.lyredge_geom.CreateFeature(featedge_geom)
+		
+		if GeomID == None: 
+			# Need to create new geometry
+			featedge_geom.SetGeometry(edge_geom)	
+			
+            #create geometry
+			wkt_edge = ogr.CreateGeometryFromWkt(str(edge_geom))
+			
+            # adds geom to edge geom table
+			sql = ('''INSERT INTO "%s" (geom) VALUES (ST_GeomFromText('%s',%s))''' %(self.tbledge_geom,wkt_edge,self.srs))
+			self.conn.ExecuteSQL(sql)
+			
+			#this is the step which it has previously been failing at
+               #above resolve this error
+			#self.lyredge_geom.CreateFeature(featedge_geom)
+			
+			
 			#Get created edge_geom primary key (GeomID)
 			sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;' % self.tbledge_geom)
 			
 			for row in self.conn.ExecuteSQL(sql):			
 				GeomID = row.GeomID			
-				 
+		
 		# Append the GeomID to the edges attributes	
 		edge_attributes['Edge_GeomID'] = GeomID
 		
@@ -2980,6 +3024,7 @@ class write:
 		'''
 		
 		#second method
+		
 		field_list = ''
 		data_list = ''
 		for field, data in edge_attributes.items():
@@ -3042,20 +3087,22 @@ class write:
 		if NodeID == None: # Need to create new geometry:
 			featnode = ogr.Feature(self.lyrnodes_def)
 			featnode.SetGeometry(node_geom)
-		
+			#print('Getting node attribute data')
 			for field, data in node_attributes.iteritems():				
 				#added to handle when reading back in from graphml or similar				
 				if type(data) == unicode:
 					data = data.encode('utf-8')
 				
 				featnode.SetField(field, data)
-			
+			#print('Creating feature')
 			self.lyrnodes.CreateFeature(featnode)
 			sql = ('SELECT "NodeID" FROM "%s" ORDER BY "NodeID" DESC LIMIT 1;' % self.tblnodes)
-			
+			#print('Getting node ID')
 			for row in self.conn.ExecuteSQL(sql):
 				NodeID = row.NodeID	
-		print 'Added node %s to note table' %NodeID
+			#print('Got node id')
+		#print('Added node %s to node table' %NodeID)
+		#print('Returning to pgnet function')
 		return NodeID
 	
 	def pgnet(self, network, tablename_prefix, srs=27700, overwrite=False, directed = False, multigraph = False, node_equality_key='geom', edge_equality_key='geom'):
@@ -3130,20 +3177,23 @@ class write:
 				del node_attrs['view_id']
 			if node_attrs.has_key('nodeid'):
 				del node_attrs['nodeid']
-			
+			#print('Going into if statement')
 			if srs != -1:
 				#grab the node geometry
 				node_geom = self.netgeometry(e[0], G.node[e[0]])							
 				#write the geometry to the database, and return the id
+				#print('Writing node to db')
 				node_f_id = self.pgnet_node(node_attrs, node_geom)
-				
+				#print('Written node.')
+				#print(node_f_id)
 			else:				
 				node_geom = self.netgeometry(e[0], {'Wkt':'POINT EMPTY'})
 				
 				#write the geometry to the database, and return the id
+				#print('Writing node to db with method 2')
 				node_f_id = self.pgnet_node_empty_geometry(node_equality_key, node_attrs, node_geom)						
 			
-			print 'node_f_id is:', node_f_id
+			print('Finsihed if statement')
 			
 			#set edge from id	
 			G[e[0]][e[1]]['Node_F_ID'] = node_f_id
@@ -3154,16 +3204,18 @@ class write:
 			#if node_attrs.has_key('NodeID'): # NEW
 			node_attrs['NodeID'] = node_f_id
 			
+			print('inserting end node')
 			# Insert the end node			
 			node_attrs = self.create_attribute_map(self.lyrnodes, G.node[e[1]], node_fields)			
 			node_attrs['GraphID'] = graph_id
+			
 			
 			#delete view_id and nodeid if exist as attributes of node
 			if node_attrs.has_key('view_id'):				
 				del node_attrs['view_id']			
 			if node_attrs.has_key('nodeid'):
 				del node_attrs['nodeid']
-				
+			print('Inserting second node of edge')
 			if srs != -1:			
 				#grab the node geometry
 				node_geom = self.netgeometry(e[1], G.node[e[1]])
@@ -3176,8 +3228,8 @@ class write:
 				
 				#write the geometry to the database, and return the id
 				node_t_id = self.pgnet_node_empty_geometry(node_equality_key, node_attrs, node_geom)
-			print 'node_f_id is:', node_f_id
-
+			#print 'node_f_id is:', node_f_id
+			print('Inserted second node')
 			#set edge to id
 			G[e[0]][e[1]]['Node_T_ID'] = node_t_id
 			
@@ -3197,34 +3249,35 @@ class write:
 			if edge_attrs.has_key('geomid'):
 				del edge_attrs['geomid']
 			
-			print 'node_f_id is:', node_f_id
+			#print 'node_f_id is:', node_f_id
 
 			#NEW
 			if edge_attrs.has_key('Node_F_ID'):
 				edge_attrs['Node_F_ID'] = node_f_id
 			if edge_attrs.has_key('Node_T_ID'):
 				edge_attrs['Node_T_ID'] = node_t_id
-			print node_t_id
-			print node_f_id
-              
+			#print node_t_id
+			#print node_f_id
+             
 			if srs != -1:		
 				
 				#define the edge geometry
 				edge_geom = self.netgeometry(e, data)	  
-				print edge_geom
-				print edge_attrs
+				#print edge_geom
+				#print edge_attrs
 				#add the edge and attributes to the database
+				print('Adding edge to db now')
 				self.pgnet_edge(edge_attrs, edge_geom)
-				
+				print('Added edge')
 			else:				
 				edge_geom = self.netgeometry(e, {'Wkt':'LINESTRING EMPTY'})
 				
 				#add the edge and attributes to the database
 				self.pgnet_edge_empty_geometry(edge_equality_key, edge_attrs, edge_geom)
-		
+		print('Creating node view')
 		#execute create node view
 		nisql(self.conn).create_node_view(self.prefix)			
-		
+		print('Creating edge view')
 		#execute create edge view
 		nisql(self.conn).create_edge_view(self.prefix)
 	
