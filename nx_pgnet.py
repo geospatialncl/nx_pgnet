@@ -2966,10 +2966,12 @@ class write:
 		edge_geom - OGR geometry - geometry of node to write to database
 
 		'''
-
+		#convert linestrings to multiline strings
+		if edge_geom.ExportToWkt()[:10] == 'LINESTRING':
+			edge_geom = ogr.ForceToMultiLineString(edge_geom)
 		#get the edge wkt
 		edge_wkt = edge_geom.ExportToWkt()
-
+		
 		# Get table definitions
 		featedge = ogr.Feature(self.lyredges.GetLayerDefn())
 		featedge_geom = ogr.Feature(self.lyredge_geom.GetLayerDefn())
@@ -2980,14 +2982,15 @@ class write:
 		if GeomID == None:
 			# Need to create new geometry
 			featedge_geom.SetGeometry(edge_geom)
+			
 			self.lyredge_geom.CreateFeature(featedge_geom)
-
+			
 			#Get created edge_geom primary key (GeomID)
 			sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;' % self.tbledge_geom)
-
+			
 			for row in self.conn.ExecuteSQL(sql):
 				GeomID = row.GeomID
-
+		
 		# Append the GeomID to the edges attributes
 		edge_attributes['Edge_GeomID'] = GeomID
 
@@ -3002,9 +3005,9 @@ class write:
 			featedge.SetField(field, data)
 		self.lyredges.CreateFeature(featedge)
 		'''
-
+		
 		#second method
-
+	
 		field_list = ''
 		data_list = ''
 		for field, data in list(edge_attributes.items()):
@@ -3117,7 +3120,7 @@ class write:
 		self.srs = srs
 
 		result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
-
+		
 		#check if network tables were created
 		if result == 0 or result == None:
 			if overwrite is True:
@@ -3142,7 +3145,7 @@ class write:
 		#define default field types for Node and Edge fields
 		node_fields = {'GraphID':ogr.OFTInteger}
 		edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
-
+		
 		for e in G.edges(data=True):
 			if not multigraph:
 				data = G.get_edge_data(*e)
@@ -3158,7 +3161,7 @@ class write:
 				del node_attrs['view_id']
 			if 'nodeid' in node_attrs:
 				del node_attrs['nodeid']
-
+			
 			if srs != -1:
 				#grab the node geometry
 				node_geom = self.netgeometry(e[0], G.node[e[0]])
@@ -3198,7 +3201,7 @@ class write:
 				del node_attrs['view_id']
 			if 'nodeid' in node_attrs:
 				del node_attrs['nodeid']
-
+			
 			if srs != -1:
 				#grab the node geometry
 				node_geom = self.netgeometry(e[1], G.node[e[1]])
@@ -3239,7 +3242,7 @@ class write:
 				edge_attrs['Node_T_ID'] = node_t_id
 			if 'GraphID' in edge_attrs:
 				edge_attrs['GraphID'] = self.graph_id
-
+			
 			if srs != -1:
 
 				#define the edge geometry
@@ -3252,7 +3255,6 @@ class write:
 
 				#add the edge and attributes to the database
 				self.pgnet_edge_empty_geometry(edge_equality_key, edge_attrs, edge_geom)
-
 
 		#execute create node view
 		nisql(self.conn).create_node_view(self.prefix)
