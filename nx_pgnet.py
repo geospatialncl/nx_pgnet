@@ -147,7 +147,7 @@ on localhost:
 
 	>>> import osgeo.ogr as ogr
 	>>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
-	>>>					password='password'")
+	>>>					password='password'",1)
 
 B{Examples}
 
@@ -161,7 +161,7 @@ Reading a network from PostGIS schema to a NetworkX graph instance:
 
 	>>> # Create a connection
 	>>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
-	>>>					password='password'")
+	>>>					password='password'",1)
 
 	>>> # Read a network
 	>>> # Note 'my_network' is the name of the network stored in the 'Graphs' table
@@ -173,7 +173,7 @@ Reading a network from CSV files and creating PostGIS network schema compatible 
 
 	>>> # Create a connection
 	>>> conn = ogr.Open("PG: host='127.0.0.1' dbname='database' user='postgres'
-	>>>					password='password'")
+	>>>					password='password'",1)
 
 	>>> # Read a network from csv files
 	>>> a_network = nx_pgnet.read(conn).pgnet_via_csv('A_Network', 'C://Temp//A_Network_Nodes.csv', 'C://Temp//A_Network_Nodes.csv', 'C://Temp//A_Network_Edge_Geometry.csv', False, False)
@@ -2966,9 +2966,10 @@ class write:
 		edge_geom - OGR geometry - geometry of node to write to database
 
 		'''
+		#may need to check the type of geom field in the layer is the same as the data
 		#convert linestrings to multiline strings
-		if edge_geom.ExportToWkt()[:10] == 'LINESTRING':
-			edge_geom = ogr.ForceToMultiLineString(edge_geom)
+		'''if edge_geom.ExportToWkt()[:10] == 'LINESTRING':
+			edge_geom = ogr.ForceToMultiLineString(edge_geom)'''
 		#get the edge wkt
 		edge_wkt = edge_geom.ExportToWkt()
 		
