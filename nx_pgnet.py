@@ -422,7 +422,7 @@ class nisql:
 
 		# Create network tables
 		sql = ("SELECT * FROM ni_create_network_tables ('%s', %i, CAST(%i AS BOOLEAN), CAST(%i AS BOOLEAN));" % (prefix, epsg, directed, multigraph))
-
+		
 		result = None
 		for row in self.conn.ExecuteSQL(sql):
 
@@ -627,6 +627,7 @@ class nisql:
 		result = None
 		for row in self.conn.ExecuteSQL(sql):
 			result = row.ni_delete_network
+
 		return result
 
 	def graph_to_csv(self, prefix, output_path):
@@ -1994,7 +1995,7 @@ class read:
 
 		# Join Edges and Edge_Geom
 		edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
-		#print(edge_tbl_view)
+		
 		# Get lyr by name
 		lyr = self.conn.GetLayerByName(edge_tbl_view)
 		#reset to read from start of edge view
@@ -2035,9 +2036,7 @@ class read:
 					attributes["Json"] = ogr.Geometry.ExportToJson(geom)
 
 					geomid = attributes['Edge_GeomID']
-
 					sql = ('SELECT * FROM "%s" WHERE "GeomID" = %s' %(self.prefix+'_View_Edges_Edge_Geometry',geomid))
-
 					atts = {}
 
 					for row in self.conn.ExecuteSQL(sql):
@@ -3121,12 +3120,14 @@ class write:
 		self.srs = srs
 
 		result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
-		
+
 		#check if network tables were created
 		if result == 0 or result == None:
 			if overwrite is True:
 				nisql(self.conn).delete_network(self.prefix)
 				result = nisql(self.conn).create_network_tables(self.prefix, self.srs, directed, multigraph)
+				if result == None:
+					raise Error('Could not create network tables in database.')
 			else:
 				raise Error('Network already exists.')
 
