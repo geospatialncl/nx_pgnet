@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="fd096cfa-b3f0-4f8b-8240-c1e687127cbc" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/nx_pgnet.py" afterPath="$PROJECT_DIR$/nx_pgnet.py" />
-    </list>
+    <list default="true" id="fd096cfa-b3f0-4f8b-8240-c1e687127cbc" name="Default" comment="" />
     <ignored path="nx_pgnet.iws" />
     <ignored path=".idea/workspace.xml" />
+    <ignored path=".idea/dataSources.local.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -160,7 +158,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="102" y="75" width="1046" height="849" extended-state="1" />
+    <frame x="102" y="75" width="1046" height="849" extended-state="0" />
     <editor active="false" />
     <layout>
       <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3184584" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
