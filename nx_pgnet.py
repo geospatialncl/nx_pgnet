@@ -2995,7 +2995,7 @@ class write:
 		edge_attributes['Edge_GeomID'] = GeomID
 
 		'''
-		this is the original way but I think something is going wrong when doing this
+		#this is the original way but I think something is going wrong when doing this
 		#Attributes to edges table
 		##for field, data in edge_attributes.iteritems():
 		for field, data in edge_attributes.items():
@@ -3005,36 +3005,29 @@ class write:
 			featedge.SetField(field, data)
 		self.lyredges.CreateFeature(featedge)
 		'''
-		
 		#second method
 	
 		field_list = ''
 		data_list = ''
 		for field, data in list(edge_attributes.items()):
 
-			field_list += '"%s",' %field
 			if type(data) == int or type(data) == float:
 				data_list += '%s,' %data
+				field_list += '"%s",' % field
+			elif data == None:
+				# empty data so don't try and insert into database
+				pass
 			else:
-				#print('Checking here')
 				data_list += "'%s'," % data.replace("'", "''")
-				'''
-				try:
-					if data.find("'") > -1:
-						print('Found an apostrophe')
-						data_list += "'%s'," % data.replace("'","''")
-					else:
-						data_list += "'%s'," % data
-				except:
-					data_list += "'%s'," % data
-				'''
+				field_list += '"%s",' % field
+
 		sql = '''INSERT INTO "%s" (%s) VALUES (%s)''' %(self.tbledges,field_list[:-1],data_list[:-1])
+
 		try:
 			self.conn.ExecuteSQL(sql)
 		except:
-			print(sql)
-			print(data_list)
-			self.conn.ExecuteSQL(sql)
+			raise Error('Could not insert data into database. SQL: %s' %sql)
+
 
 	def pgnet_node_empty_geometry(self, node_attribute_equality_key, node_attributes, node_geom):
 		'''Write a node to a Node table, where no Node geometry exists
