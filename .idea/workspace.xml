@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="fd096cfa-b3f0-4f8b-8240-c1e687127cbc" name="Default" comment="" />
+    <list default="true" id="fd096cfa-b3f0-4f8b-8240-c1e687127cbc" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/nx_pgnet.py" afterPath="$PROJECT_DIR$/nx_pgnet.py" />
+    </list>
     <ignored path="nx_pgnet.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path=".idea/dataSources.local.xml" />
@@ -25,38 +28,38 @@
       <file leaf-file-name="nx_pgnet.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/nx_pgnet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="346">
-              <caret line="2120" column="24" selection-start-line="2120" selection-start-column="24" selection-end-line="2120" selection-end-column="24" />
+            <state relative-caret-position="221">
+              <caret line="3011" column="22" selection-start-line="3011" selection-start-column="22" selection-end-line="3011" selection-end-column="22" />
               <folding>
-                <marker date="1467646028447" expanded="true" signature="6417:6514" ph="..." />
-                <marker date="1467646028447" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
-                <marker date="1467646028447" expanded="true" signature="15577:15668" ph="SELECT * FRO... ni_create_network_tables" />
-                <marker date="1467646028447" expanded="true" signature="16183:16222" ph="SELECT * FRO... ni_create_node_view" />
-                <marker date="1467646028447" expanded="true" signature="16735:16774" ph="SELECT * FRO... ni_create_edge_view" />
-                <marker date="1467646028447" expanded="true" signature="17512:17565" ph="SELECT * FRO... ni_add_graph_record" />
-                <marker date="1467646028447" expanded="true" signature="17647:17699" ph="SELECT * FRO... ni_add_graph_record" />
-                <marker date="1467646028447" expanded="true" signature="17781:17833" ph="SELECT * FRO... ni_add_graph_record" />
-                <marker date="1467646028447" expanded="true" signature="17914:17965" ph="SELECT * FRO... ni_add_graph_record" />
-                <marker date="1467646028447" expanded="true" signature="18510:18580" ph="SELECT * FRO... ni_node_snap_geometry_equality_check" />
-                <marker date="1467646028447" expanded="true" signature="19515:19585" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-                <marker date="1467646028447" expanded="true" signature="19776:19847" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-                <marker date="1467646028447" expanded="true" signature="20042:20111" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-                <marker date="1467646028447" expanded="true" signature="20303:20371" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-                <marker date="1467646028447" expanded="true" signature="20945:21006" ph="SELECT * FRO... ni_node_geometry_equality_check" />
-                <marker date="1467646028447" expanded="true" signature="21618:21688" ph="SELECT * FRO... ni_edge_snap_geometry_equality_check" />
-                <marker date="1467646028447" expanded="true" signature="22219:22280" ph="SELECT * FRO... ni_edge_geometry_equality_check" />
-                <marker date="1467646028447" expanded="true" signature="22675:22712" ph="SELECT * FRO... ni_delete_network" />
-                <marker date="1467646028447" expanded="true" signature="23167:23214" ph="SELECT * FRO... ni_graph_to_csv" />
-                <marker date="1467646028447" expanded="true" signature="23635:23696" ph="SELECT \&quot;Gra... Graphs" />
-                <marker date="1467646028447" expanded="true" signature="77844:77880" ph="SELECT * FRO... missing_value" />
-                <marker date="1467646028447" expanded="true" signature="80106:80155" ph="SELECT * FRO... Graphs" />
-                <marker date="1467646028447" expanded="true" signature="107106:107152" ph="SELECT * fro... pg_tables" />
-                <marker date="1467646028447" expanded="true" signature="110685:110747" ph="SELECT &quot;Grap... Graphs" />
-                <marker date="1467646028447" expanded="true" signature="111531:111587" ph="SELECT &quot;Geom... missing_value" />
-                <marker date="1467646028447" expanded="true" signature="113058:113114" ph="SELECT &quot;Geom... missing_value" />
-                <marker date="1467646028447" expanded="true" signature="113923:113956" ph="INSERT INTO &quot;missing_value&quot;... " />
-                <marker date="1467646028447" expanded="true" signature="115036:115092" ph="SELECT &quot;Node... missing_value" />
-                <marker date="1467646028447" expanded="true" signature="116148:116204" ph="SELECT &quot;Node... missing_value" />
+                <marker date="1467892460380" expanded="true" signature="6417:6514" ph="..." />
+                <marker date="1467892460380" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
+                <marker date="1467892460380" expanded="true" signature="15577:15668" ph="SELECT * FRO... ni_create_network_tables" />
+                <marker date="1467892460380" expanded="true" signature="16183:16222" ph="SELECT * FRO... ni_create_node_view" />
+                <marker date="1467892460380" expanded="true" signature="16735:16774" ph="SELECT * FRO... ni_create_edge_view" />
+                <marker date="1467892460380" expanded="true" signature="17512:17565" ph="SELECT * FRO... ni_add_graph_record" />
+                <marker date="1467892460380" expanded="true" signature="17647:17699" ph="SELECT * FRO... ni_add_graph_record" />
+                <marker date="1467892460380" expanded="true" signature="17781:17833" ph="SELECT * FRO... ni_add_graph_record" />
+                <marker date="1467892460380" expanded="true" signature="17914:17965" ph="SELECT * FRO... ni_add_graph_record" />
+                <marker date="1467892460380" expanded="true" signature="18510:18580" ph="SELECT * FRO... ni_node_snap_geometry_equality_check" />
+                <marker date="1467892460380" expanded="true" signature="19515:19585" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+                <marker date="1467892460380" expanded="true" signature="19776:19847" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+                <marker date="1467892460380" expanded="true" signature="20042:20111" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+                <marker date="1467892460380" expanded="true" signature="20303:20371" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+                <marker date="1467892460380" expanded="true" signature="20945:21006" ph="SELECT * FRO... ni_node_geometry_equality_check" />
+                <marker date="1467892460380" expanded="true" signature="21618:21688" ph="SELECT * FRO... ni_edge_snap_geometry_equality_check" />
+                <marker date="1467892460380" expanded="true" signature="22219:22280" ph="SELECT * FRO... ni_edge_geometry_equality_check" />
+                <marker date="1467892460380" expanded="true" signature="22675:22712" ph="SELECT * FRO... ni_delete_network" />
+                <marker date="1467892460380" expanded="true" signature="23167:23214" ph="SELECT * FRO... ni_graph_to_csv" />
+                <marker date="1467892460380" expanded="true" signature="23635:23696" ph="SELECT \&quot;Gra... Graphs" />
+                <marker date="1467892460380" expanded="true" signature="77844:77880" ph="SELECT * FRO... missing_value" />
+                <marker date="1467892460380" expanded="true" signature="80106:80155" ph="SELECT * FRO... Graphs" />
+                <marker date="1467892460380" expanded="true" signature="107106:107152" ph="SELECT * fro... pg_tables" />
+                <marker date="1467892460380" expanded="true" signature="110685:110747" ph="SELECT &quot;Grap... Graphs" />
+                <marker date="1467892460380" expanded="true" signature="111531:111587" ph="SELECT &quot;Geom... missing_value" />
+                <marker date="1467892460380" expanded="true" signature="113058:113114" ph="SELECT &quot;Geom... missing_value" />
+                <marker date="1467892460380" expanded="true" signature="114203:114236" ph="INSERT INTO &quot;missing_value&quot;... " />
+                <marker date="1467892460380" expanded="true" signature="115398:115454" ph="SELECT &quot;Node... missing_value" />
+                <marker date="1467892460380" expanded="true" signature="116510:116566" ph="SELECT &quot;Node... missing_value" />
               </folding>
             </state>
           </provider>
@@ -81,8 +84,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="102" />
-    <option name="y" value="75" />
+    <option name="x" value="143" />
+    <option name="y" value="84" />
     <option name="width" value="1046" />
     <option name="height" value="849" />
   </component>
@@ -112,7 +115,6 @@
     </navigator>
     <panes>
       <pane id="Scratches" />
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -133,13 +135,150 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="last_opened_file_path" value="$PROJECT_DIR$/nx_pgnet.py" />
-    <property name="settings.editor.selected.configurable" value="preferences.editor" />
+    <property name="settings.editor.selected.configurable" value="editor.preferences.appearance" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="nx_pgnet" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="Tox" factoryName="Tox">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="nx_pgnet" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Attests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="nx_pgnet" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Doctests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="nx_pgnet" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Nosetests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="nx_pgnet" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="PARAMS" value="" />
+      <option name="USE_PARAM" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Unittests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="nx_pgnet" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="PUREUNITTEST" value="true" />
+      <option name="PARAMS" value="" />
+      <option name="USE_PARAM" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="py.test">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="nx_pgnet" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="testToRun" value="" />
+      <option name="keywords" value="" />
+      <option name="params" value="" />
+      <option name="USE_PARAM" value="false" />
+      <option name="USE_KEYWORD" value="false" />
+      <method />
+    </configuration>
   </component>
   <component name="ShelveChangesManager" show_recycled="false">
     <option name="remove_strategy" value="false" />
@@ -158,27 +297,27 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="102" y="75" width="1046" height="849" extended-state="0" />
-    <editor active="false" />
+    <frame x="143" y="84" width="1046" height="849" extended-state="1" />
+    <editor active="true" />
     <layout>
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3184584" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21329366" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -202,35 +341,73 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <marker date="1467646028447" expanded="true" signature="6417:6514" ph="..." />
-            <marker date="1467646028447" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
-            <marker date="1467646028447" expanded="true" signature="15577:15668" ph="SELECT * FRO... ni_create_network_tables" />
-            <marker date="1467646028447" expanded="true" signature="16183:16222" ph="SELECT * FRO... ni_create_node_view" />
-            <marker date="1467646028447" expanded="true" signature="16735:16774" ph="SELECT * FRO... ni_create_edge_view" />
-            <marker date="1467646028447" expanded="true" signature="17512:17565" ph="SELECT * FRO... ni_add_graph_record" />
-            <marker date="1467646028447" expanded="true" signature="17647:17699" ph="SELECT * FRO... ni_add_graph_record" />
-            <marker date="1467646028447" expanded="true" signature="17781:17833" ph="SELECT * FRO... ni_add_graph_record" />
-            <marker date="1467646028447" expanded="true" signature="17914:17965" ph="SELECT * FRO... ni_add_graph_record" />
-            <marker date="1467646028447" expanded="true" signature="18510:18580" ph="SELECT * FRO... ni_node_snap_geometry_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="19515:19585" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="19776:19847" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="20042:20111" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="20303:20371" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="20945:21006" ph="SELECT * FRO... ni_node_geometry_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="21618:21688" ph="SELECT * FRO... ni_edge_snap_geometry_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="22219:22280" ph="SELECT * FRO... ni_edge_geometry_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="22675:22712" ph="SELECT * FRO... ni_delete_network" />
-            <marker date="1467646028447" expanded="true" signature="23167:23214" ph="SELECT * FRO... ni_graph_to_csv" />
-            <marker date="1467646028447" expanded="true" signature="23635:23696" ph="SELECT \&quot;Gra... Graphs" />
-            <marker date="1467646028447" expanded="true" signature="77844:77880" ph="SELECT * FRO... missing_value" />
-            <marker date="1467646028447" expanded="true" signature="80106:80155" ph="SELECT * FRO... Graphs" />
-            <marker date="1467646028447" expanded="true" signature="107106:107152" ph="SELECT * fro... pg_tables" />
-            <marker date="1467646028447" expanded="true" signature="110685:110747" ph="SELECT &quot;Grap... Graphs" />
-            <marker date="1467646028447" expanded="true" signature="111531:111587" ph="SELECT &quot;Geom... missing_value" />
-            <marker date="1467646028447" expanded="true" signature="113058:113114" ph="SELECT &quot;Geom... missing_value" />
-            <marker date="1467646028447" expanded="true" signature="113923:113956" ph="INSERT INTO &quot;missing_value&quot;... " />
-            <marker date="1467646028447" expanded="true" signature="115036:115092" ph="SELECT &quot;Node... missing_value" />
-            <marker date="1467646028447" expanded="true" signature="116148:116204" ph="SELECT &quot;Node... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="6417:6514" ph="..." />
+            <marker date="1467892460380" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
+            <marker date="1467892460380" expanded="true" signature="15577:15668" ph="SELECT * FRO... ni_create_network_tables" />
+            <marker date="1467892460380" expanded="true" signature="16183:16222" ph="SELECT * FRO... ni_create_node_view" />
+            <marker date="1467892460380" expanded="true" signature="16735:16774" ph="SELECT * FRO... ni_create_edge_view" />
+            <marker date="1467892460380" expanded="true" signature="17512:17565" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="17647:17699" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="17781:17833" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="17914:17965" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="18510:18580" ph="SELECT * FRO... ni_node_snap_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="19515:19585" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="19776:19847" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="20042:20111" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="20303:20371" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="20945:21006" ph="SELECT * FRO... ni_node_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="21618:21688" ph="SELECT * FRO... ni_edge_snap_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="22219:22280" ph="SELECT * FRO... ni_edge_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="22675:22712" ph="SELECT * FRO... ni_delete_network" />
+            <marker date="1467892460380" expanded="true" signature="23167:23214" ph="SELECT * FRO... ni_graph_to_csv" />
+            <marker date="1467892460380" expanded="true" signature="23635:23696" ph="SELECT \&quot;Gra... Graphs" />
+            <marker date="1467892460380" expanded="true" signature="77844:77880" ph="SELECT * FRO... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="80106:80155" ph="SELECT * FRO... Graphs" />
+            <marker date="1467892460380" expanded="true" signature="107106:107152" ph="SELECT * fro... pg_tables" />
+            <marker date="1467892460380" expanded="true" signature="110685:110747" ph="SELECT &quot;Grap... Graphs" />
+            <marker date="1467892460380" expanded="true" signature="111531:111587" ph="SELECT &quot;Geom... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="113058:113114" ph="SELECT &quot;Geom... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="114203:114236" ph="INSERT INTO &quot;missing_value&quot;... " />
+            <marker date="1467892460380" expanded="true" signature="115398:115454" ph="SELECT &quot;Node... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="116510:116566" ph="SELECT &quot;Node... missing_value" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nx_pgnet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <marker date="1467892460380" expanded="true" signature="6417:6514" ph="..." />
+            <marker date="1467892460380" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
+            <marker date="1467892460380" expanded="true" signature="15577:15668" ph="SELECT * FRO... ni_create_network_tables" />
+            <marker date="1467892460380" expanded="true" signature="16183:16222" ph="SELECT * FRO... ni_create_node_view" />
+            <marker date="1467892460380" expanded="true" signature="16735:16774" ph="SELECT * FRO... ni_create_edge_view" />
+            <marker date="1467892460380" expanded="true" signature="17512:17565" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="17647:17699" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="17781:17833" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="17914:17965" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="18510:18580" ph="SELECT * FRO... ni_node_snap_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="19515:19585" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="19776:19847" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="20042:20111" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="20303:20371" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="20945:21006" ph="SELECT * FRO... ni_node_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="21618:21688" ph="SELECT * FRO... ni_edge_snap_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="22219:22280" ph="SELECT * FRO... ni_edge_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="22675:22712" ph="SELECT * FRO... ni_delete_network" />
+            <marker date="1467892460380" expanded="true" signature="23167:23214" ph="SELECT * FRO... ni_graph_to_csv" />
+            <marker date="1467892460380" expanded="true" signature="23635:23696" ph="SELECT \&quot;Gra... Graphs" />
+            <marker date="1467892460380" expanded="true" signature="77844:77880" ph="SELECT * FRO... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="80106:80155" ph="SELECT * FRO... Graphs" />
+            <marker date="1467892460380" expanded="true" signature="107106:107152" ph="SELECT * fro... pg_tables" />
+            <marker date="1467892460380" expanded="true" signature="110685:110747" ph="SELECT &quot;Grap... Graphs" />
+            <marker date="1467892460380" expanded="true" signature="111531:111587" ph="SELECT &quot;Geom... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="113058:113114" ph="SELECT &quot;Geom... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="114203:114236" ph="INSERT INTO &quot;missing_value&quot;... " />
+            <marker date="1467892460380" expanded="true" signature="115398:115454" ph="SELECT &quot;Node... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="116510:116566" ph="SELECT &quot;Node... missing_value" />
           </folding>
         </state>
       </provider>
@@ -245,38 +422,38 @@
     <entry file="file://L:/nx_pgnet/nx_pgnet.py" />
     <entry file="file://$PROJECT_DIR$/nx_pgnet.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="346">
-          <caret line="2120" column="24" selection-start-line="2120" selection-start-column="24" selection-end-line="2120" selection-end-column="24" />
+        <state relative-caret-position="221">
+          <caret line="3011" column="22" selection-start-line="3011" selection-start-column="22" selection-end-line="3011" selection-end-column="22" />
           <folding>
-            <marker date="1467646028447" expanded="true" signature="6417:6514" ph="..." />
-            <marker date="1467646028447" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
-            <marker date="1467646028447" expanded="true" signature="15577:15668" ph="SELECT * FRO... ni_create_network_tables" />
-            <marker date="1467646028447" expanded="true" signature="16183:16222" ph="SELECT * FRO... ni_create_node_view" />
-            <marker date="1467646028447" expanded="true" signature="16735:16774" ph="SELECT * FRO... ni_create_edge_view" />
-            <marker date="1467646028447" expanded="true" signature="17512:17565" ph="SELECT * FRO... ni_add_graph_record" />
-            <marker date="1467646028447" expanded="true" signature="17647:17699" ph="SELECT * FRO... ni_add_graph_record" />
-            <marker date="1467646028447" expanded="true" signature="17781:17833" ph="SELECT * FRO... ni_add_graph_record" />
-            <marker date="1467646028447" expanded="true" signature="17914:17965" ph="SELECT * FRO... ni_add_graph_record" />
-            <marker date="1467646028447" expanded="true" signature="18510:18580" ph="SELECT * FRO... ni_node_snap_geometry_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="19515:19585" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="19776:19847" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="20042:20111" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="20303:20371" ph="SELECT * FRO... ni_node_attribute_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="20945:21006" ph="SELECT * FRO... ni_node_geometry_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="21618:21688" ph="SELECT * FRO... ni_edge_snap_geometry_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="22219:22280" ph="SELECT * FRO... ni_edge_geometry_equality_check" />
-            <marker date="1467646028447" expanded="true" signature="22675:22712" ph="SELECT * FRO... ni_delete_network" />
-            <marker date="1467646028447" expanded="true" signature="23167:23214" ph="SELECT * FRO... ni_graph_to_csv" />
-            <marker date="1467646028447" expanded="true" signature="23635:23696" ph="SELECT \&quot;Gra... Graphs" />
-            <marker date="1467646028447" expanded="true" signature="77844:77880" ph="SELECT * FRO... missing_value" />
-            <marker date="1467646028447" expanded="true" signature="80106:80155" ph="SELECT * FRO... Graphs" />
-            <marker date="1467646028447" expanded="true" signature="107106:107152" ph="SELECT * fro... pg_tables" />
-            <marker date="1467646028447" expanded="true" signature="110685:110747" ph="SELECT &quot;Grap... Graphs" />
-            <marker date="1467646028447" expanded="true" signature="111531:111587" ph="SELECT &quot;Geom... missing_value" />
-            <marker date="1467646028447" expanded="true" signature="113058:113114" ph="SELECT &quot;Geom... missing_value" />
-            <marker date="1467646028447" expanded="true" signature="113923:113956" ph="INSERT INTO &quot;missing_value&quot;... " />
-            <marker date="1467646028447" expanded="true" signature="115036:115092" ph="SELECT &quot;Node... missing_value" />
-            <marker date="1467646028447" expanded="true" signature="116148:116204" ph="SELECT &quot;Node... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="6417:6514" ph="..." />
+            <marker date="1467892460380" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
+            <marker date="1467892460380" expanded="true" signature="15577:15668" ph="SELECT * FRO... ni_create_network_tables" />
+            <marker date="1467892460380" expanded="true" signature="16183:16222" ph="SELECT * FRO... ni_create_node_view" />
+            <marker date="1467892460380" expanded="true" signature="16735:16774" ph="SELECT * FRO... ni_create_edge_view" />
+            <marker date="1467892460380" expanded="true" signature="17512:17565" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="17647:17699" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="17781:17833" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="17914:17965" ph="SELECT * FRO... ni_add_graph_record" />
+            <marker date="1467892460380" expanded="true" signature="18510:18580" ph="SELECT * FRO... ni_node_snap_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="19515:19585" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="19776:19847" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="20042:20111" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="20303:20371" ph="SELECT * FRO... ni_node_attribute_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="20945:21006" ph="SELECT * FRO... ni_node_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="21618:21688" ph="SELECT * FRO... ni_edge_snap_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="22219:22280" ph="SELECT * FRO... ni_edge_geometry_equality_check" />
+            <marker date="1467892460380" expanded="true" signature="22675:22712" ph="SELECT * FRO... ni_delete_network" />
+            <marker date="1467892460380" expanded="true" signature="23167:23214" ph="SELECT * FRO... ni_graph_to_csv" />
+            <marker date="1467892460380" expanded="true" signature="23635:23696" ph="SELECT \&quot;Gra... Graphs" />
+            <marker date="1467892460380" expanded="true" signature="77844:77880" ph="SELECT * FRO... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="80106:80155" ph="SELECT * FRO... Graphs" />
+            <marker date="1467892460380" expanded="true" signature="107106:107152" ph="SELECT * fro... pg_tables" />
+            <marker date="1467892460380" expanded="true" signature="110685:110747" ph="SELECT &quot;Grap... Graphs" />
+            <marker date="1467892460380" expanded="true" signature="111531:111587" ph="SELECT &quot;Geom... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="113058:113114" ph="SELECT &quot;Geom... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="114203:114236" ph="INSERT INTO &quot;missing_value&quot;... " />
+            <marker date="1467892460380" expanded="true" signature="115398:115454" ph="SELECT &quot;Node... missing_value" />
+            <marker date="1467892460380" expanded="true" signature="116510:116566" ph="SELECT &quot;Node... missing_value" />
           </folding>
         </state>
       </provider>

@@ -3016,11 +3016,25 @@ class write:
 			if type(data) == int or type(data) == float:
 				data_list += '%s,' %data
 			else:
-				data_list += "'%s'," %data
-
-		sql = 'INSERT INTO "%s" (%s) VALUES (%s)' %(self.tbledges,field_list[:-1],data_list[:-1])
-
-		self.conn.ExecuteSQL(sql)
+				#print('Checking here')
+				data_list += "'%s'," % data.replace("'", "''")
+				'''
+				try:
+					if data.find("'") > -1:
+						print('Found an apostrophe')
+						data_list += "'%s'," % data.replace("'","''")
+					else:
+						data_list += "'%s'," % data
+				except:
+					data_list += "'%s'," % data
+				'''
+		sql = '''INSERT INTO "%s" (%s) VALUES (%s)''' %(self.tbledges,field_list[:-1],data_list[:-1])
+		try:
+			self.conn.ExecuteSQL(sql)
+		except:
+			print(sql)
+			print(data_list)
+			self.conn.ExecuteSQL(sql)
 
 	def pgnet_node_empty_geometry(self, node_attribute_equality_key, node_attributes, node_geom):
 		'''Write a node to a Node table, where no Node geometry exists
