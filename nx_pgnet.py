@@ -422,7 +422,7 @@ class nisql:
 
 		# Create network tables
 		sql = ("SELECT * FROM ni_create_network_tables ('%s', %i, CAST(%i AS BOOLEAN), CAST(%i AS BOOLEAN));" % (prefix, epsg, directed, multigraph))
-		
+
 		result = None
 		for row in self.conn.ExecuteSQL(sql):
 
@@ -1995,7 +1995,51 @@ class read:
 
 		# Join Edges and Edge_Geom
 		edge_tbl_view = nisql(self.conn).create_edge_view(self.prefix)
-		
+
+
+		'''
+		New code to read the whole network with less dependence on ogr
+		'''
+		sql = ('SELECT "GeomID" FROM "%s"' % (self.prefix + '_View_Edges_Edge_Geometry'))
+		feats = []
+
+		for row in self.conn.ExecuteSQL(sql):
+			feats.append(row['GeomID'])
+		print('Number of edges:', len(feats))
+
+		for feat in feats:
+			sql = ('SELECT *,ST_AseWKB(geom) as "Wkb", ST_AsText(geom) as "Wkt", ST_AsGeoJson(geom) as "Json" FROM "%s" WHERE "GeomID" = %s' %(self.prefix + '_View_Edges_Edge_Geometry', feat))
+
+			atts = {}
+			for row in self.conn.ExecuteSQL(sql):
+
+				for key in row.keys():
+					atts[key] = row[key]
+
+			# delete view_id from previous view
+			if 'view_id' in atts:
+				del atts['view_id']
+
+			# delete edgeid from previous view
+			if 'edgeid' in atts:
+				del atts['edgeid']
+
+			# delete geomid from previous view
+			if 'geomid' in atts:
+				del atts['geomid']
+
+			if (isinstance(graph, nx.classes.multigraph.MultiGraph) or isinstance(graph,
+																				  nx.classes.multidigraph.MultiDiGraph)):
+				# unique key expected or multigraphs (always labelled uuid)
+				uuid = atts['uuid']
+				graph.add_edge(atts['Node_F_ID'], atts['Node_T_ID'], uuid, atts)
+			else:
+				graph.add_edge(atts['Node_F_ID'], atts['Node_T_ID'], atts)
+
+		'''
+		original code below
+		This was stopping after 500 edges for some reason
+
 		# Get lyr by name
 		lyr = self.conn.GetLayerByName(edge_tbl_view)
 		#reset to read from start of edge view
@@ -2003,14 +2047,17 @@ class read:
 
 		# Get current feature
 		feat = lyr.GetNextFeature()
+		print(lyr)
 
 		# Get fields
 		flds = [x.GetName() for x in lyr.schema]
 
 		while feat is not None:
-			# Read edge attrs.
+			# Read edge attrs
 			flddata = self.getfieldinfo(lyr, feat, flds)
 			attributes = dict(list(zip(flds, flddata)))
+
+			#print(attributes['GeomID'])
 
 			#delete view_id from previous view
 			if 'view_id' in attributes:
@@ -2061,7 +2108,7 @@ class read:
 						graph.add_edge(atts['Node_F_ID'],atts['Node_T_ID'],atts)
 
 			feat = lyr.GetNextFeature()
-
+		'''
 	def pgnet_nodes(self, graph):
 		'''Reads nodes from node table and add to graph.
 
@@ -2141,7 +2188,7 @@ class read:
 			error = "Can't find network '%s' in Graph table" % self.prefix
 			raise Error(error)
 
-		#NEW handles multi and directed graphs
+		# handles multi and directed graphs
 
 		if ((graph_attrs['Directed'] == 0) and (graph_attrs['MultiGraph'] == 0)):
 			G = nx.Graph(name=prefix)
@@ -2971,7 +3018,7 @@ class write:
 			edge_geom = ogr.ForceToMultiLineString(edge_geom)'''
 		#get the edge wkt
 		edge_wkt = edge_geom.ExportToWkt()
-		
+
 		# Get table definitions
 		featedge = ogr.Feature(self.lyredges.GetLayerDefn())
 		featedge_geom = ogr.Feature(self.lyredge_geom.GetLayerDefn())
@@ -2982,15 +3029,15 @@ class write:
 		if GeomID == None:
 			# Need to create new geometry
 			featedge_geom.SetGeometry(edge_geom)
-			
+
 			self.lyredge_geom.CreateFeature(featedge_geom)
-			
+
 			#Get created edge_geom primary key (GeomID)
 			sql = ('SELECT "GeomID" FROM "%s" ORDER BY "GeomID" DESC LIMIT 1;' % self.tbledge_geom)
-			
+
 			for row in self.conn.ExecuteSQL(sql):
 				GeomID = row.GeomID
-		
+
 		# Append the GeomID to the edges attributes
 		edge_attributes['Edge_GeomID'] = GeomID
 
@@ -3006,7 +3053,7 @@ class write:
 		self.lyredges.CreateFeature(featedge)
 		'''
 		#second method
-	
+
 		field_list = ''
 		data_list = ''
 		for field, data in list(edge_attributes.items()):
@@ -3154,7 +3201,7 @@ class write:
 		#define default field types for Node and Edge fields
 		node_fields = {'GraphID':ogr.OFTInteger}
 		edge_fields = {'Node_F_ID':ogr.OFTInteger, 'Node_T_ID':ogr.OFTInteger, 'GraphID':ogr.OFTInteger, 'Edge_GeomID':ogr.OFTInteger}
-		
+
 		for e in G.edges(data=True):
 			if not multigraph:
 				data = G.get_edge_data(*e)
@@ -3170,7 +3217,7 @@ class write:
 				del node_attrs['view_id']
 			if 'nodeid' in node_attrs:
 				del node_attrs['nodeid']
-			
+
 			if srs != -1:
 				#grab the node geometry
 				node_geom = self.netgeometry(e[0], G.node[e[0]])
@@ -3210,7 +3257,7 @@ class write:
 				del node_attrs['view_id']
 			if 'nodeid' in node_attrs:
 				del node_attrs['nodeid']
-			
+
 			if srs != -1:
 				#grab the node geometry
 				node_geom = self.netgeometry(e[1], G.node[e[1]])
@@ -3251,7 +3298,7 @@ class write:
 				edge_attrs['Node_T_ID'] = node_t_id
 			if 'GraphID' in edge_attrs:
 				edge_attrs['GraphID'] = self.graph_id
-			
+
 			if srs != -1:
 
 				#define the edge geometry
