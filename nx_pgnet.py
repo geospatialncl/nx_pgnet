@@ -2011,7 +2011,7 @@ class read:
 			# Read edge attrs.
 			flddata = self.getfieldinfo(lyr, feat, flds)
 			attributes = dict(list(zip(flds, flddata)))
-			print(attributes)
+			
 			#delete view_id from previous view
 			if 'view_id' in attributes:
 				del attributes['view_id']
