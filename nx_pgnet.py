@@ -2057,15 +2057,8 @@ class read:
 						uuid = attributes['uuid']
 						graph.add_edge(attributes['Node_F_ID'], attributes['Node_T_ID'], uuid, attributes)
 					else:
-						#print(graph.nodes())
-						#print(graph.edges())
-						#print(attributes['Node_F_ID'])
-						#print(attributes['Node_T_ID'])
-						#print(attributes)
-						#print(len(attributes))
 						graph.add_edges_from([(attributes['Node_F_ID'],attributes['Node_T_ID'],attributes),])
-						#graph.add_edge(int(attributes['Node_F_ID']), int(attributes['Node_T_ID']), str(attributes))
-						#graph.add_edge(atts['Node_F_ID'],atts['Node_T_ID'],atts)
+						
 
 			feat = lyr.GetNextFeature()
 
@@ -2107,8 +2100,7 @@ class read:
 			attributes["Wkt"] = ogr.Geometry.ExportToWkt(geom)
 			attributes["Json"] = ogr.Geometry.ExportToJson(geom)
 
-
-			graph.add_node((attributes['NodeID']), attributes)
+			graph.add_nodes_from([(attributes['NodeID'],attributes)])
 			feat = lyr.GetNextFeature()
 
 	def graph_table(self, prefix):
