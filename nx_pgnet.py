@@ -2011,7 +2011,7 @@ class read:
 			# Read edge attrs.
 			flddata = self.getfieldinfo(lyr, feat, flds)
 			attributes = dict(list(zip(flds, flddata)))
-
+			print(attributes)
 			#delete view_id from previous view
 			if 'view_id' in attributes:
 				del attributes['view_id']
@@ -2057,8 +2057,15 @@ class read:
 						uuid = attributes['uuid']
 						graph.add_edge(attributes['Node_F_ID'], attributes['Node_T_ID'], uuid, attributes)
 					else:
-						graph.add_edge(attributes['Node_F_ID'], attributes['Node_T_ID'], attributes)
-						graph.add_edge(atts['Node_F_ID'],atts['Node_T_ID'],atts)
+						#print(graph.nodes())
+						#print(graph.edges())
+						#print(attributes['Node_F_ID'])
+						#print(attributes['Node_T_ID'])
+						#print(attributes)
+						#print(len(attributes))
+						graph.add_edges_from([(attributes['Node_F_ID'],attributes['Node_T_ID'],attributes),])
+						#graph.add_edge(int(attributes['Node_F_ID']), int(attributes['Node_T_ID']), str(attributes))
+						#graph.add_edge(atts['Node_F_ID'],atts['Node_T_ID'],atts)
 
 			feat = lyr.GetNextFeature()
 
