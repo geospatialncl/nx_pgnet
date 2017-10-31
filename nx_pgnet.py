@@ -3073,17 +3073,20 @@ class write:
 
 		'''
 		NodeID = nisql(self.conn).node_geometry_equality_check(self.prefix,node_geom,self.srs)
-
+		print(node_attributes)
 		if NodeID == None: # Need to create new geometry:
 			featnode = ogr.Feature(self.lyrnodes_def)
 			featnode.SetGeometry(node_geom)
 
 			for field, data in node_attributes.items():
 				#added to handle when reading back in from graphml or similar
-				if type(data) == str:
-					data = data.encode('utf-8')
+				#if type(data) == str:
+				#	data = data.encode('utf-8')
+				try:
+					featnode.SetField(field, data)
+				except:
+					print(field, ':' ,data)
 
-				featnode.SetField(field, data)
 
 			self.lyrnodes.CreateFeature(featnode)
 
