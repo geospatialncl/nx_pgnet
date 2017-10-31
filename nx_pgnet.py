@@ -3079,14 +3079,15 @@ class write:
 			featnode.SetGeometry(node_geom)
 
 			for field, data in node_attributes.items():
-				#added to handle when reading back in from graphml or similar
-				#if type(data) == str:
-				#	data = data.encode('utf-8')
+				# set attribute and attribute value for node
 				try:
 					featnode.SetField(field, data)
 				except:
-					print(field, ':' ,data)
-
+					# if it fails, try converting strings to utf-8 encoding (this used to be done first)
+					# added to handle when reading back in from graphml or similar
+					if type(data) == str:
+						data = data.encode('utf-8')
+					featnode.SetField(field, data)
 
 			self.lyrnodes.CreateFeature(featnode)
 
