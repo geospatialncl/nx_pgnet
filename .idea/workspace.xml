@@ -1,123 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="fd096cfa-b3f0-4f8b-8240-c1e687127cbc" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/nx_pgnet.iml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/README.md" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.aux" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.dvi" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.idx" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.ilg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.ind" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.log" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.out" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.pdf" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.ps" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.tex" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/api.toc" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/epydoc.conf" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/nx_pg-module.aux" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/nx_pg-module.tex" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/nx_pg_networks_doc.pdf" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/nx_pgnet-module.aux" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/doc/nx_pgnet-module.tex" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/nx_pg.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/nx_pgnet.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/rebuild_national_grid_gas_electricity.py" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/INSTALL.txt" afterPath="$PROJECT_DIR$/pg_schema/INSTALL.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/doc/tutorial/data/OS Meridian 2 Rail Data/rail_ln_polyline.avl" afterPath="$PROJECT_DIR$/pg_schema/doc/tutorial/data/OS Meridian 2 Rail Data/rail_ln_polyline.avl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/doc/tutorial/data/OS Meridian 2 Rail Data/rail_ln_polyline.shp.xml" afterPath="$PROJECT_DIR$/pg_schema/doc/tutorial/data/OS Meridian 2 Rail Data/rail_ln_polyline.shp.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/doc/tutorial/data/OS Meridian 2 Rail Data/station_point.avl" afterPath="$PROJECT_DIR$/pg_schema/doc/tutorial/data/OS Meridian 2 Rail Data/station_point.avl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/doc/tutorial/data/OS Meridian 2 Rail Data/station_point.shp.xml" afterPath="$PROJECT_DIR$/pg_schema/doc/tutorial/data/OS Meridian 2 Rail Data/station_point.shp.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/execute_ni_combine_sql_files.bat" afterPath="$PROJECT_DIR$/pg_schema/execute_ni_combine_sql_files.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/execute_ni_setup_database.bat" afterPath="$PROJECT_DIR$/pg_schema/execute_ni_setup_database.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/example_execute_ni_setup_generic_functions.bat" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/example_execute_ni_setup_generic_functions.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_fr_constraints.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_fr_constraints.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_global_interdependency_record.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_global_interdependency_record.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_graph_record.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_graph_record.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_interdependency_record.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_interdependency_record.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_to_geometry_columns.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_add_to_geometry_columns.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_build_spatial_index.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_build_spatial_index.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_check_interdependency_tables.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_check_interdependency_tables.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_check_network_tables.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_check_network_tables.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_check_srid.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_check_srid.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_combine_generic_sql_functions.bat" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_combine_generic_sql_functions.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_edge_view.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_edge_view.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_interdependency_edge_view.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_interdependency_edge_view.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_interdependency_tables.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_interdependency_tables.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_edge_geometry.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_edge_geometry.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_edge_geometry_prefix_srid_only.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_edge_geometry_prefix_srid_only.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_edges.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_edges.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_nodes.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_nodes.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_nodes_prefix_srid_only.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_table_nodes_prefix_srid_only.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_tables.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_network_tables.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_new_column_names_for_join.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_new_column_names_for_join.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_node_view.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_create_node_view.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_delete_network.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_delete_network.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_edge_geometry_equality_check_with_srid.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_edge_geometry_equality_check_with_srid.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_edge_geometry_equality_check_without_srid.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_edge_geometry_equality_check_without_srid.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_edge_snap_geometry_equality_check.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_edge_snap_geometry_equality_check.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_get_all_table_column_names.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_get_all_table_column_names.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_get_all_view_column_names.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_get_all_view_column_names.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_get_graph_id_by_prefix.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_get_graph_id_by_prefix.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_graph_to_csv_3.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_graph_to_csv_3.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_graph_to_csv_4.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_graph_to_csv_4.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_graph_to_gephi_edge_list.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_graph_to_gephi_edge_list.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_node_attribute_equality_check.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_node_attribute_equality_check.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_node_geometry_equality_check_with_srid.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_node_geometry_equality_check_with_srid.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_node_geometry_equality_check_without_srid.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_node_geometry_equality_check_without_srid.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_node_snap_geometry_equality_check.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_node_snap_geometry_equality_check.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_remove_from_geometry_columns.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_remove_from_geometry_columns.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_reset_database_with_schema_name.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_reset_database_with_schema_name.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_setup_generic_functions.bat" afterPath="$PROJECT_DIR$/pg_schema/functions/GENERIC/ni_setup_generic_functions.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/example_execute_ni_setup_processing_functions.bat" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/example_execute_ni_setup_processing_functions.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_combine_processing_sql_functions.bat" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_combine_processing_sql_functions.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_connect_hanging_edges_to_node_in_search.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_connect_hanging_edges_to_node_in_search.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_connect_hanging_edges_to_node_like.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_connect_hanging_edges_to_node_like.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_connect_nodes_to_point_on_nearest_edge_in_search.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_connect_nodes_to_point_on_nearest_edge_in_search.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_connect_nodes_to_point_on_nearest_edge_like.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_connect_nodes_to_point_on_nearest_edge_like.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_detect_and_combine_duplicate_edges.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_data_proc_detect_and_combine_duplicate_edges.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_find_junctions.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_find_junctions.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_find_nearest_nodeb_to_nodea_using_nn.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_find_nearest_nodeb_to_nodea_using_nn.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_link_nodeb_to_nodea_by_attribute.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_link_nodeb_to_nodea_by_attribute.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_nearest_point_to_line_segment.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_nearest_point_to_line_segment.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_node_separation_distance_with_node_id.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_node_separation_distance_with_node_id.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_node_separation_distance_without_node_id.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_node_separation_distance_without_node_id.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_setup_processing_functions.bat" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_setup_processing_functions.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_union_geometry_distinct_records.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/PROCESSING/ni_union_geometry_distinct_records.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/example_execute_ni_setup_trigger_functions.bat" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/example_execute_ni_setup_trigger_functions.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_check_record_geometry_columns_table_post_graph_edges_update.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_check_record_geometry_columns_table_post_graph_edges_update.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_check_record_geometry_columns_table_post_graph_insert.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_check_record_geometry_columns_table_post_graph_insert.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_check_record_geometry_columns_table_post_graph_nodes_update.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_check_record_geometry_columns_table_post_graph_nodes_update.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_combine_trigger_sql_functions.bat" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_combine_trigger_sql_functions.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_edges_geometry_table_post_delete_graph.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_edges_geometry_table_post_delete_graph.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_edges_table_post_delete_graph.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_edges_table_post_delete_graph.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_global_int_record_post_graph_record_delete.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_global_int_record_post_graph_record_delete.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_int_edge_table_post_int_record_delete.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_int_edge_table_post_int_record_delete.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_int_table_post_int_record_delete.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_int_table_post_int_record_delete.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_int_tables_post_delete_graph.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_int_tables_post_delete_graph.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_nodes_table_post_delete_graph.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_nodes_table_post_delete_graph.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_record_geometry_columns_table_post_delete_graph.sql" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_delete_record_geometry_columns_table_post_delete_graph.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_setup_trigger_functions.bat" afterPath="$PROJECT_DIR$/pg_schema/functions/TRIGGER/ni_setup_trigger_functions.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/ni_setup_database.bat" afterPath="$PROJECT_DIR$/pg_schema/ni_setup_database.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/example_execute_ni_setup_tables.bat" afterPath="$PROJECT_DIR$/pg_schema/tables/example_execute_ni_setup_tables.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_combine_tables_sql.bat" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_combine_tables_sql.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_drop_tables.sql" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_drop_tables.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_edge_geometry.sql" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_edge_geometry.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_edges.sql" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_edges.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_global_interdependency.sql" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_global_interdependency.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_graphs.sql" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_graphs.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_interdependency.sql" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_interdependency.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_interdependency_edges.sql" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_interdependency_edges.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_nodes.sql" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_nodes.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pg_schema/tables/ni_setup_tables.bat" afterPath="$PROJECT_DIR$/pg_schema/tables/ni_setup_tables.bat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/test_script.py" afterPath="$PROJECT_DIR$/test/test_script.py" />
-    </list>
+    <list default="true" id="fd096cfa-b3f0-4f8b-8240-c1e687127cbc" name="Default" comment="" />
     <ignored path="nx_pgnet.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path=".idea/dataSources.local.xml" />
@@ -150,8 +34,8 @@
       <file leaf-file-name="nx_pgnet.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/nx_pgnet/nx_pgnet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="593">
-              <caret line="354" column="0" lean-forward="false" selection-start-line="354" selection-start-column="0" selection-end-line="354" selection-end-column="0" />
+            <state relative-caret-position="423">
+              <caret line="318" column="0" lean-forward="false" selection-start-line="318" selection-start-column="0" selection-end-line="318" selection-end-column="78" />
               <folding>
                 <element signature="e#13499#13509#0" expanded="true" />
                 <marker date="1509445430461" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
@@ -207,10 +91,9 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="1272" />
-    <option name="y" value="-8" />
-    <option name="width" value="1296" />
-    <option name="height" value="1040" />
+    <option name="x" value="33" />
+    <option name="width" value="1046" />
+    <option name="height" value="849" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -417,10 +300,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1272" y="-8" width="1296" height="1040" extended-state="7" />
+    <frame x="33" y="0" width="1046" height="849" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15614887" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19574037" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -521,8 +404,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/nx_pgnet/nx_pgnet.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="593">
-          <caret line="354" column="0" lean-forward="false" selection-start-line="354" selection-start-column="0" selection-end-line="354" selection-end-column="0" />
+        <state relative-caret-position="423">
+          <caret line="318" column="0" lean-forward="false" selection-start-line="318" selection-start-column="0" selection-end-line="318" selection-end-column="78" />
           <folding>
             <element signature="e#13499#13509#0" expanded="true" />
             <marker date="1509445430461" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
