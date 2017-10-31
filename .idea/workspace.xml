@@ -21,21 +21,21 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="nx_pg.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="nx_pg.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/nx_pgnet/nx_pg.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2550">
+            <state relative-caret-position="-2091">
               <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="nx_pgnet.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="nx_pgnet.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/nx_pgnet/nx_pgnet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="423">
-              <caret line="318" column="0" lean-forward="false" selection-start-line="318" selection-start-column="0" selection-end-line="318" selection-end-column="78" />
+            <state relative-caret-position="66">
+              <caret line="297" column="0" lean-forward="true" selection-start-line="297" selection-start-column="0" selection-end-line="297" selection-end-column="0" />
               <folding>
                 <element signature="e#13499#13509#0" expanded="true" />
                 <marker date="1509445430461" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
@@ -300,7 +300,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="33" y="0" width="1046" height="849" extended-state="0" />
+    <frame x="33" y="0" width="1046" height="849" extended-state="1" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19574037" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -394,18 +394,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/nx_pgnet/nx_pg.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2550">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/nx_pgnet/nx_pgnet.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="423">
-          <caret line="318" column="0" lean-forward="false" selection-start-line="318" selection-start-column="0" selection-end-line="318" selection-end-column="78" />
+        <state relative-caret-position="66">
+          <caret line="297" column="0" lean-forward="true" selection-start-line="297" selection-start-column="0" selection-end-line="297" selection-end-column="0" />
           <folding>
             <element signature="e#13499#13509#0" expanded="true" />
             <marker date="1509445430461" expanded="true" signature="14615:14657" ph="SELECT * FRO... pg_proc" />
@@ -437,6 +429,14 @@
             <marker date="1509445430461" expanded="true" signature="115267:115323" ph="SELECT &quot;Node... missing_value" />
             <marker date="1509445430461" expanded="true" signature="116379:116435" ph="SELECT &quot;Node... missing_value" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nx_pgnet/nx_pg.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-2091">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
