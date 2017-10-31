@@ -1,0 +1,3 @@
+# Requirements:
+networkx>=1.6
+OGR>=1.8.0
